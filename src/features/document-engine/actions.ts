@@ -35,7 +35,7 @@ export async function getTemplateWithVersion(templateId: string, versionId?: str
     });
 
     return { success: true, data: { template, version } };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
@@ -71,7 +71,7 @@ export async function testRenderTemplate(kontenHtml: string) {
       validation,
       renderedHtml,
     };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { success: false, error: error.message };
   }
 }

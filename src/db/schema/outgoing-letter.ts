@@ -50,7 +50,6 @@ export const outgoingLetters = pgTable('outgoing_letters', {
   tanggalTerbit: date('tanggal_terbit'),
   status: varchar('status', { length: 50 }).notNull().default('DRAFT'), // DRAFT, REVIEW, APPROVED, PUBLISHED
   catatanTambahan: text('catatan_tambahan'),
-  deletedAt: timestamp('deleted_at'),
   ...auditFields,
 });
 

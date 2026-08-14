@@ -5,7 +5,7 @@ import { headers } from 'next/headers';
 import crypto from 'crypto';
 
 export async function authenticateApiRequest(req: Request, endpoint: string) {
-  const headersList = headers();
+  const headersList = await headers();
   const authHeader = headersList.get('authorization');
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {

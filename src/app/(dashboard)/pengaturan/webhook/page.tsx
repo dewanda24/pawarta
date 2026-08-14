@@ -7,6 +7,8 @@ export const metadata = {
   title: 'Webhook Management | PAWARTA',
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function WebhookManagementPage() {
   const hooks = await db.select().from(webhooks).orderBy(desc(webhooks.createdAt));
 

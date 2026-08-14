@@ -18,7 +18,7 @@ import {
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 
-const IconMap: Record<string, unknown> = {
+const IconMap: Record<string, any> = {
   Home,
   Inbox,
   Send,

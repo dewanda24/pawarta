@@ -70,7 +70,7 @@ export async function createOutgoingDraft(data: OutgoingLetterFormValues) {
 
     revalidatePath('/surat-keluar');
     return { success: true, data: result };
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Error createOutgoingDraft:', error);
     return { error: 'Gagal membuat draf surat', message: error.message };
   }
@@ -100,7 +100,7 @@ export async function deleteOutgoingLetter(id: string) {
 
     revalidatePath('/surat-keluar');
     return { success: true };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { error: 'Gagal menghapus surat', message: error.message };
   }
 }

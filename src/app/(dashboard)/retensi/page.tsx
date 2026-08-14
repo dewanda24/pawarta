@@ -15,7 +15,7 @@ export default async function RetensiArsipPage() {
     .orderBy(retentionPolicies.nama);
 
   // Dynamic calculation query: Ambil arsip yang masa retensinya sudah lewat / hampir habis
-  const today = new Date();
+  const today = new Date().toISOString().split('T')[0];
   const expiringArchives = await db
     .select({
       id: archives.id,

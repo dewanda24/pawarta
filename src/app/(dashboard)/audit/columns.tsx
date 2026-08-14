@@ -12,7 +12,7 @@ export type AuditLog = {
   detail: string | null;
 };
 
-export const columns: ColumnDef<AuditLog>[] = [
+export const columns: ColumnDef<AuditLog, any>[] = [
   {
     accessorKey: 'waktu',
     header: 'Waktu',
@@ -25,7 +25,7 @@ export const columns: ColumnDef<AuditLog>[] = [
     accessorKey: 'ipAddress',
     header: 'IP Address',
     cell: ({ row }) => {
-      return <span className="font-mono text-xs">{row.getValue('ipAddress')}</span>;
+      return <span className="font-mono text-xs">{(row as any).getValue('ipAddress')}</span>;
     },
   },
   {
@@ -34,7 +34,7 @@ export const columns: ColumnDef<AuditLog>[] = [
     cell: ({ row }) => {
       return (
         <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-semibold bg-secondary text-secondary-foreground">
-          {row.getValue('modul')}
+          {(row as any).getValue('modul')}
         </span>
       );
     },
@@ -43,14 +43,14 @@ export const columns: ColumnDef<AuditLog>[] = [
     accessorKey: 'aksi',
     header: 'Aksi',
     cell: ({ row }) => {
-      return <span className="font-bold text-xs">{row.getValue('aksi')}</span>;
+      return <span className="font-bold text-xs">{(row as any).getValue('aksi')}</span>;
     },
   },
   {
     accessorKey: 'detail',
     header: 'Detail',
     cell: ({ row }) => {
-      return <span className="text-muted-foreground text-xs">{row.getValue('detail')}</span>;
+      return <span className="text-muted-foreground text-xs">{(row as any).getValue('detail')}</span>;
     },
   },
 ];

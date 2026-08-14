@@ -86,7 +86,7 @@ export async function submitWorkflow(instanceId: string, action: string, catatan
 
     revalidatePath('/surat-keluar');
     return { success: true, data: result };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { error: 'Gagal memproses workflow', message: error.message };
   }
 }

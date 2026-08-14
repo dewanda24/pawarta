@@ -20,7 +20,7 @@ export async function getUserPreferences(userId: string) {
   }
 }
 
-export async function saveUserPreferences(userId: string, data: unknown) {
+export async function saveUserPreferences(userId: string, data: any) {
   try {
     const existing = await db.query.userPreferences.findFirst({
       where: eq(userPreferences.userId, userId),

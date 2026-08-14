@@ -52,7 +52,7 @@ export async function createNewVersion(
     });
 
     return { success: true, data: newVersion };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
@@ -91,7 +91,7 @@ export async function publishTemplateVersion(templateId: string, versionId: stri
     });
 
     return { success: true };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { success: false, error: error.message };
   }
 }
@@ -115,7 +115,7 @@ export async function restoreVersion(templateId: string, versionIdToRestore: str
       oldVersion.pengaturanKertas,
       `Restored from ${oldVersion.nomorVersi}`,
     );
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { success: false, error: error.message };
   }
 }

@@ -19,7 +19,7 @@ export async function getPermissionList(search?: string) {
   }
 }
 
-export async function createPermission(data: unknown) {
+export async function createPermission(data: any) {
   try {
     const user = await requireAuth();
     const [inserted] = await db.insert(permissions).values(data).returning();
@@ -40,7 +40,7 @@ export async function createPermission(data: unknown) {
   }
 }
 
-export async function updatePermission(id: string, data: unknown) {
+export async function updatePermission(id: string, data: any) {
   try {
     const user = await requireAuth();
     await db

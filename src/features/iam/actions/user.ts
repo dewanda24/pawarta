@@ -30,7 +30,7 @@ export async function getUserList(search?: string) {
   }
 }
 
-export async function createUser(data: unknown, roleId: string) {
+export async function createUser(data: any, roleId: string) {
   try {
     const currentUser = await requireAuth();
     // Validasi email
@@ -74,10 +74,10 @@ export async function createUser(data: unknown, roleId: string) {
   }
 }
 
-export async function updateUser(id: string, data: unknown, roleId?: string) {
+export async function updateUser(id: string, data: any, roleId?: string) {
   try {
     const currentUser = await requireAuth();
-    const updateData: unknown = { nama: data.name, email: data.email };
+    const updateData: any = { nama: data.name, email: data.email };
     if (data.username) updateData.username = data.username;
 
     if (data.password) {

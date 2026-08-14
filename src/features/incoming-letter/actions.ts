@@ -76,7 +76,7 @@ export async function registerIncomingLetter(data: IncomingLetterFormValues) {
 
     revalidatePath('/surat-masuk');
     return { success: true, data: result };
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Error registerIncomingLetter:', error);
     return { error: 'Gagal meregistrasi surat', message: error.message };
   }
@@ -136,7 +136,7 @@ export async function distributeIncomingLetter(suratId: string, data: Distribute
 
     revalidatePath(`/surat-masuk/${suratId}`);
     return { success: true, data: result };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { error: 'Gagal mendistribusikan surat', message: error.message };
   }
 }
@@ -197,7 +197,7 @@ export async function createInitialDisposition(suratId: string, data: Dispositio
 
     revalidatePath(`/surat-masuk/${suratId}`);
     return { success: true, data: result };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { error: 'Gagal membuat disposisi', message: error.message };
   }
 }

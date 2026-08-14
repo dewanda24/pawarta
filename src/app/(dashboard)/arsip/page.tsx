@@ -10,6 +10,8 @@ export const metadata = {
   title: 'Arsip Digital | PAWARTA',
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function ArsipDigitalPage({ searchParams }: { searchParams: { q?: string } }) {
   const query = searchParams.q || '';
 

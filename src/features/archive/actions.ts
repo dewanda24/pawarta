@@ -39,17 +39,16 @@ export async function archiveDocument(data: ArchiveDocumentFormValues) {
   try {
     const result = await db.transaction(async (tx) => {
       // 1. Hitung Tanggal Retensi jika ada Policy
-      let tanggalRetensiBerakhir: Date | null = null;
+      let tanggalRetensiBerakhir: string | null = null;
       if (validatedFields.data.retentionPolicyId) {
         const [policy] = await tx
           .select()
           .from(retentionPolicies)
           .where(eq(retentionPolicies.id, validatedFields.data.retentionPolicyId));
         if (policy) {
-          tanggalRetensiBerakhir = new Date();
-          tanggalRetensiBerakhir.setFullYear(
-            tanggalRetensiBerakhir.getFullYear() + policy.masaAktifTahun,
-          );
+          const dateObj = new Date();
+          dateObj.setFullYear(dateObj.getFullYear() + policy.masaAktifTahun);
+          tanggalRetensiBerakhir = dateObj.toISOString().split('T')[0];
         }
       }
 
@@ -100,7 +99,7 @@ export async function archiveDocument(data: ArchiveDocumentFormValues) {
 
     revalidatePath('/arsip');
     return { success: true, data: result };
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Error archiveDocument:', error);
     return { error: 'Gagal mengarsipkan dokumen', message: error.message };
   }
@@ -153,7 +152,7 @@ export async function borrowArchive(data: BorrowArchiveFormValues) {
     revalidatePath(`/arsip/${validatedFields.data.archiveId}`);
     revalidatePath('/peminjaman-arsip');
     return { success: true, data: result };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { error: 'Gagal meminjam arsip', message: error.message };
   }
 }
@@ -186,7 +185,7 @@ export async function toggleFavorite(archiveId: string) {
       });
       return { success: true, favorited: true };
     }
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { error: 'Gagal mengubah status favorit', message: error.message };
   }
 }
@@ -217,7 +216,7 @@ export async function verifyDocument(hashSha256: string) {
       isValid: true,
       data: docHash,
     };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { error: 'Gagal memverifikasi dokumen', message: error.message };
   }
 }

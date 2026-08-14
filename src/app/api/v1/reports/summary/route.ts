@@ -31,7 +31,7 @@ export async function GET(req: Request) {
         timestamp: new Date().toISOString(),
       },
     });
-  } catch (error: unknown) {
+  } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

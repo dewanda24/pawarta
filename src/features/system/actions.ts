@@ -38,7 +38,7 @@ export async function backupSystem(tipe: string) {
 
     revalidatePath('/sistem/backup');
     return { success: true, backup };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { error: 'Gagal melakukan backup', message: error.message };
   }
 }
@@ -70,7 +70,7 @@ export async function uploadStorageFile(data: {
 
     revalidatePath('/penyimpanan');
     return { success: true, file };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { error: 'Gagal mengupload file', message: error.message };
   }
 }

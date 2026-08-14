@@ -25,7 +25,7 @@ export async function getRoleList(search?: string) {
   }
 }
 
-export async function createRole(data: unknown) {
+export async function createRole(data: any) {
   try {
     const user = await requireAuth();
     const [inserted] = await db.insert(roles).values(data).returning();
@@ -46,7 +46,7 @@ export async function createRole(data: unknown) {
   }
 }
 
-export async function updateRole(id: string, data: unknown) {
+export async function updateRole(id: string, data: any) {
   try {
     const user = await requireAuth();
     await db.update(roles).set(data).where(eq(roles.id, id));

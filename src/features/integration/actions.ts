@@ -38,7 +38,7 @@ export async function createApiKey(data: { nama: string; permissions: string[] }
 
     // PENTING: rawToken HANYA DIKEMBALIKAN SEKALI INI. Tidak disimpan di DB.
     return { success: true, apiKey, rawToken };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { error: 'Gagal membuat API Key', message: error.message };
   }
 }
@@ -64,7 +64,7 @@ export async function createWebhook(data: { nama: string; url: string; events: s
 
     revalidatePath('/pengaturan/webhook');
     return { success: true, webhook };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { error: 'Gagal membuat Webhook', message: error.message };
   }
 }
@@ -95,7 +95,7 @@ export async function createAutomationRule(data: {
 
     revalidatePath('/pengaturan/automasi');
     return { success: true, rule };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { error: 'Gagal membuat Automation Rule', message: error.message };
   }
 }
@@ -144,7 +144,7 @@ export async function generateSignatureRequest(data: {
 
     revalidatePath('/tanda-tangan');
     return { success: true, data: result };
-  } catch (error: unknown) {
+  } catch (error: any) {
     return { error: 'Gagal membuat Signature Request', message: error.message };
   }
 }

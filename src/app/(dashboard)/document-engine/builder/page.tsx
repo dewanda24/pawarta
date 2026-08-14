@@ -25,7 +25,7 @@ Kepala Sekolah
 `);
 
   const [previewMode, setPreviewMode] = useState(false);
-  const [validationResult, setValidationResult] = useState<unknown>(null);
+  const [validationResult, setValidationResult] = useState<{ html: string; missing: string[] } | null>(null);
 
   // Fungsi Test Render sederhana di Client-side
   const handleTestRender = () => {
@@ -48,7 +48,7 @@ Kepala Sekolah
 
     rendered = rendered.replace(regex, (match, key) => {
       return (
-        (dummy as unknown)[key] ||
+        (dummy as Record<string, string>)[key] ||
         `<span class="bg-red-100 text-red-600 font-bold px-1 rounded">[KOSONG: ${key}]</span>`
       );
     });

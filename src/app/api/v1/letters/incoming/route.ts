@@ -29,7 +29,7 @@ export async function GET(req: Request) {
       count: letters.length,
       data: letters,
     });
-  } catch (error: unknown) {
+  } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
@@ -66,12 +66,12 @@ export async function POST(req: Request) {
         perihal: body.perihal,
         pengirim: body.pengirim,
         nomorSurat: body.nomorSurat || 'TBA',
-        tanggalSurat: new Date(body.tanggalSurat || Date.now()),
-        tanggalDiterima: new Date(),
+        tanggalSurat: new Date(body.tanggalSurat || Date.now()).toISOString().split('T')[0],
+        tanggalDiterima: new Date().toISOString().split('T')[0],
         status: 'DRAFT',
         prioritasId: body.prioritasId || null,
         jenisSuratId: body.jenisSuratId || null,
-      })
+      } as any)
       .returning();
 
     return NextResponse.json(
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
       },
       { status: 201 },
     );
-  } catch (error: unknown) {
+  } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
