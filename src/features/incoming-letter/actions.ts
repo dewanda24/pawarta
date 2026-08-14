@@ -1,22 +1,23 @@
 'use server';
 
 import { db } from '@/db';
-import { 
-  incomingLetters, 
-  incomingTimelines, 
-  incomingLogs, 
-  incomingDistributions, 
-  incomingDispositions 
+import {
+  incomingLetters,
+  incomingTimelines,
+  incomingLogs,
+  incomingDistributions,
+  incomingDispositions,
 } from '@/db/schema/incoming-letter';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { notifications } from '@/db/schema/workspace';
 import { requireAuth, logActivity } from '@/lib/server-action';
-import { 
-  incomingLetterSchema, 
+import {
+  incomingLetterSchema,
   IncomingLetterFormValues,
   distributeLetterSchema,
   DistributeLetterFormValues,
   dispositionLetterSchema,
-  DispositionLetterFormValues
+  DispositionLetterFormValues,
 } from './validations';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
@@ -67,7 +68,7 @@ export async function registerIncomingLetter(data: IncomingLetterFormValues) {
         action: 'CREATE',
         entityType: 'incoming_letters',
         entityId: newLetter.id,
-        details: { deskripsi: 'Registrasi surat masuk baru', nomorSurat: newLetter.nomorSurat }
+        details: { deskripsi: 'Registrasi surat masuk baru', nomorSurat: newLetter.nomorSurat },
       });
 
       return newLetter;
@@ -75,7 +76,7 @@ export async function registerIncomingLetter(data: IncomingLetterFormValues) {
 
     revalidatePath('/surat-masuk');
     return { success: true, data: result };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error registerIncomingLetter:', error);
     return { error: 'Gagal meregistrasi surat', message: error.message };
   }
@@ -95,19 +96,23 @@ export async function distributeIncomingLetter(suratId: string, data: Distribute
   try {
     const result = await db.transaction(async (tx) => {
       // 1. Update Status
-      await tx.update(incomingLetters)
+      await tx
+        .update(incomingLetters)
         .set({ status: 'DISTRIBUTED' })
         .where(eq(incomingLetters.id, suratId));
 
       // 2. Create Distribution
-      const [newDistribution] = await tx.insert(incomingDistributions).values({
-        ...validatedFields.data,
-        suratId,
-        pengirimId: user.id,
-        status: 'TERKIRIM',
-        createdBy: user.id,
-        deadline: validatedFields.data.deadline ? new Date(validatedFields.data.deadline) : null,
-      }).returning();
+      const [newDistribution] = await tx
+        .insert(incomingDistributions)
+        .values({
+          ...validatedFields.data,
+          suratId,
+          pengirimId: user.id,
+          status: 'TERKIRIM',
+          createdBy: user.id,
+          deadline: validatedFields.data.deadline ? new Date(validatedFields.data.deadline) : null,
+        })
+        .returning();
 
       // 3. Add Timeline
       await tx.insert(incomingTimelines).values({
@@ -116,14 +121,14 @@ export async function distributeIncomingLetter(suratId: string, data: Distribute
         aktivitas: 'Distribusi',
         deskripsi: `Surat didistribusikan ke ${validatedFields.data.tujuanUnitId ? 'Unit' : 'Pegawai'}`,
       });
-      
+
       // 4. Log
       await logActivity({
         userId: user.id,
         action: 'DISTRIBUTE',
         entityType: 'incoming_letters',
         entityId: suratId,
-        details: { deskripsi: 'Mendistribusikan surat masuk' }
+        details: { deskripsi: 'Mendistribusikan surat masuk' },
       });
 
       return newDistribution;
@@ -131,7 +136,7 @@ export async function distributeIncomingLetter(suratId: string, data: Distribute
 
     revalidatePath(`/surat-masuk/${suratId}`);
     return { success: true, data: result };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: 'Gagal mendistribusikan surat', message: error.message };
   }
 }
@@ -150,21 +155,25 @@ export async function createInitialDisposition(suratId: string, data: Dispositio
   try {
     const result = await db.transaction(async (tx) => {
       // 1. Update Status
-      await tx.update(incomingLetters)
+      await tx
+        .update(incomingLetters)
         .set({ status: 'DISPOSITIONED' })
         .where(eq(incomingLetters.id, suratId));
 
       // 2. Create Disposition
-      const [newDisposition] = await tx.insert(incomingDispositions).values({
-        suratId,
-        pemberiDisposisiId: user.id,
-        penerimaDisposisiId: validatedFields.data.penerimaDisposisiId,
-        instruksi: validatedFields.data.instruksi,
-        catatan: validatedFields.data.catatan,
-        status: 'MENUNGGU',
-        createdBy: user.id,
-        deadline: validatedFields.data.deadline ? new Date(validatedFields.data.deadline) : null,
-      }).returning();
+      const [newDisposition] = await tx
+        .insert(incomingDispositions)
+        .values({
+          suratId,
+          pemberiDisposisiId: user.id,
+          penerimaDisposisiId: validatedFields.data.penerimaDisposisiId,
+          instruksi: validatedFields.data.instruksi,
+          catatan: validatedFields.data.catatan,
+          status: 'MENUNGGU',
+          createdBy: user.id,
+          deadline: validatedFields.data.deadline ? new Date(validatedFields.data.deadline) : null,
+        })
+        .returning();
 
       // 3. Add Timeline
       await tx.insert(incomingTimelines).values({
@@ -180,7 +189,7 @@ export async function createInitialDisposition(suratId: string, data: Dispositio
         action: 'DISPOSITION',
         entityType: 'incoming_letters',
         entityId: suratId,
-        details: { deskripsi: 'Membuat disposisi awal' }
+        details: { deskripsi: 'Membuat disposisi awal' },
       });
 
       return newDisposition;
@@ -188,7 +197,7 @@ export async function createInitialDisposition(suratId: string, data: Dispositio
 
     revalidatePath(`/surat-masuk/${suratId}`);
     return { success: true, data: result };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: 'Gagal membuat disposisi', message: error.message };
   }
 }

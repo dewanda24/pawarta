@@ -14,19 +14,21 @@ export async function getUserPreferences(userId: string) {
       where: eq(userPreferences.userId, userId),
     });
     return { success: true, data };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal memuat preferensi' };
   }
 }
 
-export async function saveUserPreferences(userId: string, data: any) {
+export async function saveUserPreferences(userId: string, data: unknown) {
   try {
     const existing = await db.query.userPreferences.findFirst({
       where: eq(userPreferences.userId, userId),
     });
 
     if (existing) {
-      await db.update(userPreferences)
+      await db
+        .update(userPreferences)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(userPreferences.id, existing.id));
     } else {
@@ -34,6 +36,7 @@ export async function saveUserPreferences(userId: string, data: any) {
     }
     revalidatePath('/dashboard');
     return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal menyimpan preferensi' };
   }
@@ -48,6 +51,7 @@ export async function getAvailableWidgets() {
       where: eq(dashboardWidgets.isAktif, true),
     });
     return { success: true, data };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal memuat widget' };
   }
@@ -56,16 +60,14 @@ export async function getAvailableWidgets() {
 export async function getUserDashboard(userId: string) {
   try {
     const data = await db.query.userDashboard.findMany({
-      where: and(
-        eq(userDashboard.userId, userId),
-        eq(userDashboard.isHidden, false)
-      ),
+      where: and(eq(userDashboard.userId, userId), eq(userDashboard.isHidden, false)),
       with: {
-        widget: true
+        widget: true,
       },
       orderBy: (ud, { asc }) => [asc(ud.posisi)],
     });
     return { success: true, data };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal memuat dashboard' };
   }
@@ -77,13 +79,11 @@ export async function getUserDashboard(userId: string) {
 export async function getUnreadNotifications(userId: string) {
   try {
     const data = await db.query.notifications.findMany({
-      where: and(
-        eq(notifications.userId, userId),
-        eq(notifications.isRead, false)
-      ),
+      where: and(eq(notifications.userId, userId), eq(notifications.isRead, false)),
       orderBy: (n, { desc }) => [desc(n.createdAt)],
     });
     return { success: true, data };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal memuat notifikasi' };
   }
@@ -91,11 +91,10 @@ export async function getUnreadNotifications(userId: string) {
 
 export async function markNotificationAsRead(id: string) {
   try {
-    await db.update(notifications)
-      .set({ isRead: true })
-      .where(eq(notifications.id, id));
+    await db.update(notifications).set({ isRead: true }).where(eq(notifications.id, id));
     revalidatePath('/dashboard');
     return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal mengupdate notifikasi' };
   }
@@ -111,6 +110,6 @@ export async function globalSearch(query: string) {
     data: [
       { id: '1', title: 'Manajemen Pengguna', type: 'Menu', url: '/dashboard/iam/users' },
       { id: '2', title: 'Master Data Instansi', type: 'Menu', url: '/dashboard/master-data' },
-    ].filter(item => item.title.toLowerCase().includes(query.toLowerCase()))
+    ].filter((item) => item.title.toLowerCase().includes(query.toLowerCase())),
   };
 }

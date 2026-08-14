@@ -1,6 +1,7 @@
 import { getJabatanList } from '@/features/master-data/actions/jabatan';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Link from 'next/link';
 
 export default async function JabatanPage() {
@@ -42,12 +43,16 @@ export default async function JabatanPage() {
                   <td className="px-6 py-4 text-gray-500">{index + 1}</td>
                   <td className="px-6 py-4 font-medium text-gray-900">{item.nama}</td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.isAktif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${item.isAktif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+                    >
                       {item.isAktif ? 'Aktif' : 'Non-Aktif'}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <Button variant="ghost" size="sm" className="text-blue-600">Edit</Button>
+                    <Button variant="ghost" size="sm" className="text-blue-600">
+                      Edit
+                    </Button>
                   </td>
                 </tr>
               ))}

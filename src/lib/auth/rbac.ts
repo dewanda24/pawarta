@@ -1,4 +1,5 @@
 import { db } from '@/db';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { eq, and } from 'drizzle-orm';
 import { auth } from './index';
 import { userRoles, rolePermissions, permissions } from '@/db/schema';

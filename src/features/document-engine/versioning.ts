@@ -10,10 +10,10 @@ import { requireAuth, logActivity } from '@/lib/server-action';
  * Menghindari penulisan ulang pada versi lama (Immutability Concept).
  */
 export async function createNewVersion(
-  templateId: string, 
-  kontenHtml: string, 
-  pengaturanKertas: any,
-  catatanPerubahan: string = 'Autosave'
+  templateId: string,
+  kontenHtml: string,
+  pengaturanKertas: unknown,
+  catatanPerubahan: string = 'Autosave',
 ) {
   try {
     const user = await requireAuth();
@@ -21,7 +21,7 @@ export async function createNewVersion(
     const lastVersions = await db.query.templateVersions.findMany({
       where: eq(templateVersions.templateId, templateId),
       orderBy: [desc(templateVersions.createdAt)],
-      limit: 1
+      limit: 1,
     });
 
     let newVersionNumber = 'v1.0';
@@ -31,48 +31,54 @@ export async function createNewVersion(
     }
 
     // 2. Insert versi baru
-    const [newVersion] = await db.insert(templateVersions).values({
-      templateId,
-      nomorVersi: newVersionNumber,
-      kontenHtml,
-      pengaturanKertas,
-      status: 'Draft',
-      catatanPerubahan
-    }).returning();
+    const [newVersion] = await db
+      .insert(templateVersions)
+      .values({
+        templateId,
+        nomorVersi: newVersionNumber,
+        kontenHtml,
+        pengaturanKertas,
+        status: 'Draft',
+        catatanPerubahan,
+      })
+      .returning();
 
     await logActivity({
       userId: user.id!,
       action: 'CREATE_VERSION',
       entityType: 'TEMPLATE_VERSION',
       entityId: newVersion.id,
-      details: { templateId, version: newVersionNumber }
+      details: { templateId, version: newVersionNumber },
     });
 
     return { success: true, data: newVersion };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { success: false, error: error.message };
   }
 }
 
 /**
- * Publish Workflow: 
+ * Publish Workflow:
  * Menjadikan versi spesifik sebagai "Published" dan "Versi Aktif" di master template.
  */
 export async function publishTemplateVersion(templateId: string, versionId: string) {
   try {
     const user = await requireAuth();
     // 1. Set semua versi menjadi Archived
-    await db.update(templateVersions)
+    await db
+      .update(templateVersions)
       .set({ status: 'Archived' })
       .where(eq(templateVersions.templateId, templateId));
-    
+
     // 2. Set versi target menjadi Published
-    await db.update(templateVersions)
+    await db
+      .update(templateVersions)
       .set({ status: 'Published' })
       .where(eq(templateVersions.id, versionId));
 
     // 3. Update master template untuk menggunakan versi aktif ini
-    await db.update(documentTemplates)
+    await db
+      .update(documentTemplates)
       .set({ versiAktifId: versionId })
       .where(eq(documentTemplates.id, templateId));
 
@@ -81,11 +87,11 @@ export async function publishTemplateVersion(templateId: string, versionId: stri
       action: 'PUBLISH_VERSION',
       entityType: 'DOCUMENT_TEMPLATE',
       entityId: templateId,
-      details: { publishedVersionId: versionId }
+      details: { publishedVersionId: versionId },
     });
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { success: false, error: error.message };
   }
 }
@@ -97,19 +103,19 @@ export async function restoreVersion(templateId: string, versionIdToRestore: str
   try {
     await requireAuth();
     const oldVersion = await db.query.templateVersions.findFirst({
-      where: eq(templateVersions.id, versionIdToRestore)
+      where: eq(templateVersions.id, versionIdToRestore),
     });
 
     if (!oldVersion) throw new Error('Versi tidak ditemukan');
 
     // Buat draft baru dari konten lama
     return await createNewVersion(
-      templateId, 
-      oldVersion.kontenHtml, 
-      oldVersion.pengaturanKertas, 
-      `Restored from ${oldVersion.nomorVersi}`
+      templateId,
+      oldVersion.kontenHtml,
+      oldVersion.pengaturanKertas,
+      `Restored from ${oldVersion.nomorVersi}`,
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { success: false, error: error.message };
   }
 }

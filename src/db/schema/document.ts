@@ -1,7 +1,9 @@
 import { pgTable, varchar, text, boolean, integer, json, uuid } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { auditFields } from './utils';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { masterJenisSurat, masterInstansi } from './master';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { users } from './iam';
 
 // ==========================================
@@ -50,7 +52,9 @@ export const documentTemplates = pgTable('document_templates', {
   kode: varchar('kode', { length: 50 }).unique().notNull(),
   nama: varchar('nama', { length: 255 }).notNull(),
   kategoriId: uuid('kategori_id').references(() => templateCategories.id, { onDelete: 'set null' }),
-  jenisSuratId: uuid('jenis_surat_id').references(() => masterJenisSurat.id).notNull(),
+  jenisSuratId: uuid('jenis_surat_id')
+    .references(() => masterJenisSurat.id)
+    .notNull(),
   deskripsi: text('deskripsi'),
   versiAktifId: uuid('versi_aktif_id'), // Akan direferensikan nanti ke template_versions
   isAktif: boolean('is_aktif').default(true).notNull(),
@@ -91,7 +95,9 @@ export const templateSections = pgTable('template_sections', {
 // 7. Generated Documents (Simulasi/Test Log)
 // ==========================================
 export const generatedDocuments = pgTable('generated_documents', {
-  templateVersionId: uuid('template_version_id').references(() => templateVersions.id, { onDelete: 'set null' }),
+  templateVersionId: uuid('template_version_id').references(() => templateVersions.id, {
+    onDelete: 'set null',
+  }),
   namaFile: varchar('nama_file', { length: 255 }).notNull(),
   tipeExport: varchar('tipe_export', { length: 20 }).notNull(), // PDF, DOCX
   dataPlaceholder: json('data_placeholder'), // Data asli yang diinject saat render

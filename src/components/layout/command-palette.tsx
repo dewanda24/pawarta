@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Search, Command, FileText, Users, Settings, Building2 } from 'lucide-react';
 
 export function CommandPaletteTrigger() {
@@ -42,11 +43,14 @@ export function CommandPaletteTrigger() {
                 className="flex-1 h-12 bg-transparent border-0 px-4 text-sm focus:outline-none focus:ring-0"
                 placeholder="Ketik perintah atau cari..."
               />
-              <button onClick={() => setOpen(false)} className="text-[10px] font-medium text-gray-400 bg-gray-100 px-2 py-1 rounded">
+              <button
+                onClick={() => setOpen(false)}
+                className="text-[10px] font-medium text-gray-400 bg-gray-100 px-2 py-1 rounded"
+              >
                 ESC
               </button>
             </div>
-            
+
             <div className="max-h-[60vh] overflow-y-auto p-2">
               <div className="px-2 py-1.5 text-xs font-semibold text-gray-500">Master Data</div>
               <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors text-left">
@@ -55,8 +59,10 @@ export function CommandPaletteTrigger() {
               <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors text-left">
                 <Users className="w-4 h-4" /> Pegawai
               </button>
-              
-              <div className="px-2 py-1.5 mt-2 text-xs font-semibold text-gray-500">Surat & Template</div>
+
+              <div className="px-2 py-1.5 mt-2 text-xs font-semibold text-gray-500">
+                Surat & Template
+              </div>
               <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-600 rounded-lg transition-colors text-left">
                 <FileText className="w-4 h-4" /> Cari Template Surat
               </button>

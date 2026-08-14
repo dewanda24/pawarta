@@ -1,0 +1,20 @@
+export const APP_CONFIG = {
+  NAME: 'PAWARTA',
+  VERSION: '0.1.0',
+  API_PREFIX: '/api/v1',
+};
+
+export const FEATURE_FLAGS = {
+  ENABLE_DIGITAL_SIGNATURE: true,
+  ENABLE_AI_ASSISTANT: false,
+  ENABLE_BSRE_SYNC: false, // Simulasi
+};
+
+export const LETTER_STATUS = {
+  DRAFT: 'DRAFT',
+  WAITING_SIGNATURE: 'WAITING_SIGNATURE',
+  SIGNED: 'SIGNED',
+  SENT: 'SENT',
+  RECEIVED: 'RECEIVED',
+  ARCHIVED: 'ARCHIVED',
+};

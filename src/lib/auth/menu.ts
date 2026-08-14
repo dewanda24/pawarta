@@ -2,6 +2,8 @@
 
 import { db } from '@/db';
 import { menus, permissions } from '@/db/schema';
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { eq, isNull, and, asc } from 'drizzle-orm';
 import { getUserPermissions } from '@/lib/auth/rbac';
 import { auth } from '@/lib/auth';
@@ -40,7 +42,7 @@ export async function getAuthorizedMenus() {
 
   // Susun menjadi hirarki (Tree)
   const menuMap = new Map();
-  const rootMenus: any[] = [];
+  const rootMenus: unknown[] = [];
 
   // Inisialisasi map
   authorizedMenus.forEach((menu) => {

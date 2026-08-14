@@ -8,11 +8,11 @@ import { activityLogs } from '@/db/schema';
  */
 export async function requireAuth() {
   const session = await auth();
-  
+
   if (!session || !session.user || !session.user.id) {
     throw new Error('Unauthorized: Anda harus login untuk melakukan aksi ini.');
   }
-  
+
   return { ...session.user, id: session.user.id };
 }
 
@@ -24,7 +24,7 @@ export async function logActivity(params: {
   action: string;
   entityType: string;
   entityId?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }) {
   try {
     await db.insert(activityLogs).values({

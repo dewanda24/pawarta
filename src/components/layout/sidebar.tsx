@@ -1,12 +1,33 @@
 'use client';
 
 import Link from 'next/link';
-import { Home, Inbox, Send, Archive, Users, Settings, FolderOpen, Shield, Key, ChevronLeft, ChevronRight, Pin } from 'lucide-react';
+import {
+  Home,
+  Inbox,
+  Send,
+  Archive,
+  Users,
+  Settings,
+  FolderOpen,
+  Shield,
+  Key,
+  ChevronLeft,
+  ChevronRight,
+  Pin,
+} from 'lucide-react';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 
-const IconMap: Record<string, any> = {
-  Home, Inbox, Send, Archive, Users, Settings, FolderOpen, Shield, Key
+const IconMap: Record<string, unknown> = {
+  Home,
+  Inbox,
+  Send,
+  Archive,
+  Users,
+  Settings,
+  FolderOpen,
+  Shield,
+  Key,
 };
 
 // Data statis sementara untuk UI mockup
@@ -21,21 +42,17 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside 
+    <aside
       className={`${collapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 flex flex-col hidden md:flex transition-all duration-300 ease-in-out relative flex-shrink-0 min-h-screen`}
     >
-      <div className={`flex items-center h-16 px-4 border-b border-gray-200 ${collapsed ? 'justify-center' : 'justify-between'}`}>
+      <div
+        className={`flex items-center h-16 px-4 border-b border-gray-200 ${collapsed ? 'justify-center' : 'justify-between'}`}
+      >
         {!collapsed && (
-          <div className="font-bold text-primary text-2xl tracking-tight">
-            PAWARTA
-          </div>
+          <div className="font-bold text-primary text-2xl tracking-tight">PAWARTA</div>
         )}
-        {collapsed && (
-          <div className="font-bold text-primary text-xl">
-            P
-          </div>
-        )}
-        <button 
+        {collapsed && <div className="font-bold text-primary text-xl">P</div>}
+        <button
           onClick={() => setCollapsed(!collapsed)}
           className={`p-1 text-gray-400 hover:text-gray-600 rounded bg-gray-50 hover:bg-gray-100 ${collapsed ? 'absolute -right-3 top-5 border border-gray-200 z-10' : ''}`}
         >
@@ -58,22 +75,26 @@ export function Sidebar() {
                 key={item.id}
                 href={item.route || '#'}
                 className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors group ${
-                  isActive ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                  isActive
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                 } ${collapsed ? 'justify-center' : ''}`}
                 title={collapsed ? item.nama : ''}
               >
-                <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-blue-700' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                <Icon
+                  className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-blue-700' : 'text-gray-400 group-hover:text-gray-600'}`}
+                />
                 {!collapsed && <span className="flex-1 truncate">{item.nama}</span>}
-                {!collapsed && isActive && (
-                  <Pin className="w-3.5 h-3.5 text-blue-400" />
-                )}
+                {!collapsed && isActive && <Pin className="w-3.5 h-3.5 text-blue-400" />}
               </Link>
             );
           })}
         </nav>
       </div>
 
-      <div className={`p-4 border-t border-gray-100 text-xs text-gray-400 ${collapsed ? 'text-center' : ''}`}>
+      <div
+        className={`p-4 border-t border-gray-100 text-xs text-gray-400 ${collapsed ? 'text-center' : ''}`}
+      >
         {!collapsed ? 'PAWARTA Enterprise 1.0' : '1.0'}
       </div>
     </aside>

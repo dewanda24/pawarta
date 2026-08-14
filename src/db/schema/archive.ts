@@ -1,7 +1,18 @@
-import { pgTable, varchar, text, uuid, date, timestamp, integer, boolean, jsonb } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  varchar,
+  text,
+  uuid,
+  date,
+  timestamp,
+  integer,
+  boolean,
+  jsonb,
+} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { auditFields } from './utils';
 import { users } from './iam';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { masterUnitKerja, masterPegawai } from './master';
 import { incomingLetters } from './incoming-letter';
 import { outgoingLetters } from './outgoing-letter';
@@ -33,12 +44,16 @@ export const archiveLabels = pgTable('archive_labels', {
 // ==========================================
 export const archives = pgTable('archives', {
   ...auditFields,
-  
+
   // Tipe dokumen yang diarsipkan (Surat Masuk / Surat Keluar / Lainnya)
   entityType: varchar('entity_type', { length: 50 }).notNull(), // INCOMING, OUTGOING, OTHER
-  incomingLetterId: uuid('incoming_letter_id').references(() => incomingLetters.id, { onDelete: 'set null' }),
-  outgoingLetterId: uuid('outgoing_letter_id').references(() => outgoingLetters.id, { onDelete: 'set null' }),
-  
+  incomingLetterId: uuid('incoming_letter_id').references(() => incomingLetters.id, {
+    onDelete: 'set null',
+  }),
+  outgoingLetterId: uuid('outgoing_letter_id').references(() => outgoingLetters.id, {
+    onDelete: 'set null',
+  }),
+
   // Metadata Arsip
   kategoriId: uuid('kategori_id').references(() => archiveCategories.id, { onDelete: 'set null' }),
   nomorArsip: varchar('nomor_arsip', { length: 100 }).unique().notNull(), // Generate khusus arsip
@@ -46,29 +61,38 @@ export const archives = pgTable('archives', {
   tahun: integer('tahun').notNull(),
   lokasiFisik: varchar('lokasi_fisik', { length: 255 }), // Rak 1, Lemari A
   folderVirtual: varchar('folder_virtual', { length: 255 }), // Path e.g., /2026/SuratMasuk
-  
+
   // Status dan Retensi
   status: varchar('status', { length: 50 }).default('AKTIF').notNull(), // AKTIF, DIPINJAM, MUSNAH, PERMANEN
   retentionPolicyId: uuid('retention_policy_id'), // Relasi dibuat nanti
   tanggalRetensiBerakhir: date('tanggal_retensi_berakhir'),
   statusRetensi: varchar('status_retensi', { length: 50 }).default('AKTIF').notNull(), // AKTIF, AKAN_BERAKHIR, HABIS, PERMANEN, MUSNAH
-  
+
   // Custom Metadata
   metadata: jsonb('metadata'), // Format bebas berdasarkan kebutuhan instansi
 
   // FTS Index Column
   searchVector: text('search_vector'), // Untuk menyimpan TSVector
+  deletedAt: timestamp('deleted_at'),
 });
 
 // Relasi Many-to-Many untuk Tag dan Label
 export const archiveToTags = pgTable('archive_to_tags', {
-  archiveId: uuid('archive_id').notNull().references(() => archives.id, { onDelete: 'cascade' }),
-  tagId: uuid('tag_id').notNull().references(() => archiveTags.id, { onDelete: 'cascade' }),
+  archiveId: uuid('archive_id')
+    .notNull()
+    .references(() => archives.id, { onDelete: 'cascade' }),
+  tagId: uuid('tag_id')
+    .notNull()
+    .references(() => archiveTags.id, { onDelete: 'cascade' }),
 });
 
 export const archiveToLabels = pgTable('archive_to_labels', {
-  archiveId: uuid('archive_id').notNull().references(() => archives.id, { onDelete: 'cascade' }),
-  labelId: uuid('label_id').notNull().references(() => archiveLabels.id, { onDelete: 'cascade' }),
+  archiveId: uuid('archive_id')
+    .notNull()
+    .references(() => archives.id, { onDelete: 'cascade' }),
+  labelId: uuid('label_id')
+    .notNull()
+    .references(() => archiveLabels.id, { onDelete: 'cascade' }),
 });
 
 // ==========================================
@@ -90,7 +114,9 @@ export const retentionPolicies = pgTable('retention_policies', {
 
 export const retentionLogs = pgTable('retention_logs', {
   id: uuid('id').defaultRandom().primaryKey(),
-  archiveId: uuid('archive_id').notNull().references(() => archives.id, { onDelete: 'cascade' }),
+  archiveId: uuid('archive_id')
+    .notNull()
+    .references(() => archives.id, { onDelete: 'cascade' }),
   aksi: varchar('aksi', { length: 50 }).notNull(), // PERUBAHAN_STATUS, PEMUSNAHAN
   statusSebelumnya: varchar('status_sebelumnya', { length: 50 }),
   statusBaru: varchar('status_baru', { length: 50 }),
@@ -104,9 +130,15 @@ export const retentionLogs = pgTable('retention_logs', {
 // ==========================================
 export const archiveBorrowings = pgTable('archive_borrowings', {
   ...auditFields,
-  archiveId: uuid('archive_id').notNull().references(() => archives.id, { onDelete: 'cascade' }),
-  peminjamId: uuid('peminjam_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
-  unitPeminjamId: uuid('unit_peminjam_id').references(() => masterUnitKerja.id, { onDelete: 'set null' }),
+  archiveId: uuid('archive_id')
+    .notNull()
+    .references(() => archives.id, { onDelete: 'cascade' }),
+  peminjamId: uuid('peminjam_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'restrict' }),
+  unitPeminjamId: uuid('unit_peminjam_id').references(() => masterUnitKerja.id, {
+    onDelete: 'set null',
+  }),
   tanggalPinjam: timestamp('tanggal_pinjam').defaultNow().notNull(),
   tanggalKembaliRencana: timestamp('tanggal_kembali_rencana').notNull(),
   tanggalKembaliAktual: timestamp('tanggal_kembali_aktual'),
@@ -120,7 +152,9 @@ export const archiveBorrowings = pgTable('archive_borrowings', {
 // ==========================================
 export const archiveHistories = pgTable('archive_histories', {
   id: uuid('id').defaultRandom().primaryKey(),
-  archiveId: uuid('archive_id').notNull().references(() => archives.id, { onDelete: 'cascade' }),
+  archiveId: uuid('archive_id')
+    .notNull()
+    .references(() => archives.id, { onDelete: 'cascade' }),
   aktorId: uuid('aktor_id').references(() => users.id, { onDelete: 'set null' }),
   aksi: varchar('aksi', { length: 100 }).notNull(), // DIBUAT, DIUPDATE, DIPINJAM, DIKEMBALIKAN, DIHANCURKAN
   deskripsi: text('deskripsi'),
@@ -142,7 +176,9 @@ export const documentHashes = pgTable('document_hashes', {
 
 export const documentVerifications = pgTable('document_verifications', {
   id: uuid('id').defaultRandom().primaryKey(),
-  hashId: uuid('hash_id').notNull().references(() => documentHashes.id, { onDelete: 'cascade' }),
+  hashId: uuid('hash_id')
+    .notNull()
+    .references(() => documentHashes.id, { onDelete: 'cascade' }),
   tanggalVerifikasi: timestamp('tanggal_verifikasi').defaultNow().notNull(),
   ipAddress: varchar('ip_address', { length: 45 }),
   userAgent: text('user_agent'),
@@ -153,15 +189,23 @@ export const documentVerifications = pgTable('document_verifications', {
 // 7. Favorit dan Dokumen Terakhir Dibaca
 // ==========================================
 export const documentFavorites = pgTable('document_favorites', {
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  archiveId: uuid('archive_id').notNull().references(() => archives.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  archiveId: uuid('archive_id')
+    .notNull()
+    .references(() => archives.id, { onDelete: 'cascade' }),
   tanggalDitambahkan: timestamp('tanggal_ditambahkan').defaultNow().notNull(),
 });
 
 export const documentRecents = pgTable('document_recents', {
   id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  archiveId: uuid('archive_id').notNull().references(() => archives.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  archiveId: uuid('archive_id')
+    .notNull()
+    .references(() => archives.id, { onDelete: 'cascade' }),
   tanggalAkses: timestamp('tanggal_akses').defaultNow().notNull(),
 });
 

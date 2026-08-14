@@ -14,16 +14,19 @@ export async function backupSystem(tipe: string) {
   try {
     // Simulasi proses backup (karena tidak ada akses shell pg_dump real di container demo)
     const filename = `backup_${tipe.toLowerCase()}_${Date.now()}.sql`;
-    
-    const [backup] = await db.insert(systemBackups).values({
-      tipe,
-      filename,
-      path: `/backups/${filename}`,
-      sizeBytes: '25 MB',
-      status: 'SUCCESS', // Simulasi langsung sukses
-      aktorId: user.id,
-      tanggalSelesai: new Date(),
-    }).returning();
+
+    const [backup] = await db
+      .insert(systemBackups)
+      .values({
+        tipe,
+        filename,
+        path: `/backups/${filename}`,
+        sizeBytes: '25 MB',
+        status: 'SUCCESS', // Simulasi langsung sukses
+        aktorId: user.id,
+        tanggalSelesai: new Date(),
+      })
+      .returning();
 
     await logActivity({
       userId: user.id,
@@ -35,7 +38,7 @@ export async function backupSystem(tipe: string) {
 
     revalidatePath('/sistem/backup');
     return { success: true, backup };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: 'Gagal melakukan backup', message: error.message };
   }
 }
@@ -43,23 +46,31 @@ export async function backupSystem(tipe: string) {
 // ==========================================
 // Storage Upload (Simulated)
 // ==========================================
-export async function uploadStorageFile(data: { originalName: string; kategori: string; mimeType: string; sizeBytes: string }) {
+export async function uploadStorageFile(data: {
+  originalName: string;
+  kategori: string;
+  mimeType: string;
+  sizeBytes: string;
+}) {
   const user = await requireAuth();
 
   try {
     // Simulasi upload file
-    const [file] = await db.insert(storageFiles).values({
-      kategori: data.kategori,
-      originalName: data.originalName,
-      path: `/storage/uploads/${Date.now()}_${data.originalName}`,
-      mimeType: data.mimeType,
-      sizeBytes: data.sizeBytes,
-      uploadedBy: user.id,
-    }).returning();
+    const [file] = await db
+      .insert(storageFiles)
+      .values({
+        kategori: data.kategori,
+        originalName: data.originalName,
+        path: `/storage/uploads/${Date.now()}_${data.originalName}`,
+        mimeType: data.mimeType,
+        sizeBytes: data.sizeBytes,
+        uploadedBy: user.id,
+      })
+      .returning();
 
     revalidatePath('/penyimpanan');
     return { success: true, file };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: 'Gagal mengupload file', message: error.message };
   }
 }

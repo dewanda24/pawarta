@@ -1,5 +1,6 @@
 import { pgTable, varchar, text, uuid, timestamp, boolean, jsonb } from 'drizzle-orm/pg-core';
 import { auditFields } from './utils';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { users } from './iam';
 
 // ==========================================

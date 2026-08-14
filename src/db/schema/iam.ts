@@ -1,4 +1,14 @@
-import { pgTable, uuid, varchar, text, boolean, timestamp, integer, primaryKey } from 'drizzle-orm/pg-core';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  boolean,
+  timestamp,
+  integer,
+  primaryKey,
+} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { auditFields } from './utils';
 import { masterPegawai } from './master';

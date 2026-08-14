@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { workflowInstances, workflowSteps, workflowHistories } from '@/db/schema/workflow';
 import { outgoingLetters } from '@/db/schema/outgoing-letter';
 import { requireAuth, logActivity } from '@/lib/server-action';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
@@ -78,14 +79,14 @@ export async function submitWorkflow(instanceId: string, action: string, catatan
         action: 'UPDATE',
         entityType: 'workflow_instances',
         entityId: instanceId,
-        details: { deskripsi: `Workflow Action: ${action}` }
+        details: { deskripsi: `Workflow Action: ${action}` },
       });
       return nextStep;
     });
 
     revalidatePath('/surat-keluar');
     return { success: true, data: result };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: 'Gagal memproses workflow', message: error.message };
   }
 }

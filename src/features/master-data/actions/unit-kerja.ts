@@ -13,11 +13,12 @@ export async function getUnitKerjaList(search?: string) {
     const data = await db.query.masterUnitKerja.findMany({
       where: and(
         isNull(masterUnitKerja.deletedAt),
-        search ? ilike(masterUnitKerja.nama, `%${search}%`) : undefined
+        search ? ilike(masterUnitKerja.nama, `%${search}%`) : undefined,
       ),
       orderBy: [desc(masterUnitKerja.createdAt)],
     });
     return { success: true, data };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal mengambil data unit kerja' };
   }
@@ -27,17 +28,18 @@ export async function createUnitKerja(data: InsertMasterUnitKerja) {
   try {
     const user = await requireAuth();
     const [inserted] = await db.insert(masterUnitKerja).values(data).returning();
-    
+
     await logActivity({
       userId: user.id!,
       action: 'CREATE',
       entityType: 'MASTER_UNIT_KERJA',
       entityId: inserted.id,
-      details: { nama: data.nama }
+      details: { nama: data.nama },
     });
 
     revalidatePath('/dashboard/master/unit-kerja');
     return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal membuat unit kerja' };
   }
@@ -60,6 +62,7 @@ export async function updateUnitKerja(id: string, data: Partial<InsertMasterUnit
 
     revalidatePath('/dashboard/master/unit-kerja');
     return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal mengubah unit kerja' };
   }
@@ -72,7 +75,7 @@ export async function deleteUnitKerja(id: string) {
       .update(masterUnitKerja)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
       .where(eq(masterUnitKerja.id, id));
-      
+
     await logActivity({
       userId: user.id!,
       action: 'DELETE',
@@ -82,6 +85,7 @@ export async function deleteUnitKerja(id: string) {
 
     revalidatePath('/dashboard/master/unit-kerja');
     return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal menghapus unit kerja' };
   }

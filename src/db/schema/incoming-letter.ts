@@ -1,7 +1,26 @@
-import { pgTable, varchar, text, uuid, date, timestamp, integer, boolean, json } from 'drizzle-orm/pg-core';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {
+  pgTable,
+  varchar,
+  text,
+  uuid,
+  date,
+  timestamp,
+  integer,
+  boolean,
+  json,
+} from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { auditFields } from './utils';
-import { masterJenisSurat, masterKlasifikasiSurat, masterInstansi, masterPegawai, masterUnitKerja, masterPrioritas, masterSifatSurat } from './master';
+import {
+  masterJenisSurat,
+  masterKlasifikasiSurat,
+  masterInstansi,
+  masterPegawai,
+  masterUnitKerja,
+  masterPrioritas,
+  masterSifatSurat,
+} from './master';
 import { users } from './iam';
 
 // ==========================================
@@ -34,23 +53,36 @@ export const incomingLetters = pgTable('incoming_letters', {
   nomorSurat: varchar('nomor_surat', { length: 100 }).notNull(),
   tanggalSurat: date('tanggal_surat').notNull(),
   tanggalDiterima: date('tanggal_diterima').notNull(),
-  
+
   pengirim: varchar('pengirim', { length: 255 }).notNull(), // Nama orang pengirim
-  instansiPengirimId: uuid('instansi_pengirim_id').references(() => masterInstansi.id, { onDelete: 'set null' }),
-  
+  instansiPengirimId: uuid('instansi_pengirim_id').references(() => masterInstansi.id, {
+    onDelete: 'set null',
+  }),
+
   perihal: text('perihal').notNull(),
   ringkasanIsi: text('ringkasan_isi'),
-  
-  jenisSuratId: uuid('jenis_surat_id').references(() => masterJenisSurat.id, { onDelete: 'restrict' }).notNull(),
-  klasifikasiId: uuid('klasifikasi_id').references(() => masterKlasifikasiSurat.id, { onDelete: 'restrict' }).notNull(),
-  prioritasId: uuid('prioritas_id').references(() => masterPrioritas.id, { onDelete: 'restrict' }).notNull(),
-  sifatSuratId: uuid('sifat_surat_id').references(() => masterSifatSurat.id, { onDelete: 'restrict' }).notNull(),
-  
-  tujuanUnitId: uuid('tujuan_unit_id').references(() => masterUnitKerja.id, { onDelete: 'set null' }),
+
+  jenisSuratId: uuid('jenis_surat_id')
+    .references(() => masterJenisSurat.id, { onDelete: 'restrict' })
+    .notNull(),
+  klasifikasiId: uuid('klasifikasi_id')
+    .references(() => masterKlasifikasiSurat.id, { onDelete: 'restrict' })
+    .notNull(),
+  prioritasId: uuid('prioritas_id')
+    .references(() => masterPrioritas.id, { onDelete: 'restrict' })
+    .notNull(),
+  sifatSuratId: uuid('sifat_surat_id')
+    .references(() => masterSifatSurat.id, { onDelete: 'restrict' })
+    .notNull(),
+
+  tujuanUnitId: uuid('tujuan_unit_id').references(() => masterUnitKerja.id, {
+    onDelete: 'set null',
+  }),
   penerimaId: uuid('penerima_id').references(() => masterPegawai.id, { onDelete: 'set null' }), // Pegawai yang menerima fisik surat
-  
+
   status: varchar('status', { length: 50 }).default('DRAFT').notNull(), // DRAFT, REGISTERED, DISTRIBUTED, DISPOSITIONED, COMPLETED
   catatan: text('catatan'),
+  deletedAt: timestamp('deleted_at'),
 });
 
 // ==========================================
@@ -58,7 +90,9 @@ export const incomingLetters = pgTable('incoming_letters', {
 // ==========================================
 export const incomingLetterAttachments = pgTable('incoming_letter_attachments', {
   ...auditFields,
-  suratId: uuid('surat_id').notNull().references(() => incomingLetters.id, { onDelete: 'cascade' }),
+  suratId: uuid('surat_id')
+    .notNull()
+    .references(() => incomingLetters.id, { onDelete: 'cascade' }),
   namaFile: varchar('nama_file', { length: 255 }).notNull(),
   tipeMime: varchar('tipe_mime', { length: 100 }),
   ukuranBytes: integer('ukuran_bytes'),
@@ -72,10 +106,18 @@ export const incomingLetterAttachments = pgTable('incoming_letter_attachments', 
 // ==========================================
 export const incomingDistributions = pgTable('incoming_distributions', {
   ...auditFields,
-  suratId: uuid('surat_id').notNull().references(() => incomingLetters.id, { onDelete: 'cascade' }),
-  pengirimId: uuid('pengirim_id').references(() => users.id, { onDelete: 'restrict' }).notNull(), // User yang mendistribusikan
-  tujuanUnitId: uuid('tujuan_unit_id').references(() => masterUnitKerja.id, { onDelete: 'set null' }),
-  tujuanPegawaiId: uuid('tujuan_pegawai_id').references(() => masterPegawai.id, { onDelete: 'set null' }),
+  suratId: uuid('surat_id')
+    .notNull()
+    .references(() => incomingLetters.id, { onDelete: 'cascade' }),
+  pengirimId: uuid('pengirim_id')
+    .references(() => users.id, { onDelete: 'restrict' })
+    .notNull(), // User yang mendistribusikan
+  tujuanUnitId: uuid('tujuan_unit_id').references(() => masterUnitKerja.id, {
+    onDelete: 'set null',
+  }),
+  tujuanPegawaiId: uuid('tujuan_pegawai_id').references(() => masterPegawai.id, {
+    onDelete: 'set null',
+  }),
   catatan: text('catatan'),
   deadline: timestamp('deadline'),
   status: varchar('status', { length: 50 }).default('TERKIRIM').notNull(), // TERKIRIM, DIBACA, DITINDAKLANJUTI
@@ -86,9 +128,15 @@ export const incomingDistributions = pgTable('incoming_distributions', {
 // ==========================================
 export const incomingDispositions = pgTable('incoming_dispositions', {
   ...auditFields,
-  suratId: uuid('surat_id').notNull().references(() => incomingLetters.id, { onDelete: 'cascade' }),
-  pemberiDisposisiId: uuid('pemberi_disposisi_id').references(() => users.id, { onDelete: 'restrict' }).notNull(),
-  penerimaDisposisiId: uuid('penerima_disposisi_id').references(() => users.id, { onDelete: 'restrict' }).notNull(),
+  suratId: uuid('surat_id')
+    .notNull()
+    .references(() => incomingLetters.id, { onDelete: 'cascade' }),
+  pemberiDisposisiId: uuid('pemberi_disposisi_id')
+    .references(() => users.id, { onDelete: 'restrict' })
+    .notNull(),
+  penerimaDisposisiId: uuid('penerima_disposisi_id')
+    .references(() => users.id, { onDelete: 'restrict' })
+    .notNull(),
   instruksi: text('instruksi').notNull(), // Instruksi disposisi
   catatan: text('catatan'),
   deadline: timestamp('deadline'),
@@ -100,16 +148,24 @@ export const incomingDispositions = pgTable('incoming_dispositions', {
 // ==========================================
 export const incomingAgendas = pgTable('incoming_agendas', {
   ...auditFields,
-  bukuAgendaId: uuid('buku_agenda_id').notNull().references(() => agendaBooks.id, { onDelete: 'cascade' }),
-  suratId: uuid('surat_id').notNull().references(() => incomingLetters.id, { onDelete: 'cascade' }),
+  bukuAgendaId: uuid('buku_agenda_id')
+    .notNull()
+    .references(() => agendaBooks.id, { onDelete: 'cascade' }),
+  suratId: uuid('surat_id')
+    .notNull()
+    .references(() => incomingLetters.id, { onDelete: 'cascade' }),
   nomorUrut: integer('nomor_urut').notNull(),
   tanggalCatat: timestamp('tanggal_catat').defaultNow().notNull(),
 });
 
 export const incomingRegisters = pgTable('incoming_registers', {
   ...auditFields,
-  bukuRegisterId: uuid('buku_register_id').notNull().references(() => registerBooks.id, { onDelete: 'cascade' }),
-  suratId: uuid('surat_id').notNull().references(() => incomingLetters.id, { onDelete: 'cascade' }),
+  bukuRegisterId: uuid('buku_register_id')
+    .notNull()
+    .references(() => registerBooks.id, { onDelete: 'cascade' }),
+  suratId: uuid('surat_id')
+    .notNull()
+    .references(() => incomingLetters.id, { onDelete: 'cascade' }),
   nomorUrut: integer('nomor_urut').notNull(),
   tanggalCatat: timestamp('tanggal_catat').defaultNow().notNull(),
 });
@@ -119,7 +175,9 @@ export const incomingRegisters = pgTable('incoming_registers', {
 // ==========================================
 export const incomingTimelines = pgTable('incoming_timelines', {
   id: uuid('id').defaultRandom().primaryKey(),
-  suratId: uuid('surat_id').notNull().references(() => incomingLetters.id, { onDelete: 'cascade' }),
+  suratId: uuid('surat_id')
+    .notNull()
+    .references(() => incomingLetters.id, { onDelete: 'cascade' }),
   aktorId: uuid('aktor_id').references(() => users.id, { onDelete: 'set null' }),
   aktivitas: varchar('aktivitas', { length: 100 }).notNull(), // Registrasi, Upload, Distribusi, Disposisi, Selesai
   deskripsi: text('deskripsi'),
@@ -191,12 +249,15 @@ export const incomingLettersRelations = relations(incomingLetters, ({ one, many 
   logs: many(incomingLogs),
 }));
 
-export const incomingLetterAttachmentsRelations = relations(incomingLetterAttachments, ({ one }) => ({
-  surat: one(incomingLetters, {
-    fields: [incomingLetterAttachments.suratId],
-    references: [incomingLetters.id],
+export const incomingLetterAttachmentsRelations = relations(
+  incomingLetterAttachments,
+  ({ one }) => ({
+    surat: one(incomingLetters, {
+      fields: [incomingLetterAttachments.suratId],
+      references: [incomingLetters.id],
+    }),
   }),
-}));
+);
 
 export const incomingDistributionsRelations = relations(incomingDistributions, ({ one }) => ({
   surat: one(incomingLetters, {

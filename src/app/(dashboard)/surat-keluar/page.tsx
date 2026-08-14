@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { db } from '@/db';
 import { outgoingLetters } from '@/db/schema/outgoing-letter';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { desc, eq, isNull } from 'drizzle-orm';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
@@ -30,11 +31,13 @@ export default async function SuratKeluarPage() {
           </Link>
         </div>
       </div>
-      
+
       <div className="rounded-md border p-4 bg-white shadow-sm">
         {/* Placeholder for complex DataTable */}
-        <p className="text-sm text-muted-foreground mb-4">Menampilkan {letters.length} data surat keluar.</p>
-        
+        <p className="text-sm text-muted-foreground mb-4">
+          Menampilkan {letters.length} data surat keluar.
+        </p>
+
         {letters.length === 0 ? (
           <div className="text-center py-10">Belum ada surat keluar. Silakan buat draft baru.</div>
         ) : (
@@ -61,7 +64,9 @@ export default async function SuratKeluarPage() {
                   <td className="p-3">{l.createdAt?.toLocaleDateString()}</td>
                   <td className="p-3">
                     <Link href={`/surat-keluar/${l.id}`}>
-                      <Button variant="outline" size="sm">Detail</Button>
+                      <Button variant="outline" size="sm">
+                        Detail
+                      </Button>
                     </Link>
                   </td>
                 </tr>

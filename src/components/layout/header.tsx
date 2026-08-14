@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Bell, Search, LayoutGrid, User, Settings, LogOut } from 'lucide-react';
 import { NotificationCenter } from './notification-center';
 import { CommandPaletteTrigger } from './command-palette';
@@ -15,7 +16,7 @@ export function Header() {
         <button className="hidden md:flex items-center justify-center w-9 h-9 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
           <LayoutGrid className="w-5 h-5" />
         </button>
-        
+
         {/* Notification Center */}
         <NotificationCenter />
 

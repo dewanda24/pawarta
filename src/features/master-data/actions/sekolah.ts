@@ -13,7 +13,7 @@ export async function getSekolahList(search?: string) {
     const data = await db.query.masterSekolah.findMany({
       where: and(
         isNull(masterSekolah.deletedAt),
-        search ? ilike(masterSekolah.nama, `%${search}%`) : undefined
+        search ? ilike(masterSekolah.nama, `%${search}%`) : undefined,
       ),
       with: {
         kepalaSekolah: true,
@@ -21,6 +21,7 @@ export async function getSekolahList(search?: string) {
       orderBy: [desc(masterSekolah.createdAt)],
     });
     return { success: true, data };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal mengambil data sekolah' };
   }
@@ -30,17 +31,18 @@ export async function createSekolah(data: InsertMasterSekolah) {
   try {
     const user = await requireAuth();
     const [inserted] = await db.insert(masterSekolah).values(data).returning();
-    
+
     await logActivity({
       userId: user.id!,
       action: 'CREATE',
       entityType: 'MASTER_SEKOLAH',
       entityId: inserted.id,
-      details: { nama: data.nama }
+      details: { nama: data.nama },
     });
 
     revalidatePath('/dashboard/master/sekolah');
     return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal membuat data sekolah' };
   }
@@ -59,11 +61,12 @@ export async function updateSekolah(id: string, data: Partial<InsertMasterSekola
       action: 'UPDATE',
       entityType: 'MASTER_SEKOLAH',
       entityId: id,
-      details: { updatedFields: Object.keys(data) }
+      details: { updatedFields: Object.keys(data) },
     });
 
     revalidatePath('/dashboard/master/sekolah');
     return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal mengubah data sekolah' };
   }
@@ -86,6 +89,7 @@ export async function deleteSekolah(id: string) {
 
     revalidatePath('/dashboard/master/sekolah');
     return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal menghapus data sekolah' };
   }

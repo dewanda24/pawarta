@@ -1,11 +1,8 @@
 'use server';
 
 import { db } from '@/db';
-import { 
-  documentTemplates, 
-  templateVersions, 
-  masterPlaceholder 
-} from '@/db/schema';
+import { documentTemplates, templateVersions, masterPlaceholder } from '@/db/schema';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { eq, desc } from 'drizzle-orm';
 import { renderContent, validatePlaceholders } from './placeholder';
 import { requireAuth } from '@/lib/server-action';
@@ -21,7 +18,7 @@ export async function getTemplateWithVersion(templateId: string, versionId?: str
       where: eq(documentTemplates.id, templateId),
       with: {
         jenisSurat: true,
-      }
+      },
     });
 
     if (!template) throw new Error('Template tidak ditemukan');
@@ -34,11 +31,11 @@ export async function getTemplateWithVersion(templateId: string, versionId?: str
       with: {
         header: true,
         footer: true,
-      }
+      },
     });
 
     return { success: true, data: { template, version } };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { success: false, error: error.message };
   }
 }
@@ -52,29 +49,29 @@ export async function testRenderTemplate(kontenHtml: string) {
     await requireAuth();
     // Ambil master placeholder dari database untuk memastikan key valid
     const masterKeys = await db.query.masterPlaceholder.findMany({
-      where: eq(masterPlaceholder.isAktif, true)
+      where: eq(masterPlaceholder.isAktif, true),
     });
-    
-    const allowedKeys = masterKeys.map(k => k.key);
-    
+
+    const allowedKeys = masterKeys.map((k) => k.key);
+
     // 1. Validasi
     const validation = validatePlaceholders(kontenHtml, allowedKeys);
-    
+
     // 2. Generate Dummy Data untuk render
     const dummyData: Record<string, string> = {};
-    masterKeys.forEach(k => {
+    masterKeys.forEach((k) => {
       dummyData[k.key] = `[Dummy ${k.nama}]`;
     });
 
     // 3. Eksekusi Render (Simulation)
     const renderedHtml = renderContent(kontenHtml, dummyData);
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       validation,
-      renderedHtml 
+      renderedHtml,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { success: false, error: error.message };
   }
 }

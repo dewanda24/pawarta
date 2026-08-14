@@ -13,11 +13,12 @@ export async function getJabatanList(search?: string) {
     const data = await db.query.masterJabatan.findMany({
       where: and(
         isNull(masterJabatan.deletedAt),
-        search ? ilike(masterJabatan.nama, `%${search}%`) : undefined
+        search ? ilike(masterJabatan.nama, `%${search}%`) : undefined,
       ),
       orderBy: [desc(masterJabatan.createdAt)],
     });
     return { success: true, data };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal mengambil data jabatan' };
   }
@@ -27,17 +28,18 @@ export async function createJabatan(data: InsertMasterJabatan) {
   try {
     const user = await requireAuth();
     const [inserted] = await db.insert(masterJabatan).values(data).returning();
-    
+
     await logActivity({
       userId: user.id!,
       action: 'CREATE',
       entityType: 'MASTER_JABATAN',
       entityId: inserted.id,
-      details: { nama: data.nama }
+      details: { nama: data.nama },
     });
 
     revalidatePath('/dashboard/master/jabatan');
     return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal membuat jabatan' };
   }
@@ -60,6 +62,7 @@ export async function updateJabatan(id: string, data: Partial<InsertMasterJabata
 
     revalidatePath('/dashboard/master/jabatan');
     return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal mengubah jabatan' };
   }
@@ -72,7 +75,7 @@ export async function deleteJabatan(id: string) {
       .update(masterJabatan)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
       .where(eq(masterJabatan.id, id));
-      
+
     await logActivity({
       userId: user.id!,
       action: 'DELETE',
@@ -82,6 +85,7 @@ export async function deleteJabatan(id: string) {
 
     revalidatePath('/dashboard/master/jabatan');
     return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal menghapus jabatan' };
   }

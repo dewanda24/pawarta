@@ -1,6 +1,23 @@
 import { db } from '@/db';
-import { incomingLetters, incomingTimelines, incomingDistributions, incomingDispositions } from '@/db/schema/incoming-letter';
-import { masterInstansi, masterJenisSurat, masterKlasifikasiSurat, masterPrioritas, masterSifatSurat, masterPegawai, masterUnitKerja } from '@/db/schema/master';
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {
+  incomingLetters,
+  incomingTimelines,
+  incomingDistributions,
+  incomingDispositions,
+} from '@/db/schema/incoming-letter';
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {
+  masterInstansi,
+  masterJenisSurat,
+  masterKlasifikasiSurat,
+  masterPrioritas,
+  masterSifatSurat,
+  masterPegawai,
+  masterUnitKerja,
+} from '@/db/schema/master';
 import { users } from '@/db/schema/iam';
 import { eq, desc } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
@@ -86,15 +103,21 @@ export default async function DetailSuratMasukPage({ params }: { params: { id: s
               </div>
               <div>
                 <p className="text-muted-foreground">Tanggal Surat</p>
-                <p className="font-medium">{new Date(letter.tanggalSurat).toLocaleDateString('id-ID')}</p>
+                <p className="font-medium">
+                  {new Date(letter.tanggalSurat).toLocaleDateString('id-ID')}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Tanggal Diterima</p>
-                <p className="font-medium">{new Date(letter.tanggalDiterima).toLocaleDateString('id-ID')}</p>
+                <p className="font-medium">
+                  {new Date(letter.tanggalDiterima).toLocaleDateString('id-ID')}
+                </p>
               </div>
               <div className="col-span-2">
                 <p className="text-muted-foreground">Pengirim</p>
-                <p className="font-medium">{letter.pengirim} {letter.instansi ? `(${letter.instansi})` : ''}</p>
+                <p className="font-medium">
+                  {letter.pengirim} {letter.instansi ? `(${letter.instansi})` : ''}
+                </p>
               </div>
               <div className="col-span-2">
                 <p className="text-muted-foreground">Perihal</p>
@@ -129,7 +152,9 @@ export default async function DetailSuratMasukPage({ params }: { params: { id: s
 
           <div className="rounded-md border p-6 space-y-4">
             <h2 className="text-lg font-semibold">Lampiran (Placeholder)</h2>
-            <p className="text-sm text-muted-foreground">Upload file belum diimplementasikan di versi preview ini.</p>
+            <p className="text-sm text-muted-foreground">
+              Upload file belum diimplementasikan di versi preview ini.
+            </p>
           </div>
         </div>
 
@@ -138,13 +163,17 @@ export default async function DetailSuratMasukPage({ params }: { params: { id: s
             <h2 className="text-lg font-semibold">Timeline & Riwayat</h2>
             <div className="space-y-4">
               {timelines.map((timeline) => (
-                <div key={timeline.id} className="relative pl-6 before:absolute before:left-2 before:top-2 before:bottom-[-1rem] before:w-[2px] before:bg-muted last:before:hidden">
+                <div
+                  key={timeline.id}
+                  className="relative pl-6 before:absolute before:left-2 before:top-2 before:bottom-[-1rem] before:w-[2px] before:bg-muted last:before:hidden"
+                >
                   <div className="absolute left-0 top-1.5 h-4 w-4 rounded-full border-2 border-primary bg-background"></div>
                   <div className="text-sm">
                     <p className="font-medium">{timeline.aktivitas}</p>
                     <p className="text-muted-foreground">{timeline.deskripsi}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(timeline.tanggal).toLocaleString('id-ID')} - {timeline.aktor || 'Sistem'}
+                      {new Date(timeline.tanggal).toLocaleString('id-ID')} -{' '}
+                      {timeline.aktor || 'Sistem'}
                     </p>
                   </div>
                 </div>

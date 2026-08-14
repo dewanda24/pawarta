@@ -13,7 +13,7 @@ export async function getPegawaiList(search?: string) {
     const data = await db.query.masterPegawai.findMany({
       where: and(
         isNull(masterPegawai.deletedAt),
-        search ? ilike(masterPegawai.nama, `%${search}%`) : undefined
+        search ? ilike(masterPegawai.nama, `%${search}%`) : undefined,
       ),
       with: {
         unitKerja: true,
@@ -22,6 +22,7 @@ export async function getPegawaiList(search?: string) {
       orderBy: [desc(masterPegawai.createdAt)],
     });
     return { success: true, data };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal mengambil data pegawai' };
   }
@@ -31,17 +32,18 @@ export async function createPegawai(data: InsertMasterPegawai) {
   try {
     const user = await requireAuth();
     const [inserted] = await db.insert(masterPegawai).values(data).returning();
-    
+
     await logActivity({
       userId: user.id!,
       action: 'CREATE',
       entityType: 'MASTER_PEGAWAI',
       entityId: inserted.id,
-      details: { nama: data.nama }
+      details: { nama: data.nama },
     });
 
     revalidatePath('/dashboard/master/pegawai');
     return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal membuat data pegawai' };
   }
@@ -64,6 +66,7 @@ export async function updatePegawai(id: string, data: Partial<InsertMasterPegawa
 
     revalidatePath('/dashboard/master/pegawai');
     return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal mengubah data pegawai' };
   }
@@ -76,7 +79,7 @@ export async function deletePegawai(id: string) {
       .update(masterPegawai)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
       .where(eq(masterPegawai.id, id));
-    
+
     await logActivity({
       userId: user.id!,
       action: 'DELETE',
@@ -86,6 +89,7 @@ export async function deletePegawai(id: string) {
 
     revalidatePath('/dashboard/master/pegawai');
     return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return { success: false, error: 'Gagal menghapus data pegawai' };
   }

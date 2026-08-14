@@ -1,22 +1,23 @@
 'use server';
 
 import { db } from '@/db';
-import { 
-  archives, 
-  archiveHistories, 
-  archiveBorrowings, 
-  documentHashes, 
+import {
+  archives,
+  archiveHistories,
+  archiveBorrowings,
+  documentHashes,
   documentVerifications,
   documentFavorites,
-  retentionPolicies
+  retentionPolicies,
 } from '@/db/schema/archive';
 import { requireAuth, logActivity } from '@/lib/server-action';
-import { 
-  archiveDocumentSchema, 
+import {
+  archiveDocumentSchema,
   ArchiveDocumentFormValues,
   borrowArchiveSchema,
-  BorrowArchiveFormValues
+  BorrowArchiveFormValues,
 } from './validations';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { eq, and, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import crypto from 'crypto';
@@ -40,10 +41,15 @@ export async function archiveDocument(data: ArchiveDocumentFormValues) {
       // 1. Hitung Tanggal Retensi jika ada Policy
       let tanggalRetensiBerakhir: Date | null = null;
       if (validatedFields.data.retentionPolicyId) {
-        const [policy] = await tx.select().from(retentionPolicies).where(eq(retentionPolicies.id, validatedFields.data.retentionPolicyId));
+        const [policy] = await tx
+          .select()
+          .from(retentionPolicies)
+          .where(eq(retentionPolicies.id, validatedFields.data.retentionPolicyId));
         if (policy) {
           tanggalRetensiBerakhir = new Date();
-          tanggalRetensiBerakhir.setFullYear(tanggalRetensiBerakhir.getFullYear() + policy.masaAktifTahun);
+          tanggalRetensiBerakhir.setFullYear(
+            tanggalRetensiBerakhir.getFullYear() + policy.masaAktifTahun,
+          );
         }
       }
 
@@ -55,8 +61,10 @@ export async function archiveDocument(data: ArchiveDocumentFormValues) {
         .insert(archives)
         .values({
           entityType: validatedFields.data.entityType,
-          incomingLetterId: validatedFields.data.entityType === 'INCOMING' ? validatedFields.data.entityId : null,
-          outgoingLetterId: validatedFields.data.entityType === 'OUTGOING' ? validatedFields.data.entityId : null,
+          incomingLetterId:
+            validatedFields.data.entityType === 'INCOMING' ? validatedFields.data.entityId : null,
+          outgoingLetterId:
+            validatedFields.data.entityType === 'OUTGOING' ? validatedFields.data.entityId : null,
           kategoriId: validatedFields.data.kategoriId,
           nomorArsip,
           perihal: validatedFields.data.perihal,
@@ -84,7 +92,7 @@ export async function archiveDocument(data: ArchiveDocumentFormValues) {
         action: 'ARCHIVE',
         entityType: 'archives',
         entityId: newArchive.id,
-        details: { deskripsi: 'Mengarsipkan dokumen', nomorArsip }
+        details: { deskripsi: 'Mengarsipkan dokumen', nomorArsip },
       });
 
       return newArchive;
@@ -92,7 +100,7 @@ export async function archiveDocument(data: ArchiveDocumentFormValues) {
 
     revalidatePath('/arsip');
     return { success: true, data: result };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error archiveDocument:', error);
     return { error: 'Gagal mengarsipkan dokumen', message: error.message };
   }
@@ -112,18 +120,22 @@ export async function borrowArchive(data: BorrowArchiveFormValues) {
   try {
     const result = await db.transaction(async (tx) => {
       // 1. Create Borrowing record
-      const [borrowing] = await tx.insert(archiveBorrowings).values({
-        archiveId: validatedFields.data.archiveId,
-        peminjamId: validatedFields.data.peminjamId,
-        unitPeminjamId: validatedFields.data.unitPeminjamId,
-        tanggalKembaliRencana: new Date(validatedFields.data.tanggalKembaliRencana),
-        keperluan: validatedFields.data.keperluan,
-        status: 'DIPINJAM', // Langsung dipinjam untuk demo
-        createdBy: user.id,
-      }).returning();
+      const [borrowing] = await tx
+        .insert(archiveBorrowings)
+        .values({
+          archiveId: validatedFields.data.archiveId,
+          peminjamId: validatedFields.data.peminjamId,
+          unitPeminjamId: validatedFields.data.unitPeminjamId,
+          tanggalKembaliRencana: new Date(validatedFields.data.tanggalKembaliRencana),
+          keperluan: validatedFields.data.keperluan,
+          status: 'DIPINJAM', // Langsung dipinjam untuk demo
+          createdBy: user.id,
+        })
+        .returning();
 
       // 2. Update Archive Status
-      await tx.update(archives)
+      await tx
+        .update(archives)
         .set({ status: 'DIPINJAM' })
         .where(eq(archives.id, validatedFields.data.archiveId));
 
@@ -141,7 +153,7 @@ export async function borrowArchive(data: BorrowArchiveFormValues) {
     revalidatePath(`/arsip/${validatedFields.data.archiveId}`);
     revalidatePath('/peminjaman-arsip');
     return { success: true, data: result };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: 'Gagal meminjam arsip', message: error.message };
   }
 }
@@ -153,12 +165,19 @@ export async function toggleFavorite(archiveId: string) {
   const user = await requireAuth();
 
   try {
-    const existing = await db.select().from(documentFavorites)
-      .where(and(eq(documentFavorites.userId, user.id), eq(documentFavorites.archiveId, archiveId)));
+    const existing = await db
+      .select()
+      .from(documentFavorites)
+      .where(
+        and(eq(documentFavorites.userId, user.id), eq(documentFavorites.archiveId, archiveId)),
+      );
 
     if (existing.length > 0) {
-      await db.delete(documentFavorites)
-        .where(and(eq(documentFavorites.userId, user.id), eq(documentFavorites.archiveId, archiveId)));
+      await db
+        .delete(documentFavorites)
+        .where(
+          and(eq(documentFavorites.userId, user.id), eq(documentFavorites.archiveId, archiveId)),
+        );
       return { success: true, favorited: false };
     } else {
       await db.insert(documentFavorites).values({
@@ -167,7 +186,7 @@ export async function toggleFavorite(archiveId: string) {
       });
       return { success: true, favorited: true };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: 'Gagal mengubah status favorit', message: error.message };
   }
 }
@@ -177,8 +196,11 @@ export async function toggleFavorite(archiveId: string) {
  */
 export async function verifyDocument(hashSha256: string) {
   try {
-    const [docHash] = await db.select().from(documentHashes).where(eq(documentHashes.hashSha256, hashSha256));
-    
+    const [docHash] = await db
+      .select()
+      .from(documentHashes)
+      .where(eq(documentHashes.hashSha256, hashSha256));
+
     if (!docHash) {
       return { isValid: false, message: 'Dokumen tidak ditemukan atau palsu.' };
     }
@@ -191,11 +213,11 @@ export async function verifyDocument(hashSha256: string) {
       statusValidasi: true,
     });
 
-    return { 
-      isValid: true, 
-      data: docHash 
+    return {
+      isValid: true,
+      data: docHash,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: 'Gagal memverifikasi dokumen', message: error.message };
   }
 }

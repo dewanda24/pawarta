@@ -1,5 +1,6 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import * as schemas from '@/db/schema';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { z } from 'zod';
 
 // ==========================================
@@ -19,7 +20,12 @@ export const selectMasterSekolahSchema = createSelectSchema(schemas.masterSekola
 // 2. Master Unit Kerja
 // ==========================================
 export const insertMasterUnitKerjaSchema = createInsertSchema(schemas.masterUnitKerja).omit({
-  id: true, createdAt: true, updatedAt: true, deletedAt: true, createdBy: true, updatedBy: true,
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  createdBy: true,
+  updatedBy: true,
 });
 export const selectMasterUnitKerjaSchema = createSelectSchema(schemas.masterUnitKerja);
 
@@ -27,7 +33,12 @@ export const selectMasterUnitKerjaSchema = createSelectSchema(schemas.masterUnit
 // 3. Master Jabatan
 // ==========================================
 export const insertMasterJabatanSchema = createInsertSchema(schemas.masterJabatan).omit({
-  id: true, createdAt: true, updatedAt: true, deletedAt: true, createdBy: true, updatedBy: true,
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  createdBy: true,
+  updatedBy: true,
 });
 export const selectMasterJabatanSchema = createSelectSchema(schemas.masterJabatan);
 
@@ -35,47 +46,87 @@ export const selectMasterJabatanSchema = createSelectSchema(schemas.masterJabata
 // 4. Master Pegawai
 // ==========================================
 export const insertMasterPegawaiSchema = createInsertSchema(schemas.masterPegawai).omit({
-  id: true, createdAt: true, updatedAt: true, deletedAt: true, createdBy: true, updatedBy: true,
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  createdBy: true,
+  updatedBy: true,
 });
 export const selectMasterPegawaiSchema = createSelectSchema(schemas.masterPegawai);
 
 // ==========================================
 // 5. Master Penandatangan
 // ==========================================
-export const insertMasterPenandatanganSchema = createInsertSchema(schemas.masterPenandatangan).omit({
-  id: true, createdAt: true, updatedAt: true, deletedAt: true, createdBy: true, updatedBy: true,
-});
+export const insertMasterPenandatanganSchema = createInsertSchema(schemas.masterPenandatangan).omit(
+  {
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    deletedAt: true,
+    createdBy: true,
+    updatedBy: true,
+  },
+);
 export const selectMasterPenandatanganSchema = createSelectSchema(schemas.masterPenandatangan);
 
 // ==========================================
 // 6. Master Jenis Surat
 // ==========================================
 export const insertMasterJenisSuratSchema = createInsertSchema(schemas.masterJenisSurat).omit({
-  id: true, createdAt: true, updatedAt: true, deletedAt: true, createdBy: true, updatedBy: true,
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  createdBy: true,
+  updatedBy: true,
 });
 export const selectMasterJenisSuratSchema = createSelectSchema(schemas.masterJenisSurat);
 
 // ==========================================
 // 7. Master Klasifikasi Surat
 // ==========================================
-export const insertMasterKlasifikasiSuratSchema = createInsertSchema(schemas.masterKlasifikasiSurat).omit({
-  id: true, createdAt: true, updatedAt: true, deletedAt: true, createdBy: true, updatedBy: true,
+export const insertMasterKlasifikasiSuratSchema = createInsertSchema(
+  schemas.masterKlasifikasiSurat,
+).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  createdBy: true,
+  updatedBy: true,
 });
-export const selectMasterKlasifikasiSuratSchema = createSelectSchema(schemas.masterKlasifikasiSurat);
+export const selectMasterKlasifikasiSuratSchema = createSelectSchema(
+  schemas.masterKlasifikasiSurat,
+);
 
 // ==========================================
 // 8. Mapping Jenis Surat -> Klasifikasi
 // ==========================================
-export const insertMappingJenisKlasifikasiSchema = createInsertSchema(schemas.mappingJenisKlasifikasi).omit({
-  id: true, createdAt: true, updatedAt: true, deletedAt: true, createdBy: true, updatedBy: true,
+export const insertMappingJenisKlasifikasiSchema = createInsertSchema(
+  schemas.mappingJenisKlasifikasi,
+).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  createdBy: true,
+  updatedBy: true,
 });
-export const selectMappingJenisKlasifikasiSchema = createSelectSchema(schemas.mappingJenisKlasifikasi);
+export const selectMappingJenisKlasifikasiSchema = createSelectSchema(
+  schemas.mappingJenisKlasifikasi,
+);
 
 // ==========================================
 // 9. Master Prioritas
 // ==========================================
 export const insertMasterPrioritasSchema = createInsertSchema(schemas.masterPrioritas).omit({
-  id: true, createdAt: true, updatedAt: true, deletedAt: true, createdBy: true, updatedBy: true,
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  createdBy: true,
+  updatedBy: true,
 });
 export const selectMasterPrioritasSchema = createSelectSchema(schemas.masterPrioritas);
 
@@ -83,7 +134,12 @@ export const selectMasterPrioritasSchema = createSelectSchema(schemas.masterPrio
 // 10. Master Sifat Surat
 // ==========================================
 export const insertMasterSifatSuratSchema = createInsertSchema(schemas.masterSifatSurat).omit({
-  id: true, createdAt: true, updatedAt: true, deletedAt: true, createdBy: true, updatedBy: true,
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  createdBy: true,
+  updatedBy: true,
 });
 export const selectMasterSifatSuratSchema = createSelectSchema(schemas.masterSifatSurat);
 
@@ -91,7 +147,12 @@ export const selectMasterSifatSuratSchema = createSelectSchema(schemas.masterSif
 // 11. Master Instansi
 // ==========================================
 export const insertMasterInstansiSchema = createInsertSchema(schemas.masterInstansi).omit({
-  id: true, createdAt: true, updatedAt: true, deletedAt: true, createdBy: true, updatedBy: true,
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  createdBy: true,
+  updatedBy: true,
 });
 export const selectMasterInstansiSchema = createSelectSchema(schemas.masterInstansi);
 
@@ -99,7 +160,12 @@ export const selectMasterInstansiSchema = createSelectSchema(schemas.masterInsta
 // 12. Master Placeholder
 // ==========================================
 export const insertMasterPlaceholderSchema = createInsertSchema(schemas.masterPlaceholder).omit({
-  id: true, createdAt: true, updatedAt: true, deletedAt: true, createdBy: true, updatedBy: true,
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  createdBy: true,
+  updatedBy: true,
 });
 export const selectMasterPlaceholderSchema = createSelectSchema(schemas.masterPlaceholder);
 
@@ -107,6 +173,11 @@ export const selectMasterPlaceholderSchema = createSelectSchema(schemas.masterPl
 // 13. Konfigurasi Sistem
 // ==========================================
 export const insertKonfigurasiSistemSchema = createInsertSchema(schemas.konfigurasiSistem).omit({
-  id: true, createdAt: true, updatedAt: true, deletedAt: true, createdBy: true, updatedBy: true,
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true,
+  createdBy: true,
+  updatedBy: true,
 });
 export const selectKonfigurasiSistemSchema = createSelectSchema(schemas.konfigurasiSistem);

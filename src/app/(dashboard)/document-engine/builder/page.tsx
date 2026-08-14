@@ -25,7 +25,7 @@ Kepala Sekolah
 `);
 
   const [previewMode, setPreviewMode] = useState(false);
-  const [validationResult, setValidationResult] = useState<any>(null);
+  const [validationResult, setValidationResult] = useState<unknown>(null);
 
   // Fungsi Test Render sederhana di Client-side
   const handleTestRender = () => {
@@ -36,23 +36,26 @@ Kepala Sekolah
       tanggal_rapat: 'Senin, 20 Agustus 2026',
       waktu_rapat: '09:00 WIB',
       lokasi_rapat: 'Ruang Rapat Utama',
-      ttd_kepala_sekolah: '[TTD_QR_CODE]'
+      ttd_kepala_sekolah: '[TTD_QR_CODE]',
     };
 
     let rendered = content;
     const regex = /\{\{([a-zA-Z0-9_]+)\}\}/g;
-    
+
     // Validasi missing
-    const extracted = [...content.matchAll(regex)].map(m => m[1]);
-    const missing = extracted.filter(k => !(k in dummy));
+    const extracted = [...content.matchAll(regex)].map((m) => m[1]);
+    const missing = extracted.filter((k) => !(k in dummy));
 
     rendered = rendered.replace(regex, (match, key) => {
-      return (dummy as any)[key] || `<span class="bg-red-100 text-red-600 font-bold px-1 rounded">[KOSONG: ${key}]</span>`;
+      return (
+        (dummy as unknown)[key] ||
+        `<span class="bg-red-100 text-red-600 font-bold px-1 rounded">[KOSONG: ${key}]</span>`
+      );
     });
 
     setValidationResult({
       html: rendered.replace(/\n/g, '<br/>'),
-      missing
+      missing,
     });
     setPreviewMode(true);
   };
@@ -63,18 +66,13 @@ Kepala Sekolah
 
       {/* Editor & Preview Pane */}
       <div className="flex-1 flex overflow-hidden">
-        <EditorPane 
-          content={content} 
-          onChange={setContent} 
-          previewMode={previewMode} 
-        />
-        <PreviewPane 
-          previewMode={previewMode} 
-          onClosePreview={() => setPreviewMode(false)} 
-          validationResult={validationResult} 
+        <EditorPane content={content} onChange={setContent} previewMode={previewMode} />
+        <PreviewPane
+          previewMode={previewMode}
+          onClosePreview={() => setPreviewMode(false)}
+          validationResult={validationResult}
         />
       </div>
     </div>
   );
 }
-

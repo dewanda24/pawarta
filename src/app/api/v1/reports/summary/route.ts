@@ -14,19 +14,13 @@ export async function GET(req: Request) {
 
   try {
     // 1. Total Incoming Letters
-    const [incomingCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(incomingLetters);
+    const [incomingCount] = await db.select({ count: sql<number>`count(*)` }).from(incomingLetters);
 
     // 2. Total Outgoing Letters
-    const [outgoingCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(outgoingLetters);
+    const [outgoingCount] = await db.select({ count: sql<number>`count(*)` }).from(outgoingLetters);
 
     // 3. Total Archives
-    const [archiveCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(archives);
+    const [archiveCount] = await db.select({ count: sql<number>`count(*)` }).from(archives);
 
     return NextResponse.json({
       success: true,
@@ -37,7 +31,7 @@ export async function GET(req: Request) {
         timestamp: new Date().toISOString(),
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

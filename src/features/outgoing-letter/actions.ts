@@ -42,7 +42,10 @@ export async function createOutgoingDraft(data: OutgoingLetterFormValues) {
       });
 
       // 3. Init Workflow (Find Draft Step)
-      const [draftStep] = await tx.select().from(workflowSteps).where(eq(workflowSteps.kodeStatus, 'DRAFT'));
+      const [draftStep] = await tx
+        .select()
+        .from(workflowSteps)
+        .where(eq(workflowSteps.kodeStatus, 'DRAFT'));
       if (draftStep) {
         await tx.insert(workflowInstances).values({
           entityType: 'SURAT_KELUAR',
@@ -59,7 +62,7 @@ export async function createOutgoingDraft(data: OutgoingLetterFormValues) {
         action: 'CREATE',
         entityType: 'outgoing_letters',
         entityId: newLetter.id,
-        details: { deskripsi: 'Membuat draf surat keluar baru' }
+        details: { deskripsi: 'Membuat draf surat keluar baru' },
       });
 
       return newLetter;
@@ -67,7 +70,7 @@ export async function createOutgoingDraft(data: OutgoingLetterFormValues) {
 
     revalidatePath('/surat-keluar');
     return { success: true, data: result };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error createOutgoingDraft:', error);
     return { error: 'Gagal membuat draf surat', message: error.message };
   }
@@ -75,7 +78,7 @@ export async function createOutgoingDraft(data: OutgoingLetterFormValues) {
 
 export async function deleteOutgoingLetter(id: string) {
   const user = await requireAuth();
-  
+
   try {
     await db.transaction(async (tx) => {
       // Soft Delete
@@ -91,13 +94,13 @@ export async function deleteOutgoingLetter(id: string) {
         action: 'DELETE',
         entityType: 'outgoing_letters',
         entityId: id,
-        details: { deskripsi: 'Menghapus surat keluar' }
+        details: { deskripsi: 'Menghapus surat keluar' },
       });
     });
 
     revalidatePath('/surat-keluar');
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return { error: 'Gagal menghapus surat', message: error.message };
   }
 }
