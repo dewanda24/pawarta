@@ -1,43 +1,48 @@
-import { z } from 'zod';
-import * as schemas from '../schemas';
+import { InferSelectModel, InferInsertModel } from 'drizzle-orm';
+import * as schemas from '@/db/schema';
 
-// Ekspor Typescript Interfaces dari Zod Schemas
+// Helper type untuk menghilangkan audit fields pada form insert
+type OmitAudit<T> = Omit<T, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'createdBy' | 'updatedBy'>;
 
-export type InsertMasterSekolah = z.infer<typeof schemas.insertMasterSekolahSchema>;
-export type MasterSekolah = z.infer<typeof schemas.selectMasterSekolahSchema>;
+// ==========================================
+// Typescript Interfaces
+// ==========================================
 
-export type InsertMasterUnitKerja = z.infer<typeof schemas.insertMasterUnitKerjaSchema>;
-export type MasterUnitKerja = z.infer<typeof schemas.selectMasterUnitKerjaSchema>;
+export type MasterSekolah = InferSelectModel<typeof schemas.masterSekolah>;
+export type InsertMasterSekolah = OmitAudit<InferInsertModel<typeof schemas.masterSekolah>>;
 
-export type InsertMasterJabatan = z.infer<typeof schemas.insertMasterJabatanSchema>;
-export type MasterJabatan = z.infer<typeof schemas.selectMasterJabatanSchema>;
+export type MasterUnitKerja = InferSelectModel<typeof schemas.masterUnitKerja>;
+export type InsertMasterUnitKerja = OmitAudit<InferInsertModel<typeof schemas.masterUnitKerja>>;
 
-export type InsertMasterPegawai = z.infer<typeof schemas.insertMasterPegawaiSchema>;
-export type MasterPegawai = z.infer<typeof schemas.selectMasterPegawaiSchema>;
+export type MasterJabatan = InferSelectModel<typeof schemas.masterJabatan>;
+export type InsertMasterJabatan = OmitAudit<InferInsertModel<typeof schemas.masterJabatan>>;
 
-export type InsertMasterPenandatangan = z.infer<typeof schemas.insertMasterPenandatanganSchema>;
-export type MasterPenandatangan = z.infer<typeof schemas.selectMasterPenandatanganSchema>;
+export type MasterPegawai = InferSelectModel<typeof schemas.masterPegawai>;
+export type InsertMasterPegawai = OmitAudit<InferInsertModel<typeof schemas.masterPegawai>>;
 
-export type InsertMasterJenisSurat = z.infer<typeof schemas.insertMasterJenisSuratSchema>;
-export type MasterJenisSurat = z.infer<typeof schemas.selectMasterJenisSuratSchema>;
+export type MasterPenandatangan = InferSelectModel<typeof schemas.masterPenandatangan>;
+export type InsertMasterPenandatangan = OmitAudit<InferInsertModel<typeof schemas.masterPenandatangan>>;
 
-export type InsertMasterKlasifikasiSurat = z.infer<typeof schemas.insertMasterKlasifikasiSuratSchema>;
-export type MasterKlasifikasiSurat = z.infer<typeof schemas.selectMasterKlasifikasiSuratSchema>;
+export type MasterJenisSurat = InferSelectModel<typeof schemas.masterJenisSurat>;
+export type InsertMasterJenisSurat = OmitAudit<InferInsertModel<typeof schemas.masterJenisSurat>>;
 
-export type InsertMappingJenisKlasifikasi = z.infer<typeof schemas.insertMappingJenisKlasifikasiSchema>;
-export type MappingJenisKlasifikasi = z.infer<typeof schemas.selectMappingJenisKlasifikasiSchema>;
+export type MasterKlasifikasiSurat = InferSelectModel<typeof schemas.masterKlasifikasiSurat>;
+export type InsertMasterKlasifikasiSurat = OmitAudit<InferInsertModel<typeof schemas.masterKlasifikasiSurat>>;
 
-export type InsertMasterPrioritas = z.infer<typeof schemas.insertMasterPrioritasSchema>;
-export type MasterPrioritas = z.infer<typeof schemas.selectMasterPrioritasSchema>;
+export type MappingJenisKlasifikasi = InferSelectModel<typeof schemas.mappingJenisKlasifikasi>;
+export type InsertMappingJenisKlasifikasi = OmitAudit<InferInsertModel<typeof schemas.mappingJenisKlasifikasi>>;
 
-export type InsertMasterSifatSurat = z.infer<typeof schemas.insertMasterSifatSuratSchema>;
-export type MasterSifatSurat = z.infer<typeof schemas.selectMasterSifatSuratSchema>;
+export type MasterPrioritas = InferSelectModel<typeof schemas.masterPrioritas>;
+export type InsertMasterPrioritas = OmitAudit<InferInsertModel<typeof schemas.masterPrioritas>>;
 
-export type InsertMasterInstansi = z.infer<typeof schemas.insertMasterInstansiSchema>;
-export type MasterInstansi = z.infer<typeof schemas.selectMasterInstansiSchema>;
+export type MasterSifatSurat = InferSelectModel<typeof schemas.masterSifatSurat>;
+export type InsertMasterSifatSurat = OmitAudit<InferInsertModel<typeof schemas.masterSifatSurat>>;
 
-export type InsertMasterPlaceholder = z.infer<typeof schemas.insertMasterPlaceholderSchema>;
-export type MasterPlaceholder = z.infer<typeof schemas.selectMasterPlaceholderSchema>;
+export type MasterInstansi = InferSelectModel<typeof schemas.masterInstansi>;
+export type InsertMasterInstansi = OmitAudit<InferInsertModel<typeof schemas.masterInstansi>>;
 
-export type InsertKonfigurasiSistem = z.infer<typeof schemas.insertKonfigurasiSistemSchema>;
-export type KonfigurasiSistem = z.infer<typeof schemas.selectKonfigurasiSistemSchema>;
+export type MasterPlaceholder = InferSelectModel<typeof schemas.masterPlaceholder>;
+export type InsertMasterPlaceholder = OmitAudit<InferInsertModel<typeof schemas.masterPlaceholder>>;
+
+export type KonfigurasiSistem = InferSelectModel<typeof schemas.konfigurasiSistem>;
+export type InsertKonfigurasiSistem = OmitAudit<InferInsertModel<typeof schemas.konfigurasiSistem>>;

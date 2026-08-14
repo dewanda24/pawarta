@@ -1,31 +1,36 @@
-import { Bell, Search, UserCircle } from 'lucide-react';
-import { Input } from '../ui/input';
+import { Bell, Search, LayoutGrid, User, Settings, LogOut } from 'lucide-react';
+import { NotificationCenter } from './notification-center';
+import { CommandPaletteTrigger } from './command-palette';
 
 export function Header() {
   return (
-    <header className="flex h-16 items-center justify-between bg-white px-6 border-b border-gray-200">
+    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 shadow-sm">
       <div className="flex-1 flex items-center gap-4">
-        <div className="relative w-64 hidden sm:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input 
-            placeholder="Cari..." 
-            className="pl-9 bg-gray-50 border-transparent focus-visible:bg-white" 
-          />
-        </div>
+        {/* Command Palette Trigger */}
+        <CommandPaletteTrigger />
       </div>
-      <div className="flex items-center gap-4">
-        <button className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+
+      <div className="flex items-center gap-2 sm:gap-4">
+        {/* Quick Actions (Placeholder) */}
+        <button className="hidden md:flex items-center justify-center w-9 h-9 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
+          <LayoutGrid className="w-5 h-5" />
         </button>
-        <div className="h-8 w-px bg-gray-200 mx-2"></div>
-        <button className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-primary transition-colors">
-          <UserCircle className="w-8 h-8 text-gray-400" />
-          <div className="hidden md:block text-left">
-            <div className="leading-tight">Administrator</div>
-            <div className="text-xs text-gray-500 font-normal">Super Admin</div>
+        
+        {/* Notification Center */}
+        <NotificationCenter />
+
+        <div className="h-6 w-px bg-gray-200 mx-1 hidden sm:block"></div>
+
+        {/* User Menu */}
+        <div className="flex items-center gap-3 cursor-pointer p-1 rounded-lg hover:bg-gray-50 transition-colors">
+          <div className="text-right hidden md:block">
+            <div className="text-sm font-medium text-gray-900 leading-tight">Admin PAWARTA</div>
+            <div className="text-xs text-gray-500">Super Admin</div>
           </div>
-        </button>
+          <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold shadow-inner">
+            A
+          </div>
+        </div>
       </div>
     </header>
   );

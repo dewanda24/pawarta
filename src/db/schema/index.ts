@@ -1,2 +1,11 @@
 export * from './master';
-
+export * from './iam';
+export * from './workspace';
+export * from './document';
+export * from './workflow';
+export * from './outgoing-letter';
+export * from './incoming-letter';
+export * from './archive';
+export * from './integration';
+export * from './system';
+export * from './signature';
