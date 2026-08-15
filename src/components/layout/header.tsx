@@ -1,7 +1,10 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+'use client';
+
 import { Bell, Search, LayoutGrid, User, Settings, LogOut } from 'lucide-react';
 import { NotificationCenter } from './notification-center';
 import { CommandPaletteTrigger } from './command-palette';
+import { signOut } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
 
 export function Header() {
   return (
@@ -23,14 +26,19 @@ export function Header() {
         <div className="h-6 w-px bg-gray-200 mx-1 hidden sm:block"></div>
 
         {/* User Menu */}
-        <div className="flex items-center gap-3 cursor-pointer p-1 rounded-lg hover:bg-gray-50 transition-colors">
-          <div className="text-right hidden md:block">
-            <div className="text-sm font-medium text-gray-900 leading-tight">Admin PAWARTA</div>
-            <div className="text-xs text-gray-500">Super Admin</div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer p-1 rounded-lg hover:bg-gray-50 transition-colors">
+            <div className="text-right hidden md:block">
+              <div className="text-sm font-medium text-gray-900 leading-tight">Admin PAWARTA</div>
+              <div className="text-xs text-gray-500">Super Admin</div>
+            </div>
+            <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold shadow-inner">
+              A
+            </div>
           </div>
-          <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold shadow-inner">
-            A
-          </div>
+          <Button variant="ghost" size="icon" onClick={() => signOut({ callbackUrl: '/login' })} className="text-red-500 hover:text-red-700 hover:bg-red-50">
+            <LogOut className="w-5 h-5" />
+          </Button>
         </div>
       </div>
     </header>

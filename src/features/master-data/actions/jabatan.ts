@@ -53,7 +53,7 @@ export async function createJabatan(data: InsertMasterJabatan) {
       details: { nama: data.nama },
     });
 
-    revalidatePath('/dashboard/master/jabatan');
+    revalidatePath('/master/jabatan');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || 'Gagal membuat data jabatan' };
@@ -75,7 +75,7 @@ export async function updateJabatan(id: string, data: Partial<InsertMasterJabata
       entityId: id,
     });
 
-    revalidatePath('/dashboard/master/jabatan');
+    revalidatePath('/master/jabatan');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || 'Gagal mengubah data jabatan' };
@@ -97,7 +97,7 @@ export async function deleteJabatan(id: string) {
       entityId: id,
     });
 
-    revalidatePath('/dashboard/master/jabatan');
+    revalidatePath('/master/jabatan');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || 'Gagal menghapus data jabatan' };

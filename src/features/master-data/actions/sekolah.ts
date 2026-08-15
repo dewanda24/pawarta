@@ -54,7 +54,7 @@ export async function createSekolah(data: InsertMasterSekolah) {
       details: { nama: data.nama },
     });
 
-    revalidatePath('/dashboard/master/sekolah');
+    revalidatePath('/master/sekolah');
     return { success: true };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error: any) {
@@ -78,7 +78,7 @@ export async function updateSekolah(id: string, data: Partial<InsertMasterSekola
       details: { updatedFields: Object.keys(data) },
     });
 
-    revalidatePath('/dashboard/master/sekolah');
+    revalidatePath('/master/sekolah');
     return { success: true };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error: any) {
@@ -101,7 +101,7 @@ export async function deleteSekolah(id: string) {
       entityId: id,
     });
 
-    revalidatePath('/dashboard/master/sekolah');
+    revalidatePath('/master/sekolah');
     return { success: true };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error: any) {

@@ -88,7 +88,7 @@ export async function createUser(data: any, roleId: string) {
       details: { email: data.email },
     });
 
-    revalidatePath('/dashboard/iam/users');
+    revalidatePath('/iam/users');
     return { success: true };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error: any) {
@@ -126,7 +126,7 @@ export async function updateUser(id: string, data: any, roleId?: string) {
       entityId: id,
     });
 
-    revalidatePath('/dashboard/iam/users');
+    revalidatePath('/iam/users');
     return { success: true };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error: any) {
@@ -146,7 +146,7 @@ export async function deleteUser(id: string) {
       entityId: id,
     });
 
-    revalidatePath('/dashboard/iam/users');
+    revalidatePath('/iam/users');
     return { success: true };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error: any) {

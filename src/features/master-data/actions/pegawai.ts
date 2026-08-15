@@ -55,7 +55,7 @@ export async function createPegawai(data: InsertMasterPegawai) {
       details: { nama: data.nama },
     });
 
-    revalidatePath('/dashboard/master/pegawai');
+    revalidatePath('/master/pegawai');
     return { success: true };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error: any) {
@@ -78,7 +78,7 @@ export async function updatePegawai(id: string, data: Partial<InsertMasterPegawa
       entityId: id,
     });
 
-    revalidatePath('/dashboard/master/pegawai');
+    revalidatePath('/master/pegawai');
     return { success: true };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error: any) {
@@ -101,7 +101,7 @@ export async function deletePegawai(id: string) {
       entityId: id,
     });
 
-    revalidatePath('/dashboard/master/pegawai');
+    revalidatePath('/master/pegawai');
     return { success: true };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error: any) {

@@ -53,7 +53,7 @@ export async function createUnitKerja(data: InsertMasterUnitKerja) {
       details: { nama: data.nama },
     });
 
-    revalidatePath('/dashboard/master/unit-kerja');
+    revalidatePath('/master/unit-kerja');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || 'Gagal membuat data unit kerja' };
@@ -75,7 +75,7 @@ export async function updateUnitKerja(id: string, data: Partial<InsertMasterUnit
       entityId: id,
     });
 
-    revalidatePath('/dashboard/master/unit-kerja');
+    revalidatePath('/master/unit-kerja');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || 'Gagal mengubah data unit kerja' };
@@ -97,7 +97,7 @@ export async function deleteUnitKerja(id: string) {
       entityId: id,
     });
 
-    revalidatePath('/dashboard/master/unit-kerja');
+    revalidatePath('/master/unit-kerja');
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message || 'Gagal menghapus data unit kerja' };

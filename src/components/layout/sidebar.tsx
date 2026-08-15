@@ -33,10 +33,11 @@ const IconMap: Record<string, any> = {
 // Data statis sementara untuk UI mockup
 const mockupMenus = [
   { id: '1', nama: 'Dashboard', icon: 'Home', route: '/dashboard' },
-  { id: '2', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/dashboard/iam/users' },
-  { id: '3', nama: 'Master Data', icon: 'FolderOpen', route: '/dashboard/master-data' },
-  { id: '4', nama: 'Master Sekolah', icon: 'FolderOpen', route: '/dashboard/master/sekolah' },
-  { id: '5', nama: 'Master Pegawai', icon: 'Users', route: '/dashboard/master/pegawai' },
+  { id: '2', nama: 'Surat Masuk', icon: 'Inbox', route: '/surat-masuk' },
+  { id: '3', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/iam/users' },
+  { id: '4', nama: 'Master Unit Kerja', icon: 'FolderOpen', route: '/master/unit-kerja' },
+  { id: '5', nama: 'Master Jabatan', icon: 'FolderOpen', route: '/master/jabatan' },
+  { id: '6', nama: 'Master Pegawai', icon: 'Users', route: '/master/pegawai' },
 ];
 
 export function Sidebar() {
