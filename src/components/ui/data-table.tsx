@@ -22,15 +22,31 @@ import { Button } from '@/components/ui/button';
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  pageCount?: number;
+  pagination?: {
+    pageIndex: number;
+    pageSize: number;
+  };
+  onPaginationChange?: (updater: any) => void;
 }
 
-export function DataTable<TData extends Record<string, any>, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
+export function DataTable<TData extends Record<string, any>, TValue>({ 
+  columns, 
+  data,
+  pageCount,
+  pagination,
+  onPaginationChange
+}: DataTableProps<TData, TValue>) {
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    pageCount,
+    state: pagination ? { pagination } : undefined,
+    onPaginationChange: onPaginationChange,
+    manualPagination: pageCount !== undefined,
+    ...(pageCount === undefined ? { getPaginationRowModel: getPaginationRowModel() } : {}),
   });
 
   return (

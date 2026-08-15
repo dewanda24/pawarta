@@ -19,8 +19,41 @@ import {
   dispositionLetterSchema,
   DispositionLetterFormValues,
 } from './validations';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+
+export async function getIncomingLetters(params?: { search?: string; limit?: number; offset?: number }) {
+  try {
+    await requireAuth('SURAT_MASUK_READ');
+    
+    const search = params?.search;
+    const limit = params?.limit;
+    const offset = params?.offset ?? 0;
+
+    const whereClause = undefined; // You can add search filter later
+
+    const data = await db.query.incomingLetters.findMany({
+      where: whereClause,
+      ...(limit ? { limit, offset } : {}),
+      with: {
+        instansiPengirim: true,
+        jenisSurat: true,
+      },
+      orderBy: [desc(incomingLetters.createdAt)],
+    });
+
+    if (limit) {
+      const totalRecordsResult = await db.$count(incomingLetters, whereClause);
+      const totalRecords = typeof totalRecordsResult === 'number' ? totalRecordsResult : 0;
+      const totalPages = Math.ceil(totalRecords / limit);
+      return { success: true, data, metadata: { totalRecords, totalPages, page: Math.floor(offset / limit) + 1, limit } };
+    }
+
+    return { success: true, data };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal mengambil data surat masuk' };
+  }
+}
 
 export async function registerIncomingLetter(data: IncomingLetterFormValues) {
   const user = await requireAuth();

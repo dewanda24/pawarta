@@ -7,26 +7,42 @@ import { InsertMasterJabatan } from '../types';
 import { revalidatePath } from 'next/cache';
 import { requireAuth, logActivity } from '@/lib/server-action';
 
-export async function getJabatanList(search?: string) {
+export async function getJabatanList(params?: { search?: string; limit?: number; offset?: number }) {
   try {
-    await requireAuth();
+    await requireAuth('MASTER_JABATAN_READ');
+    
+    const search = params?.search;
+    const limit = params?.limit;
+    const offset = params?.offset ?? 0;
+
+    const whereClause = and(
+      isNull(masterJabatan.deletedAt),
+      search ? ilike(masterJabatan.nama, `%${search}%`) : undefined,
+    );
+
     const data = await db.query.masterJabatan.findMany({
-      where: and(
-        isNull(masterJabatan.deletedAt),
-        search ? ilike(masterJabatan.nama, `%${search}%`) : undefined,
-      ),
+      where: whereClause,
+      ...(limit ? { limit, offset } : {}),
       orderBy: [desc(masterJabatan.createdAt)],
     });
+
+    if (limit) {
+      const totalRecordsResult = await db.$count(masterJabatan, whereClause);
+      const totalRecords = typeof totalRecordsResult === 'number' ? totalRecordsResult : 0;
+      const totalPages = Math.ceil(totalRecords / limit);
+      return { success: true, data, metadata: { totalRecords, totalPages, page: Math.floor(offset / limit) + 1, limit } };
+    }
+
     return { success: true, data };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
-    return { success: false, error: 'Gagal mengambil data jabatan' };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal mengambil data jabatan' };
   }
 }
 
 export async function createJabatan(data: InsertMasterJabatan) {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth('MASTER_JABATAN_CREATE');
     const [inserted] = await db.insert(masterJabatan).values(data).returning();
 
     await logActivity({
@@ -39,15 +55,14 @@ export async function createJabatan(data: InsertMasterJabatan) {
 
     revalidatePath('/dashboard/master/jabatan');
     return { success: true };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
-    return { success: false, error: 'Gagal membuat jabatan' };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal membuat data jabatan' };
   }
 }
 
 export async function updateJabatan(id: string, data: Partial<InsertMasterJabatan>) {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth('MASTER_JABATAN_UPDATE');
     await db
       .update(masterJabatan)
       .set({ ...data, updatedAt: new Date() })
@@ -62,15 +77,14 @@ export async function updateJabatan(id: string, data: Partial<InsertMasterJabata
 
     revalidatePath('/dashboard/master/jabatan');
     return { success: true };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
-    return { success: false, error: 'Gagal mengubah jabatan' };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal mengubah data jabatan' };
   }
 }
 
 export async function deleteJabatan(id: string) {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth('MASTER_JABATAN_DELETE');
     await db
       .update(masterJabatan)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
@@ -85,8 +99,8 @@ export async function deleteJabatan(id: string) {
 
     revalidatePath('/dashboard/master/jabatan');
     return { success: true };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
-    return { success: false, error: 'Gagal menghapus jabatan' };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal menghapus data jabatan' };
   }
 }
+

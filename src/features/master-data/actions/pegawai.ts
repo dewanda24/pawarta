@@ -7,30 +7,44 @@ import { InsertMasterPegawai } from '../types';
 import { revalidatePath } from 'next/cache';
 import { requireAuth, logActivity } from '@/lib/server-action';
 
-export async function getPegawaiList(search?: string) {
+export async function getPegawaiList(params?: { search?: string; limit?: number; offset?: number }) {
   try {
-    await requireAuth();
+    await requireAuth('MASTER_PEGAWAI_READ');
+
+    const search = params?.search;
+    const limit = params?.limit ?? 10;
+    const offset = params?.offset ?? 0;
+
+    const whereClause = and(
+      isNull(masterPegawai.deletedAt),
+      search ? ilike(masterPegawai.nama, `%${search}%`) : undefined,
+    );
+
     const data = await db.query.masterPegawai.findMany({
-      where: and(
-        isNull(masterPegawai.deletedAt),
-        search ? ilike(masterPegawai.nama, `%${search}%`) : undefined,
-      ),
+      where: whereClause,
       with: {
         unitKerja: true,
         jabatan: true,
       },
+      limit,
+      offset,
       orderBy: [desc(masterPegawai.createdAt)],
     });
-    return { success: true, data };
+
+    const totalRecordsResult = await db.$count(masterPegawai, whereClause);
+    const totalRecords = typeof totalRecordsResult === 'number' ? totalRecordsResult : 0;
+    const totalPages = Math.ceil(totalRecords / limit);
+
+    return { success: true, data, metadata: { totalRecords, totalPages, page: Math.floor(offset / limit) + 1, limit } };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
-    return { success: false, error: 'Gagal mengambil data pegawai' };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal mengambil data pegawai' };
   }
 }
 
 export async function createPegawai(data: InsertMasterPegawai) {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth('MASTER_PEGAWAI_CREATE');
     const [inserted] = await db.insert(masterPegawai).values(data).returning();
 
     await logActivity({
@@ -44,14 +58,14 @@ export async function createPegawai(data: InsertMasterPegawai) {
     revalidatePath('/dashboard/master/pegawai');
     return { success: true };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
-    return { success: false, error: 'Gagal membuat data pegawai' };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal membuat data pegawai' };
   }
 }
 
 export async function updatePegawai(id: string, data: Partial<InsertMasterPegawai>) {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth('MASTER_PEGAWAI_UPDATE');
     await db
       .update(masterPegawai)
       .set({ ...data, updatedAt: new Date() })
@@ -67,14 +81,14 @@ export async function updatePegawai(id: string, data: Partial<InsertMasterPegawa
     revalidatePath('/dashboard/master/pegawai');
     return { success: true };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
-    return { success: false, error: 'Gagal mengubah data pegawai' };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal mengubah data pegawai' };
   }
 }
 
 export async function deletePegawai(id: string) {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth('MASTER_PEGAWAI_DELETE');
     await db
       .update(masterPegawai)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
@@ -90,7 +104,7 @@ export async function deletePegawai(id: string) {
     revalidatePath('/dashboard/master/pegawai');
     return { success: true };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
-    return { success: false, error: 'Gagal menghapus data pegawai' };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal menghapus data pegawai' };
   }
 }

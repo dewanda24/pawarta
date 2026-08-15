@@ -35,6 +35,8 @@ const mockupMenus = [
   { id: '1', nama: 'Dashboard', icon: 'Home', route: '/dashboard' },
   { id: '2', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/dashboard/iam/users' },
   { id: '3', nama: 'Master Data', icon: 'FolderOpen', route: '/dashboard/master-data' },
+  { id: '4', nama: 'Master Sekolah', icon: 'FolderOpen', route: '/dashboard/master/sekolah' },
+  { id: '5', nama: 'Master Pegawai', icon: 'Users', route: '/dashboard/master/pegawai' },
 ];
 
 export function Sidebar() {

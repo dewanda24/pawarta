@@ -5,26 +5,42 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
-import { UserForm, UserFormValues } from './form';
+import { PegawaiForm, PegawaiFormValues } from './form';
 import { DeleteConfirmDialog } from '@/components/shared/delete-confirm-dialog';
-import { getUserList, deleteUser } from '@/features/iam/actions/user';
+import { getPegawaiList, deletePegawai } from '@/features/master-data/actions/pegawai';
+import { getUnitKerjaList } from '@/features/master-data/actions/unit-kerja';
+import { getJabatanList } from '@/features/master-data/actions/jabatan';
 import { toast } from 'sonner';
 
-export default function UsersPage() {
+export default function MasterPegawaiPage() {
   const [data, setData] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   
+  const [unitKerjaList, setUnitKerjaList] = useState<any[]>([]);
+  const [jabatanList, setJabatanList] = useState<any[]>([]);
+
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedData, setSelectedData] = useState<any | undefined>(undefined);
+  const [selectedData, setSelectedData] = useState<PegawaiFormValues & { id?: string } | undefined>(undefined);
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const fetchOptions = async () => {
+    try {
+      const resUnitKerja = await getUnitKerjaList();
+      const resJabatan = await getJabatanList();
+      if (resUnitKerja.success) setUnitKerjaList(resUnitKerja.data || []);
+      if (resJabatan.success) setJabatanList(resJabatan.data || []);
+    } catch (error) {
+      console.error('Failed fetching options', error);
+    }
+  };
+
   const fetchData = async () => {
     try {
-      const response = await getUserList({
+      const response = await getPegawaiList({
         limit: pagination.pageSize,
         offset: pagination.pageIndex * pagination.pageSize,
       });
@@ -36,9 +52,13 @@ export default function UsersPage() {
         toast.error(response.error);
       }
     } catch (error) {
-      toast.error('Gagal mengambil data pengguna');
+      toast.error('Gagal mengambil data pegawai');
     }
   };
+
+  useEffect(() => {
+    fetchOptions();
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -63,15 +83,15 @@ export default function UsersPage() {
     if (!deletingId) return;
     setIsDeleting(true);
     try {
-      const res = await deleteUser(deletingId);
+      const res = await deletePegawai(deletingId);
       if (res.success) {
-        toast.success('Berhasil menghapus pengguna');
+        toast.success('Berhasil menghapus pegawai');
         setIsDeleteDialogOpen(false);
       } else {
         toast.error(res.error);
       }
     } catch (e) {
-      toast.error('Gagal menghapus pengguna');
+      toast.error('Gagal menghapus pegawai');
     } finally {
       setIsDeleting(false);
     }
@@ -80,51 +100,30 @@ export default function UsersPage() {
   const columns: ColumnDef<any>[] = [
     {
       accessorKey: 'nama',
-      header: 'Pengguna',
-      cell: ({ row }) => {
-        const user = row.original;
-        return (
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-              {user.nama.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <div className="font-medium text-gray-900">{user.nama}</div>
-              <div className="text-xs text-gray-500">{user.username}</div>
-            </div>
-          </div>
-        );
-      }
+      header: 'Nama Pegawai',
     },
     {
-      accessorKey: 'email',
-      header: 'Email',
+      accessorKey: 'nip',
+      header: 'NIP',
     },
     {
-      accessorKey: 'role',
-      header: 'Role',
-      cell: ({ row }) => {
-        const roles = row.original.userRoles;
-        if (!roles || roles.length === 0) return <span className="text-gray-400 italic">No Role</span>;
-        return (
-          <div className="flex flex-wrap gap-1">
-            {roles.map((ur: any) => (
-              <span key={ur.roleId} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
-                {ur.role.namaRole}
-              </span>
-            ))}
-          </div>
-        );
-      }
+      accessorKey: 'unitKerja.nama',
+      header: 'Unit Kerja',
+      cell: ({ row }) => row.original.unitKerja?.nama || '-',
     },
     {
-      accessorKey: 'status',
+      accessorKey: 'jabatan.nama',
+      header: 'Jabatan',
+      cell: ({ row }) => row.original.jabatan?.nama || '-',
+    },
+    {
+      accessorKey: 'isAktif',
       header: 'Status',
       cell: ({ row }) => {
-        const status = row.original.status;
+        const isAktif = row.original.isAktif;
         return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status === 'Aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-            {status}
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isAktif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            {isAktif ? 'Aktif' : 'Non-Aktif'}
           </span>
         );
       },
@@ -153,11 +152,11 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Manajemen Pengguna</h1>
-          <p className="text-sm text-gray-500">Kelola akses akun dan role pengguna sistem.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Master Pegawai</h1>
+          <p className="text-sm text-gray-500">Kelola data pegawai, unit kerja, dan jabatan.</p>
         </div>
         <Button onClick={handleCreate} className="flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Tambah Pengguna
+          <Plus className="w-4 h-4" /> Tambah Pegawai
         </Button>
       </div>
 
@@ -169,10 +168,12 @@ export default function UsersPage() {
         onPaginationChange={setPagination}
       />
 
-      <UserForm 
+      <PegawaiForm 
         open={isFormOpen} 
         onOpenChange={setIsFormOpen} 
         initialData={selectedData} 
+        unitKerjaOptions={unitKerjaList}
+        jabatanOptions={jabatanList}
       />
 
       <DeleteConfirmDialog

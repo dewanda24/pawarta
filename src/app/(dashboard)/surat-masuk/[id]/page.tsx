@@ -24,6 +24,8 @@ import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
+import { LetterActions } from '@/components/features/incoming-letter/LetterActions';
+
 export const metadata = {
   title: 'Detail Surat Masuk | PAWARTA',
 };
@@ -72,6 +74,11 @@ export default async function DetailSuratMasukPage({ params }: { params: { id: s
     .where(eq(incomingTimelines.suratId, letter.id))
     .orderBy(desc(incomingTimelines.tanggal));
 
+  const [pegawaiOpts, unitKerjaOpts] = await Promise.all([
+    db.select({ id: masterPegawai.id, nama: masterPegawai.nama }).from(masterPegawai).where(eq(masterPegawai.isAktif, true)),
+    db.select({ id: masterUnitKerja.id, nama: masterUnitKerja.nama }).from(masterUnitKerja).where(eq(masterUnitKerja.isAktif, true)),
+  ]);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -80,11 +87,14 @@ export default async function DetailSuratMasukPage({ params }: { params: { id: s
           <p className="text-muted-foreground">{letter.nomorSurat}</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/surat-masuk">
+          <Link href="/dashboard/surat-masuk">
             <Button variant="outline">Kembali</Button>
           </Link>
-          <Button variant="secondary">Distribusi</Button>
-          <Button>Disposisi</Button>
+          <LetterActions 
+            suratId={letter.id} 
+            pegawaiOpts={pegawaiOpts} 
+            unitKerjaOpts={unitKerjaOpts} 
+          />
         </div>
       </div>
 

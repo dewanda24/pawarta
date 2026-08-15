@@ -7,26 +7,42 @@ import { InsertMasterUnitKerja } from '../types';
 import { revalidatePath } from 'next/cache';
 import { requireAuth, logActivity } from '@/lib/server-action';
 
-export async function getUnitKerjaList(search?: string) {
+export async function getUnitKerjaList(params?: { search?: string; limit?: number; offset?: number }) {
   try {
-    await requireAuth();
+    await requireAuth('MASTER_UNIT_KERJA_READ');
+    
+    const search = params?.search;
+    const limit = params?.limit;
+    const offset = params?.offset ?? 0;
+
+    const whereClause = and(
+      isNull(masterUnitKerja.deletedAt),
+      search ? ilike(masterUnitKerja.nama, `%${search}%`) : undefined,
+    );
+
     const data = await db.query.masterUnitKerja.findMany({
-      where: and(
-        isNull(masterUnitKerja.deletedAt),
-        search ? ilike(masterUnitKerja.nama, `%${search}%`) : undefined,
-      ),
+      where: whereClause,
+      ...(limit ? { limit, offset } : {}),
       orderBy: [desc(masterUnitKerja.createdAt)],
     });
+
+    if (limit) {
+      const totalRecordsResult = await db.$count(masterUnitKerja, whereClause);
+      const totalRecords = typeof totalRecordsResult === 'number' ? totalRecordsResult : 0;
+      const totalPages = Math.ceil(totalRecords / limit);
+      return { success: true, data, metadata: { totalRecords, totalPages, page: Math.floor(offset / limit) + 1, limit } };
+    }
+
     return { success: true, data };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
-    return { success: false, error: 'Gagal mengambil data unit kerja' };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal mengambil data unit kerja' };
   }
 }
 
 export async function createUnitKerja(data: InsertMasterUnitKerja) {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth('MASTER_UNIT_KERJA_CREATE');
     const [inserted] = await db.insert(masterUnitKerja).values(data).returning();
 
     await logActivity({
@@ -39,15 +55,14 @@ export async function createUnitKerja(data: InsertMasterUnitKerja) {
 
     revalidatePath('/dashboard/master/unit-kerja');
     return { success: true };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
-    return { success: false, error: 'Gagal membuat unit kerja' };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal membuat data unit kerja' };
   }
 }
 
 export async function updateUnitKerja(id: string, data: Partial<InsertMasterUnitKerja>) {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth('MASTER_UNIT_KERJA_UPDATE');
     await db
       .update(masterUnitKerja)
       .set({ ...data, updatedAt: new Date() })
@@ -62,15 +77,14 @@ export async function updateUnitKerja(id: string, data: Partial<InsertMasterUnit
 
     revalidatePath('/dashboard/master/unit-kerja');
     return { success: true };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
-    return { success: false, error: 'Gagal mengubah unit kerja' };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal mengubah data unit kerja' };
   }
 }
 
 export async function deleteUnitKerja(id: string) {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth('MASTER_UNIT_KERJA_DELETE');
     await db
       .update(masterUnitKerja)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
@@ -85,8 +99,8 @@ export async function deleteUnitKerja(id: string) {
 
     revalidatePath('/dashboard/master/unit-kerja');
     return { success: true };
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
-    return { success: false, error: 'Gagal menghapus unit kerja' };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Gagal menghapus data unit kerja' };
   }
 }
+

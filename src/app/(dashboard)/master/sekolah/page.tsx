@@ -5,18 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
-import { UserForm, UserFormValues } from './form';
+import { SekolahForm, FormValues } from './form';
 import { DeleteConfirmDialog } from '@/components/shared/delete-confirm-dialog';
-import { getUserList, deleteUser } from '@/features/iam/actions/user';
+import { getSekolahList, deleteSekolah } from '@/features/master-data/actions/sekolah';
 import { toast } from 'sonner';
 
-export default function UsersPage() {
+export default function MasterSekolahPage() {
   const [data, setData] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedData, setSelectedData] = useState<any | undefined>(undefined);
+  const [selectedData, setSelectedData] = useState<FormValues & { id?: string } | undefined>(undefined);
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export default function UsersPage() {
 
   const fetchData = async () => {
     try {
-      const response = await getUserList({
+      const response = await getSekolahList({
         limit: pagination.pageSize,
         offset: pagination.pageIndex * pagination.pageSize,
       });
@@ -36,7 +36,7 @@ export default function UsersPage() {
         toast.error(response.error);
       }
     } catch (error) {
-      toast.error('Gagal mengambil data pengguna');
+      toast.error('Gagal mengambil data sekolah');
     }
   };
 
@@ -63,15 +63,15 @@ export default function UsersPage() {
     if (!deletingId) return;
     setIsDeleting(true);
     try {
-      const res = await deleteUser(deletingId);
+      const res = await deleteSekolah(deletingId);
       if (res.success) {
-        toast.success('Berhasil menghapus pengguna');
+        toast.success('Berhasil menghapus sekolah');
         setIsDeleteDialogOpen(false);
       } else {
         toast.error(res.error);
       }
     } catch (e) {
-      toast.error('Gagal menghapus pengguna');
+      toast.error('Gagal menghapus sekolah');
     } finally {
       setIsDeleting(false);
     }
@@ -80,51 +80,24 @@ export default function UsersPage() {
   const columns: ColumnDef<any>[] = [
     {
       accessorKey: 'nama',
-      header: 'Pengguna',
-      cell: ({ row }) => {
-        const user = row.original;
-        return (
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-              {user.nama.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <div className="font-medium text-gray-900">{user.nama}</div>
-              <div className="text-xs text-gray-500">{user.username}</div>
-            </div>
-          </div>
-        );
-      }
+      header: 'Nama Sekolah',
     },
     {
-      accessorKey: 'email',
-      header: 'Email',
+      accessorKey: 'npsn',
+      header: 'NPSN',
     },
     {
-      accessorKey: 'role',
-      header: 'Role',
-      cell: ({ row }) => {
-        const roles = row.original.userRoles;
-        if (!roles || roles.length === 0) return <span className="text-gray-400 italic">No Role</span>;
-        return (
-          <div className="flex flex-wrap gap-1">
-            {roles.map((ur: any) => (
-              <span key={ur.roleId} className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
-                {ur.role.namaRole}
-              </span>
-            ))}
-          </div>
-        );
-      }
+      accessorKey: 'jenjang',
+      header: 'Jenjang',
     },
     {
-      accessorKey: 'status',
+      accessorKey: 'isAktif',
       header: 'Status',
       cell: ({ row }) => {
-        const status = row.original.status;
+        const isAktif = row.original.isAktif;
         return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status === 'Aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-            {status}
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isAktif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            {isAktif ? 'Aktif' : 'Non-Aktif'}
           </span>
         );
       },
@@ -153,11 +126,11 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Manajemen Pengguna</h1>
-          <p className="text-sm text-gray-500">Kelola akses akun dan role pengguna sistem.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Master Sekolah</h1>
+          <p className="text-sm text-gray-500">Kelola data master institusi sekolah.</p>
         </div>
         <Button onClick={handleCreate} className="flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Tambah Pengguna
+          <Plus className="w-4 h-4" /> Tambah Sekolah
         </Button>
       </div>
 
@@ -169,7 +142,7 @@ export default function UsersPage() {
         onPaginationChange={setPagination}
       />
 
-      <UserForm 
+      <SekolahForm 
         open={isFormOpen} 
         onOpenChange={setIsFormOpen} 
         initialData={selectedData} 
