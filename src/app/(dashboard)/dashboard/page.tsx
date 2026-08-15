@@ -16,7 +16,7 @@ interface RecentMasukItem {
   nomorSurat: string;
   pengirim: string;
   perihal: string;
-  tanggalDiterima: string;
+  tanggalDiterima: string | null;
   status: string;
 }
 
@@ -25,7 +25,7 @@ interface RecentKeluarItem {
   nomorSurat: string | null;
   tujuanSurat: string;
   perihal: string;
-  tanggalSurat: string;
+  tanggalSurat: string | null;
   status: string;
 }
 

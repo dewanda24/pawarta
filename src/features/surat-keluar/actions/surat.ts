@@ -53,7 +53,14 @@ export async function getSuratKeluarList(params?: {
   }
 }
 
-export async function createSuratKeluar(data: InsertOutgoingLetter) {
+export type CreateSuratKeluarInput = Partial<InsertOutgoingLetter> & {
+  perihal: string;
+  tujuanSurat: string;
+  jenisSuratId: string;
+  klasifikasiId: string;
+};
+
+export async function createSuratKeluar(data: CreateSuratKeluarInput) {
   try {
     const user = await requireAuth('SURAT_KELUAR_CREATE');
 

@@ -31,6 +31,7 @@ interface OptionItem {
   id: string;
   nama?: string;
   kode?: string;
+  nip?: string | null;
 }
 
 interface OutgoingLetterFormProps {
