@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '../src/db/schema';
@@ -24,6 +25,10 @@ async function main() {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+
+    // Bersihkan data lama (opsional, hati-hati jika dipakai di production)
+    console.log('Clearing old data...');
+    await db.execute(sql`TRUNCATE TABLE master_sekolah, master_pegawai, master_jabatan, master_unit_kerja, master_instansi, master_jenis_surat, master_prioritas, master_sifat_surat CASCADE`);
 
     // 1. Master Unit Kerja
     console.log('Inserting Master Unit Kerja...');

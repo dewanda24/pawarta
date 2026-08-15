@@ -4,73 +4,139 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { outgoingLetterSchema, OutgoingLetterFormValues } from '@/features/outgoing-letter/validations';
-import { createOutgoingDraft } from '@/features/outgoing-letter/actions';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import { createSuratKeluar } from '@/features/surat-keluar/actions/surat';
+
+const formSchema = z.object({
+  perihal: z.string().min(1, 'Perihal wajib diisi'),
+  tujuanSurat: z.string().min(1, 'Tujuan surat wajib diisi'),
+  jenisSuratId: z.string().uuid('Pilih jenis surat'),
+  klasifikasiId: z.string().uuid('Pilih klasifikasi surat'),
+  prioritasId: z.string().uuid('Pilih prioritas').optional().nullable(),
+  sifatSuratId: z.string().uuid('Pilih sifat surat').optional().nullable(),
+  instansiTujuanId: z.string().uuid('Pilih instansi').optional().nullable(),
+  pembuatId: z.string().uuid('Pembuat ID tidak valid'),
+  unitKerjaId: z.string().uuid('Unit Kerja ID tidak valid'),
+  penandatanganId: z.string().uuid('Pilih penandatangan').optional().nullable(),
+  catatanTambahan: z.string().optional().nullable(),
+});
+
+type SuratKeluarFormValues = z.infer<typeof formSchema>;
 
 export default function CreateSuratKeluarPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<OutgoingLetterFormValues>({
-    resolver: zodResolver(outgoingLetterSchema),
+  const form = useForm<SuratKeluarFormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      templateId: '123e4567-e89b-12d3-a456-426614174000', // Mock UUID for testing since we don't fetch masters yet
-      jenisSuratId: '123e4567-e89b-12d3-a456-426614174000',
-      klasifikasiId: '123e4567-e89b-12d3-a456-426614174000',
-      unitKerjaId: '123e4567-e89b-12d3-a456-426614174000',
-      penandatanganId: '123e4567-e89b-12d3-a456-426614174000',
-    }
+      perihal: '',
+      tujuanSurat: '',
+      jenisSuratId: '',
+      klasifikasiId: '',
+      prioritasId: '',
+      sifatSuratId: '',
+      instansiTujuanId: '',
+      pembuatId: '', // Ini idealnya didapat dari session NextAuth saat render
+      unitKerjaId: '', // Idealnya dari session user
+      penandatanganId: '',
+      catatanTambahan: '',
+    },
   });
 
-  const onSubmit = async (data: OutgoingLetterFormValues) => {
-    setLoading(true);
-    setError(null);
-    const res = await createOutgoingDraft(data);
-    
-    if (res.error) {
-      setError(res.error);
-      setLoading(false);
-    } else if (res.success && res.data) {
-      // Redirect to editor to fill in the actual letter body
-      router.push(`/surat-keluar/${res.data.id}/editor`);
+  const onSubmit = async (data: SuratKeluarFormValues) => {
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        ...data,
+        prioritasId: data.prioritasId || null,
+        sifatSuratId: data.sifatSuratId || null,
+        instansiTujuanId: data.instansiTujuanId || null,
+        penandatanganId: data.penandatanganId || null,
+        catatanTambahan: data.catatanTambahan || null,
+      };
+
+      const result = await createSuratKeluar(payload as any);
+
+      if (result.success) {
+        toast.success('Draft surat keluar berhasil dibuat');
+        router.push('/surat-keluar');
+      } else {
+        toast.error(result.error || 'Terjadi kesalahan');
+      }
+    } catch (error) {
+      toast.error('Terjadi kesalahan sistem');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 md:p-8 pt-6">
-      <h2 className="text-2xl font-bold mb-6">Buat Draft Surat Keluar</h2>
-      
-      {error && <div className="bg-destructive/15 text-destructive p-3 rounded-md mb-4">{error}</div>}
+    <div className="space-y-6 max-w-4xl">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Buat Surat Keluar Baru</h1>
+        <p className="text-sm text-gray-500">Isi metadata awal untuk draft surat keluar.</p>
+      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 bg-white p-6 rounded-lg border shadow-sm">
-        
-        <div className="space-y-2">
-          <Label htmlFor="perihal">Perihal Surat</Label>
-          <Input id="perihal" {...register('perihal')} placeholder="Cth: Undangan Rapat Orang Tua" />
-          {errors.perihal && <p className="text-xs text-destructive">{errors.perihal.message}</p>}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 bg-white p-6 rounded-lg border shadow-sm">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2 col-span-2">
+            <Label htmlFor="perihal">Perihal Surat <span className="text-red-500">*</span></Label>
+            <Input id="perihal" {...form.register('perihal')} placeholder="Contoh: Undangan Rapat Koordinasi" />
+            {form.formState.errors.perihal && (
+              <p className="text-sm text-red-500">{form.formState.errors.perihal.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2 col-span-2">
+            <Label htmlFor="tujuanSurat">Tujuan Surat (Personal/Umum) <span className="text-red-500">*</span></Label>
+            <Input id="tujuanSurat" {...form.register('tujuanSurat')} placeholder="Kepada Yth. Kepala Dinas..." />
+            {form.formState.errors.tujuanSurat && (
+              <p className="text-sm text-red-500">{form.formState.errors.tujuanSurat.message}</p>
+            )}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="jenisSuratId">Jenis Surat ID (UUID) <span className="text-red-500">*</span></Label>
+            <Input id="jenisSuratId" {...form.register('jenisSuratId')} placeholder="ID Jenis Surat" />
+            {form.formState.errors.jenisSuratId && <p className="text-sm text-red-500">{form.formState.errors.jenisSuratId.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="klasifikasiId">Klasifikasi Surat ID (UUID) <span className="text-red-500">*</span></Label>
+            <Input id="klasifikasiId" {...form.register('klasifikasiId')} placeholder="ID Klasifikasi" />
+            {form.formState.errors.klasifikasiId && <p className="text-sm text-red-500">{form.formState.errors.klasifikasiId.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="pembuatId">Pembuat ID (UUID Konseptor) <span className="text-red-500">*</span></Label>
+            <Input id="pembuatId" {...form.register('pembuatId')} placeholder="ID User Anda" />
+            {form.formState.errors.pembuatId && <p className="text-sm text-red-500">{form.formState.errors.pembuatId.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="unitKerjaId">Unit Kerja ID (UUID) <span className="text-red-500">*</span></Label>
+            <Input id="unitKerjaId" {...form.register('unitKerjaId')} placeholder="ID Unit Kerja" />
+            {form.formState.errors.unitKerjaId && <p className="text-sm text-red-500">{form.formState.errors.unitKerjaId.message}</p>}
+          </div>
+
+          <div className="space-y-2 col-span-2">
+            <Label htmlFor="catatanTambahan">Catatan Tambahan</Label>
+            <Textarea id="catatanTambahan" {...form.register('catatanTambahan')} placeholder="Catatan untuk pimpinan atau reviewer" />
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="tujuanSurat">Tujuan (Personal/Nama)</Label>
-          <Input id="tujuanSurat" {...register('tujuanSurat')} placeholder="Cth: Bapak/Ibu Wali Murid Kelas X" />
-          {errors.tujuanSurat && <p className="text-xs text-destructive">{errors.tujuanSurat.message}</p>}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="catatanTambahan">Catatan Internal (Opsional)</Label>
-          <Input id="catatanTambahan" {...register('catatanTambahan')} />
-        </div>
-
-        {/* Note: the other UUID fields are mocked in defaultValues for now since building the master data dropdowns would take a lot of code */}
-        
-        <div className="flex justify-end space-x-2 pt-4">
-          <Button variant="outline" type="button" onClick={() => router.back()} disabled={loading}>Batal</Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Menyimpan...' : 'Simpan Draft & Edit Konten'}
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={() => router.push('/surat-keluar')}>
+            Batal
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Menyimpan...' : 'Simpan Draft'}
           </Button>
         </div>
       </form>

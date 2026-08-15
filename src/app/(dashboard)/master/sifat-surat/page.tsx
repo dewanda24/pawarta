@@ -5,16 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
+import { SifatSuratForm, SifatSuratFormValues } from './form';
 import { DeleteConfirmDialog } from '@/components/shared/delete-confirm-dialog';
-import { getSuratKeluarList, deleteSuratKeluar } from '@/features/surat-keluar/actions/surat';
+import { getSifatSuratList, deleteSifatSurat } from '@/features/master-data/actions/sifat-surat';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
 
-export default function SuratKeluarPage() {
-  const router = useRouter();
+export default function SifatSuratPage() {
   const [data, setData] = useState<any[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedData, setSelectedData] = useState<SifatSuratFormValues & { id?: string } | undefined>(undefined);
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -22,7 +24,7 @@ export default function SuratKeluarPage() {
 
   const fetchData = async () => {
     try {
-      const response = await getSuratKeluarList({
+      const response = await getSifatSuratList({
         limit: pagination.pageSize,
         offset: pagination.pageIndex * pagination.pageSize,
       });
@@ -34,16 +36,22 @@ export default function SuratKeluarPage() {
         toast.error(response.error);
       }
     } catch (error) {
-      toast.error('Gagal mengambil data surat keluar');
+      toast.error('Gagal mengambil data sifat surat');
     }
   };
 
   useEffect(() => {
     fetchData();
-  }, [pagination.pageIndex, pagination.pageSize, isDeleteDialogOpen]);
+  }, [pagination.pageIndex, pagination.pageSize, isFormOpen, isDeleteDialogOpen]);
+
+  const handleEdit = (item: any) => {
+    setSelectedData(item);
+    setIsFormOpen(true);
+  };
 
   const handleCreate = () => {
-    router.push('/surat-keluar/create');
+    setSelectedData(undefined);
+    setIsFormOpen(true);
   };
 
   const handleDeleteClick = (id: string) => {
@@ -55,15 +63,15 @@ export default function SuratKeluarPage() {
     if (!deletingId) return;
     setIsDeleting(true);
     try {
-      const res = await deleteSuratKeluar(deletingId);
+      const res = await deleteSifatSurat(deletingId);
       if (res.success) {
-        toast.success('Berhasil menghapus draft surat keluar');
+        toast.success('Berhasil menghapus sifat surat');
         setIsDeleteDialogOpen(false);
       } else {
         toast.error(res.error);
       }
     } catch (e) {
-      toast.error('Gagal menghapus draft surat keluar');
+      toast.error('Gagal menghapus sifat surat');
     } finally {
       setIsDeleting(false);
     }
@@ -71,31 +79,17 @@ export default function SuratKeluarPage() {
 
   const columns: ColumnDef<any>[] = [
     {
-      accessorKey: 'perihal',
-      header: 'Perihal',
+      accessorKey: 'nama',
+      header: 'Nama Sifat Surat',
     },
     {
-      accessorKey: 'tujuanSurat',
-      header: 'Tujuan',
-    },
-    {
-      accessorKey: 'jenisSurat.nama',
-      header: 'Jenis Surat',
-      cell: ({ row }) => row.original.jenisSurat?.nama || '-',
-    },
-    {
-      accessorKey: 'status',
+      accessorKey: 'isAktif',
       header: 'Status',
       cell: ({ row }) => {
-        const status = row.original.status;
-        let bg = 'bg-gray-100 text-gray-800';
-        if (status === 'DRAFT') bg = 'bg-yellow-100 text-yellow-800';
-        if (status === 'REVIEW') bg = 'bg-blue-100 text-blue-800';
-        if (status === 'APPROVED') bg = 'bg-green-100 text-green-800';
-        
+        const isAktif = row.original.isAktif;
         return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bg}`}>
-            {status}
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isAktif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            {isAktif ? 'Aktif' : 'Non-Aktif'}
           </span>
         );
       },
@@ -106,14 +100,12 @@ export default function SuratKeluarPage() {
         const item = row.original;
         return (
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => router.push(`/surat-keluar/${item.id}`)} className="text-blue-600">
-              Detail
+            <Button variant="ghost" size="sm" onClick={() => handleEdit(item)} className="text-blue-600">
+              Edit
             </Button>
-            {item.status === 'DRAFT' && (
-              <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(item.id)} className="text-red-600">
-                Hapus
-              </Button>
-            )}
+            <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(item.id)} className="text-red-600">
+              Hapus
+            </Button>
           </div>
         );
       },
@@ -126,11 +118,11 @@ export default function SuratKeluarPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Surat Keluar</h1>
-          <p className="text-sm text-gray-500">Kelola daftar surat keluar, persetujuan, dan pengiriman.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Master Sifat Surat</h1>
+          <p className="text-sm text-gray-500">Kelola master data sifat surat (Biasa, Penting, Rahasia).</p>
         </div>
         <Button onClick={handleCreate} className="flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Buat Draft Baru
+          <Plus className="w-4 h-4" /> Tambah Sifat Surat
         </Button>
       </div>
 
@@ -140,6 +132,12 @@ export default function SuratKeluarPage() {
         pageCount={pageCount}
         pagination={pagination}
         onPaginationChange={setPagination}
+      />
+
+      <SifatSuratForm 
+        open={isFormOpen} 
+        onOpenChange={setIsFormOpen} 
+        initialData={selectedData} 
       />
 
       <DeleteConfirmDialog
