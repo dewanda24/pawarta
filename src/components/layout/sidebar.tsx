@@ -5,71 +5,55 @@ import {
   Home,
   Inbox,
   Send,
-  Archive,
+  BookOpen,
   Users,
-  Settings,
-  FolderOpen,
+  FileText,
+  Building2,
   Shield,
-  Key,
   ChevronLeft,
   ChevronRight,
   Pin,
+  FolderOpen,
+  type LucideIcon,
 } from 'lucide-react';
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 
-const IconMap: Record<string, any> = {
+const IconMap: Record<string, LucideIcon> = {
   Home,
   Inbox,
   Send,
-  Archive,
+  BookOpen,
   Users,
-  Settings,
-  FolderOpen,
+  FileText,
+  Building2,
   Shield,
-  Key,
+  FolderOpen,
 };
 
-// Data statis sementara untuk UI mockup
+// Menu fokus lingkup persuratan sekolah (TU & Kepala Sekolah)
 const menuGroups = [
   {
-    title: 'Utama',
+    title: 'Menu Utama',
     items: [
       { id: '1', nama: 'Dashboard', icon: 'Home', route: '/dashboard' },
       { id: '2', nama: 'Surat Masuk', icon: 'Inbox', route: '/surat-masuk' },
       { id: '3', nama: 'Surat Keluar', icon: 'Send', route: '/surat-keluar' },
-      { id: '4', nama: 'Persetujuan & TTE', icon: 'Key', route: '/tanda-tangan' },
-    ]
+      { id: '4', nama: 'Buku Agenda & Rekap', icon: 'BookOpen', route: '/agenda-digital' },
+    ],
   },
   {
-    title: 'Manajemen Dokumen',
+    title: 'Master Data Sekolah',
     items: [
-      { id: '5', nama: 'Document Engine', icon: 'FolderOpen', route: '/document-engine' },
-      { id: '6', nama: 'Arsip Digital', icon: 'Archive', route: '/arsip' },
-      { id: '7', nama: 'Workspace', icon: 'Users', route: '/workspace' },
-    ]
+      { id: '5', nama: 'Guru & Staf Pegawai', icon: 'Users', route: '/master/pegawai' },
+      { id: '6', nama: 'Kode Klasifikasi Surat', icon: 'FileText', route: '/master/jenis-surat' },
+      { id: '7', nama: 'Daftar Instansi Relasi', icon: 'Building2', route: '/master/instansi' },
+    ],
   },
   {
-    title: 'Master Data',
-    items: [
-      { id: '10', nama: 'Unit Kerja', icon: 'FolderOpen', route: '/master/unit-kerja' },
-      { id: '11', nama: 'Jabatan', icon: 'FolderOpen', route: '/master/jabatan' },
-      { id: '12', nama: 'Pegawai', icon: 'Users', route: '/master/pegawai' },
-      { id: '18', nama: 'Penandatangan', icon: 'Users', route: '/master/penandatangan' },
-      { id: '13', nama: 'Sekolah', icon: 'FolderOpen', route: '/master/sekolah' },
-      { id: '14', nama: 'Instansi', icon: 'FolderOpen', route: '/master/instansi' },
-      { id: '15', nama: 'Jenis Surat', icon: 'FolderOpen', route: '/master/jenis-surat' },
-      { id: '16', nama: 'Prioritas', icon: 'FolderOpen', route: '/master/prioritas' },
-      { id: '17', nama: 'Sifat Surat', icon: 'FolderOpen', route: '/master/sifat-surat' },
-    ]
+    title: 'Pengaturan',
+    items: [{ id: '8', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/iam/users' }],
   },
-  {
-    title: 'Konfigurasi Sistem',
-    items: [
-      { id: '8', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/iam/users' },
-      { id: '9', nama: 'Audit Log', icon: 'Settings', route: '/audit' },
-    ]
-  }
 ];
 
 export function Sidebar() {
@@ -104,13 +88,12 @@ export function Sidebar() {
                   {group.title}
                 </div>
               )}
-              {collapsed && (
-                <div className="my-2 border-t border-gray-100 mx-2" />
-              )}
+              {collapsed && <div className="my-2 border-t border-gray-100 mx-2" />}
               <div className="space-y-1">
                 {group.items.map((item) => {
                   const Icon = item.icon && IconMap[item.icon] ? IconMap[item.icon] : FolderOpen;
-                  const isActive = pathname === item.route || pathname?.startsWith(`${item.route}/`);
+                  const isActive =
+                    pathname === item.route || pathname?.startsWith(`${item.route}/`);
                   return (
                     <Link
                       key={item.id}
@@ -139,7 +122,7 @@ export function Sidebar() {
       <div
         className={`p-4 border-t border-gray-100 text-xs text-gray-400 ${collapsed ? 'text-center' : ''}`}
       >
-        {!collapsed ? 'PAWARTA Enterprise 1.0' : '1.0'}
+        {!collapsed ? 'PAWARTA Persuratan Sekolah' : 'v1.0'}
       </div>
     </aside>
   );

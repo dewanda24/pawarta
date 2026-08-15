@@ -1,14 +1,7 @@
 import { db } from '@/db';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import {
-  incomingLetters,
-  incomingTimelines,
-  incomingDistributions,
-  incomingDispositions,
-} from '@/db/schema/incoming-letter';
+import { incomingLetters, incomingTimelines } from '@/db/schema/incoming-letter';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {
   masterInstansi,
   masterJenisSurat,
@@ -75,8 +68,14 @@ export default async function DetailSuratMasukPage({ params }: { params: { id: s
     .orderBy(desc(incomingTimelines.tanggal));
 
   const [pegawaiOpts, unitKerjaOpts] = await Promise.all([
-    db.select({ id: masterPegawai.id, nama: masterPegawai.nama }).from(masterPegawai).where(eq(masterPegawai.isAktif, true)),
-    db.select({ id: masterUnitKerja.id, nama: masterUnitKerja.nama }).from(masterUnitKerja).where(eq(masterUnitKerja.isAktif, true)),
+    db
+      .select({ id: masterPegawai.id, nama: masterPegawai.nama })
+      .from(masterPegawai)
+      .where(eq(masterPegawai.isAktif, true)),
+    db
+      .select({ id: masterUnitKerja.id, nama: masterUnitKerja.nama })
+      .from(masterUnitKerja)
+      .where(eq(masterUnitKerja.isAktif, true)),
   ]);
 
   return (
@@ -87,13 +86,13 @@ export default async function DetailSuratMasukPage({ params }: { params: { id: s
           <p className="text-muted-foreground">{letter.nomorSurat}</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/dashboard/surat-masuk">
+          <Link href="/surat-masuk">
             <Button variant="outline">Kembali</Button>
           </Link>
-          <LetterActions 
-            suratId={letter.id} 
-            pegawaiOpts={pegawaiOpts} 
-            unitKerjaOpts={unitKerjaOpts} 
+          <LetterActions
+            suratId={letter.id}
+            pegawaiOpts={pegawaiOpts}
+            unitKerjaOpts={unitKerjaOpts}
           />
         </div>
       </div>

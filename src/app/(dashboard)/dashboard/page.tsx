@@ -1,77 +1,277 @@
-import { BarChart3, Users, Mail, Activity, CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
+import { db } from '@/db';
+import { incomingLetters } from '@/db/schema/incoming-letter';
+import { outgoingLetters } from '@/db/schema/outgoing-letter';
+import { masterPegawai } from '@/db/schema/master';
+import { sql, desc } from 'drizzle-orm';
+import { Inbox, Send, Users, PlusCircle, BookOpen, ArrowRight, School } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-export default function DashboardPage() {
+export const metadata = {
+  title: 'Dashboard Persuratan Sekolah | PAWARTA',
+};
+
+interface RecentMasukItem {
+  id: string;
+  nomorSurat: string;
+  pengirim: string;
+  perihal: string;
+  tanggalDiterima: string;
+  status: string;
+}
+
+interface RecentKeluarItem {
+  id: string;
+  nomorSurat: string | null;
+  tujuanSurat: string;
+  perihal: string;
+  tanggalSurat: string;
+  status: string;
+}
+
+export default async function DashboardPage() {
+  // Ambil data statistik dengan fallback aman
+  let totalMasuk = 0;
+  let totalKeluar = 0;
+  let totalPegawai = 0;
+  let recentMasuk: RecentMasukItem[] = [];
+  let recentKeluar: RecentKeluarItem[] = [];
+
+  try {
+    const [masukCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(incomingLetters)
+      .where(sql`${incomingLetters.deletedAt} IS NULL`);
+    totalMasuk = Number(masukCount?.count || 0);
+
+    const [keluarCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(outgoingLetters)
+      .where(sql`${outgoingLetters.deletedAt} IS NULL`);
+    totalKeluar = Number(keluarCount?.count || 0);
+
+    const [pegawaiCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(masterPegawai)
+      .where(sql`${masterPegawai.deletedAt} IS NULL`);
+    totalPegawai = Number(pegawaiCount?.count || 0);
+
+    recentMasuk = await db
+      .select({
+        id: incomingLetters.id,
+        nomorSurat: incomingLetters.nomorSurat,
+        pengirim: incomingLetters.pengirim,
+        perihal: incomingLetters.perihal,
+        tanggalDiterima: incomingLetters.tanggalDiterima,
+        status: incomingLetters.status,
+      })
+      .from(incomingLetters)
+      .where(sql`${incomingLetters.deletedAt} IS NULL`)
+      .orderBy(desc(incomingLetters.createdAt))
+      .limit(5);
+
+    recentKeluar = await db
+      .select({
+        id: outgoingLetters.id,
+        nomorSurat: outgoingLetters.nomorSurat,
+        tujuanSurat: outgoingLetters.tujuanSurat,
+        perihal: outgoingLetters.perihal,
+        tanggalSurat: outgoingLetters.tanggalSurat,
+        status: outgoingLetters.status,
+      })
+      .from(outgoingLetters)
+      .where(sql`${outgoingLetters.deletedAt} IS NULL`)
+      .orderBy(desc(outgoingLetters.createdAt))
+      .limit(5);
+  } catch (error) {
+    console.error('Error loading dashboard stats:', error);
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      {/* Header Banner */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-blue-700 to-indigo-800 text-white p-6 sm:p-8 rounded-2xl shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Enterprise Dashboard</h1>
-          <p className="text-sm text-gray-500 mt-1">Ringkasan aktivitas dan metrik sistem utama.</p>
+          <div className="flex items-center gap-2 text-blue-200 text-sm font-medium mb-1">
+            <School className="w-4 h-4" />
+            <span>Sistem Informasi Administrasi Persuratan Sekolah</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Selamat Datang di PAWARTA
+          </h1>
+          <p className="text-blue-100 text-sm mt-1 max-w-xl">
+            Kelola alur surat masuk, penomoran surat keluar, lembar disposisi, dan rekapitulasi buku
+            agenda secara praktis.
+          </p>
         </div>
-        <div className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
-          Super Admin Workspace
+        <div className="flex gap-2 flex-wrap">
+          <Link href="/surat-masuk/tambah">
+            <Button className="bg-white text-blue-800 hover:bg-blue-50 font-semibold shadow-sm flex items-center gap-2">
+              <PlusCircle className="w-4 h-4" /> Catat Surat Masuk
+            </Button>
+          </Link>
+          <Link href="/surat-keluar/create">
+            <Button
+              variant="outline"
+              className="bg-blue-600/30 border-blue-400/40 text-white hover:bg-blue-600/50 flex items-center gap-2"
+            >
+              <Send className="w-4 h-4" /> Buat Surat Keluar
+            </Button>
+          </Link>
         </div>
       </div>
 
-      {/* Widget Grid Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        
-        {/* Widget 1: Statistic */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Total Pengguna</p>
-              <h3 className="text-3xl font-bold text-gray-900 mt-2">1,248</h3>
-            </div>
-            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-              <Users className="w-5 h-5" />
-            </div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Card 1: Surat Masuk */}
+        <div className="bg-white p-5 rounded-xl border border-gray-200/80 shadow-xs flex items-center justify-between hover:border-blue-300 transition-colors">
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Surat Masuk
+            </p>
+            <h3 className="text-2xl font-bold text-gray-900 mt-1">{totalMasuk}</h3>
+            <p className="text-xs text-muted-foreground mt-1">Total teregistrasi</p>
           </div>
-          <div className="mt-4 text-xs font-medium text-green-600 flex items-center gap-1">
-            <CheckCircle2 className="w-4 h-4" /> +12 minggu ini
+          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <Inbox className="w-6 h-6" />
           </div>
         </div>
 
-        {/* Widget 2: Mail (Placeholder for Surat Masuk) */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Surat Masuk Baru</p>
-              <h3 className="text-3xl font-bold text-gray-900 mt-2">56</h3>
-            </div>
-            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
-              <Mail className="w-5 h-5" />
-            </div>
+        {/* Card 2: Surat Keluar */}
+        <div className="bg-white p-5 rounded-xl border border-gray-200/80 shadow-xs flex items-center justify-between hover:border-emerald-300 transition-colors">
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Surat Keluar
+            </p>
+            <h3 className="text-2xl font-bold text-gray-900 mt-1">{totalKeluar}</h3>
+            <p className="text-xs text-muted-foreground mt-1">Total diterbitkan</p>
           </div>
-          <div className="mt-4 text-xs font-medium text-gray-400">Menunggu disposisi</div>
-        </div>
-
-        {/* Widget 3: Activity */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between hover:shadow-md transition-shadow xl:col-span-2">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Aktivitas Sistem</p>
-              <h3 className="text-xl font-bold text-gray-900 mt-1">Stabil</h3>
-            </div>
-            <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
-              <Activity className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
-            <span>Uptime: 99.9%</span>
-            <span>Error Rate: 0.01%</span>
-          </div>
-          <div className="mt-2 w-full bg-gray-100 rounded-full h-1.5">
-            <div className="bg-emerald-500 h-1.5 rounded-full w-[99%]" />
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <Send className="w-6 h-6" />
           </div>
         </div>
 
-        {/* Full width Chart Widget Mockup */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 md:col-span-2 xl:col-span-4 min-h-[300px] flex items-center justify-center flex-col">
-          <BarChart3 className="w-12 h-12 text-gray-300 mb-4" />
-          <p className="text-sm text-gray-500 font-medium">Data Chart Analytics (Tersedia setelah modul Arsip)</p>
+        {/* Card 3: Guru & Pegawai */}
+        <div className="bg-white p-5 rounded-xl border border-gray-200/80 shadow-xs flex items-center justify-between hover:border-purple-300 transition-colors">
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Guru & Staf
+            </p>
+            <h3 className="text-2xl font-bold text-gray-900 mt-1">{totalPegawai}</h3>
+            <p className="text-xs text-muted-foreground mt-1">Tujuan disposisi</p>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+            <Users className="w-6 h-6" />
+          </div>
         </div>
 
+        {/* Card 4: Buku Agenda */}
+        <div className="bg-white p-5 rounded-xl border border-gray-200/80 shadow-xs flex items-center justify-between hover:border-amber-300 transition-colors">
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Buku Agenda
+            </p>
+            <h3 className="text-2xl font-bold text-gray-900 mt-1">Siap Rekap</h3>
+            <Link
+              href="/agenda-digital"
+              className="text-xs text-amber-600 font-medium hover:underline flex items-center gap-1 mt-1"
+            >
+              Buka Rekapitulasi <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+            <BookOpen className="w-6 h-6" />
+          </div>
+        </div>
+      </div>
+
+      {/* Two Column Section: Recent Incoming & Outgoing */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Incoming Letters */}
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b pb-3">
+            <div className="flex items-center gap-2">
+              <Inbox className="w-5 h-5 text-blue-600" />
+              <h2 className="font-semibold text-gray-900">Surat Masuk Terbaru</h2>
+            </div>
+            <Link
+              href="/surat-masuk"
+              className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
+              Lihat Semua <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          <div className="divide-y divide-gray-100">
+            {recentMasuk.length === 0 ? (
+              <div className="py-8 text-center text-sm text-gray-400">
+                Belum ada data surat masuk.
+              </div>
+            ) : (
+              recentMasuk.map((item) => (
+                <div key={item.id} className="py-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {item.perihal || 'Tanpa Perihal'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Dari: <span className="font-medium text-gray-700">{item.pengirim}</span> • No:{' '}
+                      {item.nomorSurat}
+                    </p>
+                  </div>
+                  <Link href={`/surat-masuk/${item.id}`}>
+                    <Button variant="ghost" size="sm" className="text-xs h-7 px-2">
+                      Detail
+                    </Button>
+                  </Link>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Recent Outgoing Letters */}
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b pb-3">
+            <div className="flex items-center gap-2">
+              <Send className="w-5 h-5 text-emerald-600" />
+              <h2 className="font-semibold text-gray-900">Surat Keluar Terbaru</h2>
+            </div>
+            <Link
+              href="/surat-keluar"
+              className="text-xs font-medium text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+            >
+              Lihat Semua <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          <div className="divide-y divide-gray-100">
+            {recentKeluar.length === 0 ? (
+              <div className="py-8 text-center text-sm text-gray-400">
+                Belum ada data surat keluar.
+              </div>
+            ) : (
+              recentKeluar.map((item) => (
+                <div key={item.id} className="py-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {item.perihal || 'Tanpa Perihal'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Kepada: <span className="font-medium text-gray-700">{item.tujuanSurat}</span>{' '}
+                      • No: {item.nomorSurat || 'Draft'}
+                    </p>
+                  </div>
+                  <Link href={`/surat-keluar/${item.id}`}>
+                    <Button variant="ghost" size="sm" className="text-xs h-7 px-2">
+                      Detail
+                    </Button>
+                  </Link>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

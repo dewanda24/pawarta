@@ -66,3 +66,17 @@ export const storageFiles = pgTable('storage_files', {
   uploadedBy: uuid('uploaded_by').references(() => users.id, { onDelete: 'set null' }),
   tanggalUpload: timestamp('tanggal_upload').defaultNow().notNull(),
 });
+
+// ==========================================
+// 5. Activity Logs (Log Aktivitas Sistem)
+// ==========================================
+export const activityLogs = pgTable('activity_logs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  aksi: varchar('aksi', { length: 50 }).notNull(), // Create, Update, Delete, Login, Approve
+  modul: varchar('modul', { length: 100 }).notNull(), // Nama modul terkait e.g., Surat Masuk
+  detailAktivitas: text('detail_aktivitas').notNull(), // Deskripsi lengkap
+  ipAddress: varchar('ip_address', { length: 45 }),
+  metadata: jsonb('metadata'), // Menyimpan detail tambahan e.g., ID data yang diubah
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
