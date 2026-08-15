@@ -34,10 +34,22 @@ const IconMap: Record<string, any> = {
 const mockupMenus = [
   { id: '1', nama: 'Dashboard', icon: 'Home', route: '/dashboard' },
   { id: '2', nama: 'Surat Masuk', icon: 'Inbox', route: '/surat-masuk' },
-  { id: '3', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/iam/users' },
-  { id: '4', nama: 'Master Unit Kerja', icon: 'FolderOpen', route: '/master/unit-kerja' },
-  { id: '5', nama: 'Master Jabatan', icon: 'FolderOpen', route: '/master/jabatan' },
-  { id: '6', nama: 'Master Pegawai', icon: 'Users', route: '/master/pegawai' },
+  { id: '3', nama: 'Surat Keluar', icon: 'Send', route: '/surat-keluar' },
+  { id: '4', nama: 'Persetujuan & TTE', icon: 'Key', route: '/tanda-tangan' },
+  { id: '5', nama: 'Document Engine', icon: 'FolderOpen', route: '/document-engine' },
+  { id: '6', nama: 'Arsip Digital', icon: 'Archive', route: '/arsip' },
+  { id: '7', nama: 'Workspace', icon: 'Users', route: '/workspace' },
+  { id: '8', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/iam/users' },
+  { id: '9', nama: 'Audit Log', icon: 'Settings', route: '/audit' },
+  { id: '10', nama: 'Master Unit Kerja', icon: 'FolderOpen', route: '/master/unit-kerja' },
+  { id: '11', nama: 'Master Jabatan', icon: 'FolderOpen', route: '/master/jabatan' },
+  { id: '12', nama: 'Master Pegawai', icon: 'Users', route: '/master/pegawai' },
+  { id: '13', nama: 'Master Sekolah', icon: 'FolderOpen', route: '/master/sekolah' },
+  { id: '14', nama: 'Master Instansi', icon: 'FolderOpen', route: '/master/instansi' },
+  { id: '15', nama: 'Master Jenis Surat', icon: 'FolderOpen', route: '/master/jenis-surat' },
+  { id: '16', nama: 'Master Prioritas', icon: 'FolderOpen', route: '/master/prioritas' },
+  { id: '17', nama: 'Master Sifat Surat', icon: 'FolderOpen', route: '/master/sifat-surat' },
+  { id: '18', nama: 'Master Penandatangan', icon: 'Users', route: '/master/penandatangan' },
 ];
 
 export function Sidebar() {

@@ -4,6 +4,7 @@ import postgres from 'postgres';
 import * as schema from '../src/db/schema';
 import * as dotenv from 'dotenv';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 
 // Load environment variables
 dotenv.config({ path: '.env.local' });
@@ -29,6 +30,22 @@ async function main() {
     // Bersihkan data lama (opsional, hati-hati jika dipakai di production)
     console.log('Clearing old data...');
     await db.execute(sql`TRUNCATE TABLE master_sekolah, master_pegawai, master_jabatan, master_unit_kerja, master_instansi, master_jenis_surat, master_prioritas, master_sifat_surat CASCADE`);
+
+    // 0. User Admin
+    console.log('Inserting Admin User...');
+    const hashedPassword = await bcrypt.hash('password123', 10);
+    const users = [
+      {
+        id: crypto.randomUUID(),
+        username: 'admin',
+        email: 'admin@pawarta.com',
+        nama: 'Administrator',
+        passwordHash: hashedPassword,
+        status: 'Aktif',
+        ...defaultFields
+      }
+    ];
+    await db.insert(schema.users).values(users).onConflictDoNothing();
 
     // 1. Master Unit Kerja
     console.log('Inserting Master Unit Kerja...');
