@@ -2,8 +2,8 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '../src/db/schema';
 import * as dotenv from 'dotenv';
-import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { eq } from 'drizzle-orm';
 
 dotenv.config({ path: '.env.local' });
 
@@ -27,352 +27,310 @@ async function main() {
 
     const hashedPassword = await bcrypt.hash('password123', 10);
 
+    // Helper to get or create
     // 1. Master Unit Kerja
-    console.log('1. Membuat Master Unit Kerja...');
-    const [unitTU] = await db
-      .insert(schema.masterUnitKerja)
-      .values({
-        kode: 'TU-01',
-        nama: 'Tata Usaha / Subag Persuratan',
-        isAktif: true,
-        ...defaultFields,
-      })
-      .onConflictDoUpdate({
-        target: schema.masterUnitKerja.kode,
-        set: { nama: 'Tata Usaha / Subag Persuratan' },
-      })
-      .returning();
+    console.log('1. Sinkronisasi Master Unit Kerja...');
+    async function getOrCreateUnit(kode: string, nama: string) {
+      const existing = await db.query.masterUnitKerja.findFirst({
+        where: eq(schema.masterUnitKerja.kode, kode),
+      });
+      if (existing) return existing.id;
+      const [created] = await db
+        .insert(schema.masterUnitKerja)
+        .values({
+          kode,
+          nama,
+          isAktif: true,
+          ...defaultFields,
+        })
+        .returning();
+      return created.id;
+    }
 
-    const [unitKurikulum] = await db
-      .insert(schema.masterUnitKerja)
-      .values({
-        kode: 'KUR-01',
-        nama: 'Bidang Kurikulum',
-        isAktif: true,
-        ...defaultFields,
-      })
-      .onConflictDoUpdate({
-        target: schema.masterUnitKerja.kode,
-        set: { nama: 'Bidang Kurikulum' },
-      })
-      .returning();
-
-    const [unitKesiswaan] = await db
-      .insert(schema.masterUnitKerja)
-      .values({
-        kode: 'KES-01',
-        nama: 'Bidang Kesiswaan & OSIS',
-        isAktif: true,
-        ...defaultFields,
-      })
-      .onConflictDoUpdate({
-        target: schema.masterUnitKerja.kode,
-        set: { nama: 'Bidang Kesiswaan & OSIS' },
-      })
-      .returning();
-
-    const unitTUId = unitTU.id;
-    const unitKurikulumId = unitKurikulum.id;
-    const unitKesiswaanId = unitKesiswaan.id;
+    const unitTUId = await getOrCreateUnit('TU-01', 'Tata Usaha / Subag Persuratan');
+    const unitKurikulumId = await getOrCreateUnit('KUR-01', 'Bidang Kurikulum');
+    const unitKesiswaanId = await getOrCreateUnit('KES-01', 'Bidang Kesiswaan & OSIS');
 
     // 2. Master Jabatan
-    console.log('2. Membuat Master Jabatan...');
-    const [jabKepsek] = await db
-      .insert(schema.masterJabatan)
-      .values({
-        nama: 'Kepala Sekolah',
-        isAktif: true,
-        ...defaultFields,
-      })
-      .onConflictDoUpdate({ target: schema.masterJabatan.nama, set: { isAktif: true } })
-      .returning();
+    console.log('2. Sinkronisasi Master Jabatan...');
+    async function getOrCreateJabatan(nama: string) {
+      const existing = await db.query.masterJabatan.findFirst({
+        where: eq(schema.masterJabatan.nama, nama),
+      });
+      if (existing) return existing.id;
+      const [created] = await db
+        .insert(schema.masterJabatan)
+        .values({
+          nama,
+          isAktif: true,
+          ...defaultFields,
+        })
+        .returning();
+      return created.id;
+    }
 
-    const [jabWakasek] = await db
-      .insert(schema.masterJabatan)
-      .values({
-        nama: 'Wakil Kepala Sekolah',
-        isAktif: true,
-        ...defaultFields,
-      })
-      .onConflictDoUpdate({ target: schema.masterJabatan.nama, set: { isAktif: true } })
-      .returning();
-
-    const [jabKaTU] = await db
-      .insert(schema.masterJabatan)
-      .values({
-        nama: 'Kepala Tata Usaha',
-        isAktif: true,
-        ...defaultFields,
-      })
-      .onConflictDoUpdate({ target: schema.masterJabatan.nama, set: { isAktif: true } })
-      .returning();
-
-    const [jabGuru] = await db
-      .insert(schema.masterJabatan)
-      .values({
-        nama: 'Guru Mata Pelajaran',
-        isAktif: true,
-        ...defaultFields,
-      })
-      .onConflictDoUpdate({ target: schema.masterJabatan.nama, set: { isAktif: true } })
-      .returning();
-
-    const jabKepsekId = jabKepsek.id;
-    const jabWakasekId = jabWakasek.id;
-    const jabKaTUId = jabKaTU.id;
-    const jabGuruId = jabGuru.id;
+    const jabKepsekId = await getOrCreateJabatan('Kepala Sekolah');
+    const jabWakasekId = await getOrCreateJabatan('Wakil Kepala Sekolah');
+    const jabKaTUId = await getOrCreateJabatan('Kepala Tata Usaha');
+    const jabGuruId = await getOrCreateJabatan('Guru Mata Pelajaran');
 
     // 3. Master Pegawai (Guru & Staf)
-    console.log('3. Membuat Master Pegawai...');
-    const pegKepsekId = crypto.randomUUID();
-    const pegWakasekId = crypto.randomUUID();
-    const pegStaffTUId = crypto.randomUUID();
-    const pegGuruBKId = crypto.randomUUID();
+    console.log('3. Sinkronisasi Master Pegawai...');
+    async function getOrCreatePegawai(nip: string, data: typeof schema.masterPegawai.$inferInsert) {
+      const existing = await db.query.masterPegawai.findFirst({
+        where: eq(schema.masterPegawai.nip, nip),
+      });
+      if (existing) return existing.id;
+      const [created] = await db.insert(schema.masterPegawai).values(data).returning();
+      return created.id;
+    }
 
-    await db
-      .insert(schema.masterPegawai)
-      .values([
-        {
-          id: pegKepsekId,
-          nama: 'Drs. H. Ahmad Wijaya, M.Pd',
-          nip: '197503122000031001',
-          email: 'kepsek@sekolah.sch.id',
-          noHp: '081234567890',
-          unitKerjaId: unitTUId,
-          jabatanId: jabKepsekId,
-          statusAsn: 'PNS',
-          isAktif: true,
-          ...defaultFields,
-        },
-        {
-          id: pegWakasekId,
-          nama: 'Siti Rahmawati, S.Pd',
-          nip: '198207152006042003',
-          email: 'wakasek@sekolah.sch.id',
-          noHp: '081234567891',
-          unitKerjaId: unitKurikulumId,
-          jabatanId: jabWakasekId,
-          statusAsn: 'PNS',
-          isAktif: true,
-          ...defaultFields,
-        },
-        {
-          id: pegStaffTUId,
-          nama: 'Rina Kartika, A.Md',
-          nip: '199011202018012005',
-          email: 'tu@sekolah.sch.id',
-          noHp: '081234567892',
-          unitKerjaId: unitTUId,
-          jabatanId: jabKaTUId,
-          statusAsn: 'PPPK',
-          isAktif: true,
-          ...defaultFields,
-        },
-        {
-          id: pegGuruBKId,
-          nama: 'Budi Hermawan, S.Kom',
-          nip: '199304102022031004',
-          email: 'budi.guru@sekolah.sch.id',
-          noHp: '081234567893',
-          unitKerjaId: unitKesiswaanId,
-          jabatanId: jabGuruId,
-          statusAsn: 'PNS',
-          isAktif: true,
-          ...defaultFields,
-        },
-      ])
-      .onConflictDoNothing();
+    const pegKepsekId = await getOrCreatePegawai('197503122000031001', {
+      nama: 'Drs. H. Ahmad Wijaya, M.Pd',
+      nip: '197503122000031001',
+      email: 'kepsek@sekolah.sch.id',
+      noHp: '081234567890',
+      unitKerjaId: unitTUId,
+      jabatanId: jabKepsekId,
+      statusAsn: 'PNS',
+      isAktif: true,
+      ...defaultFields,
+    });
+
+    const pegWakasekId = await getOrCreatePegawai('198207152006042003', {
+      nama: 'Siti Rahmawati, S.Pd',
+      nip: '198207152006042003',
+      email: 'wakasek@sekolah.sch.id',
+      noHp: '081234567891',
+      unitKerjaId: unitKurikulumId,
+      jabatanId: jabWakasekId,
+      statusAsn: 'PNS',
+      isAktif: true,
+      ...defaultFields,
+    });
+
+    const pegStaffTUId = await getOrCreatePegawai('199011202018012005', {
+      nama: 'Rina Kartika, A.Md',
+      nip: '199011202018012005',
+      email: 'tu@sekolah.sch.id',
+      noHp: '081234567892',
+      unitKerjaId: unitTUId,
+      jabatanId: jabKaTUId,
+      statusAsn: 'PPPK',
+      isAktif: true,
+      ...defaultFields,
+    });
+
+    const pegGuruBKId = await getOrCreatePegawai('199304102022031004', {
+      nama: 'Budi Hermawan, S.Kom',
+      nip: '199304102022031004',
+      email: 'budi.guru@sekolah.sch.id',
+      noHp: '081234567893',
+      unitKerjaId: unitKesiswaanId,
+      jabatanId: jabGuruId,
+      statusAsn: 'PNS',
+      isAktif: true,
+      ...defaultFields,
+    });
 
     // 4. User Logins (Pengguna Sistem)
-    console.log('4. Membuat Akun Logins (Admin, Kepsek, Wakasek, Guru)...');
-    const userAdminId = crypto.randomUUID();
-    const userKepsekId = crypto.randomUUID();
-    const userWakasekId = crypto.randomUUID();
-    const userGuruId = crypto.randomUUID();
+    console.log('4. Sinkronisasi Akun Pengguna (Admin, Kepsek, Wakasek, Guru)...');
+    async function getOrCreateUser(username: string, data: typeof schema.users.$inferInsert) {
+      const existing = await db.query.users.findFirst({
+        where: eq(schema.users.username, username),
+      });
+      if (existing) return existing.id;
+      const [created] = await db.insert(schema.users).values(data).returning();
+      return created.id;
+    }
 
-    await db
-      .insert(schema.users)
-      .values([
-        {
-          id: userAdminId,
-          username: 'admin',
-          email: 'admin@sekolah.sch.id',
-          nama: 'Admin TU Sekolah',
-          passwordHash: hashedPassword,
-          status: 'Aktif',
-          pegawaiId: pegStaffTUId,
-          ...defaultFields,
-        },
-        {
-          id: userKepsekId,
-          username: 'kepsek',
-          email: 'kepsek@sekolah.sch.id',
-          nama: 'Drs. H. Ahmad Wijaya, M.Pd (Kepsek)',
-          passwordHash: hashedPassword,
-          status: 'Aktif',
-          pegawaiId: pegKepsekId,
-          ...defaultFields,
-        },
-        {
-          id: userWakasekId,
-          username: 'wakasek',
-          email: 'wakasek@sekolah.sch.id',
-          nama: 'Siti Rahmawati, S.Pd (Wakasek Kurikulum)',
-          passwordHash: hashedPassword,
-          status: 'Aktif',
-          pegawaiId: pegWakasekId,
-          ...defaultFields,
-        },
-        {
-          id: userGuruId,
-          username: 'guru',
-          email: 'guru@sekolah.sch.id',
-          nama: 'Budi Hermawan, S.Kom (Guru)',
-          passwordHash: hashedPassword,
-          status: 'Aktif',
-          pegawaiId: pegGuruBKId,
-          ...defaultFields,
-        },
-      ])
-      .onConflictDoNothing();
+    const userAdminId = await getOrCreateUser('admin', {
+      username: 'admin',
+      email: 'admin@sekolah.sch.id',
+      nama: 'Admin TU Sekolah',
+      passwordHash: hashedPassword,
+      status: 'Aktif',
+      pegawaiId: pegStaffTUId,
+      ...defaultFields,
+    });
 
-    // 5. Master Klasifikasi Surat Dinas Sekolah (Format Kode Baku 421.x)
-    console.log('5. Membuat Master Kode Klasifikasi Surat Dinas Sekolah...');
-    const klasKurikulumId = crypto.randomUUID();
-    const klasKesiswaanId = crypto.randomUUID();
-    const klasKeuanganId = crypto.randomUUID();
-    const klasKepegawaianId = crypto.randomUUID();
+    const userKepsekId = await getOrCreateUser('kepsek', {
+      username: 'kepsek',
+      email: 'kepsek@sekolah.sch.id',
+      nama: 'Drs. H. Ahmad Wijaya, M.Pd (Kepsek)',
+      passwordHash: hashedPassword,
+      status: 'Aktif',
+      pegawaiId: pegKepsekId,
+      ...defaultFields,
+    });
 
-    await db
-      .insert(schema.masterKlasifikasiSurat)
-      .values([
-        {
-          id: klasKurikulumId,
-          kode: '421.1',
-          nama: 'Kurikulum & Pengajaran',
-          deskripsi: 'Surat terkait jadwal, ujian, dan kurikulum',
+    const userWakasekId = await getOrCreateUser('wakasek', {
+      username: 'wakasek',
+      email: 'wakasek@sekolah.sch.id',
+      nama: 'Siti Rahmawati, S.Pd (Wakasek Kurikulum)',
+      passwordHash: hashedPassword,
+      status: 'Aktif',
+      pegawaiId: pegWakasekId,
+      ...defaultFields,
+    });
+
+    await getOrCreateUser('guru', {
+      username: 'guru',
+      email: 'guru@sekolah.sch.id',
+      nama: 'Budi Hermawan, S.Kom (Guru)',
+      passwordHash: hashedPassword,
+      status: 'Aktif',
+      pegawaiId: pegGuruBKId,
+      ...defaultFields,
+    });
+
+    // 5. Master Klasifikasi Surat Dinas Sekolah
+    console.log('5. Sinkronisasi Master Kode Klasifikasi Surat...');
+    async function getOrCreateKlasifikasi(kode: string, nama: string, deskripsi: string) {
+      const existing = await db.query.masterKlasifikasiSurat.findFirst({
+        where: eq(schema.masterKlasifikasiSurat.kode, kode),
+      });
+      if (existing) return existing.id;
+      const [created] = await db
+        .insert(schema.masterKlasifikasiSurat)
+        .values({
+          kode,
+          nama,
+          deskripsi,
           isAktif: true,
           ...defaultFields,
-        },
-        {
-          id: klasKesiswaanId,
-          kode: '421.2',
-          nama: 'Kesiswaan & Ekstrakurikuler',
-          deskripsi: 'Surat edaran wali murid, osis, beasiswa',
-          isAktif: true,
-          ...defaultFields,
-        },
-        {
-          id: klasKeuanganId,
-          kode: '421.3',
-          nama: 'Keuangan & Komite',
-          deskripsi: 'SPP, sumbangan komite, bantuan operasional',
-          isAktif: true,
-          ...defaultFields,
-        },
-        {
-          id: klasKepegawaianId,
-          kode: '421.5',
-          nama: 'Kepegawaian & Tata Usaha',
-          deskripsi: 'Surat tugas guru, izin operasional, SK',
-          isAktif: true,
-          ...defaultFields,
-        },
-      ])
-      .onConflictDoNothing();
+        })
+        .returning();
+      return created.id;
+    }
+
+    const klasKurikulumId = await getOrCreateKlasifikasi(
+      '421.1',
+      'Kurikulum & Pengajaran',
+      'Surat terkait jadwal, ujian, dan kurikulum',
+    );
+    const klasKesiswaanId = await getOrCreateKlasifikasi(
+      '421.2',
+      'Kesiswaan & Ekstrakurikuler',
+      'Surat edaran wali murid, osis, beasiswa',
+    );
+    await getOrCreateKlasifikasi(
+      '421.3',
+      'Keuangan & Komite',
+      'SPP, sumbangan komite, bantuan operasional',
+    );
+    const klasKepegawaianId = await getOrCreateKlasifikasi(
+      '421.5',
+      'Kepegawaian & Tata Usaha',
+      'Surat tugas guru, izin operasional, SK',
+    );
 
     // 6. Master Jenis Surat
-    console.log('6. Membuat Master Jenis Surat...');
-    const jenisUndanganId = crypto.randomUUID();
-    const jenisTugasId = crypto.randomUUID();
-    const jenisEdaranId = crypto.randomUUID();
-    const jenisSKId = crypto.randomUUID();
+    console.log('6. Sinkronisasi Master Jenis Surat...');
+    async function getOrCreateJenis(kode: string, nama: string) {
+      const existing = await db.query.masterJenisSurat.findFirst({
+        where: eq(schema.masterJenisSurat.kode, kode),
+      });
+      if (existing) return existing.id;
+      const [created] = await db
+        .insert(schema.masterJenisSurat)
+        .values({
+          kode,
+          nama,
+          isAktif: true,
+          ...defaultFields,
+        })
+        .returning();
+      return created.id;
+    }
 
-    await db
-      .insert(schema.masterJenisSurat)
-      .values([
-        {
-          id: jenisUndanganId,
-          kode: 'SU',
-          nama: 'Surat Undangan',
-          isAktif: true,
-          ...defaultFields,
-        },
-        { id: jenisTugasId, kode: 'ST', nama: 'Surat Tugas', isAktif: true, ...defaultFields },
-        { id: jenisEdaranId, kode: 'SE', nama: 'Surat Edaran', isAktif: true, ...defaultFields },
-        {
-          id: jenisSKId,
-          kode: 'SK',
-          nama: 'Surat Keputusan (SK)',
-          isAktif: true,
-          ...defaultFields,
-        },
-      ])
-      .onConflictDoNothing();
+    const jenisUndanganId = await getOrCreateJenis('SU', 'Surat Undangan');
+    const jenisTugasId = await getOrCreateJenis('ST', 'Surat Tugas');
+    const jenisEdaranId = await getOrCreateJenis('SE', 'Surat Edaran');
+    await getOrCreateJenis('SK', 'Surat Keputusan (SK)');
 
     // 7. Master Prioritas & Sifat Surat
-    console.log('7. Membuat Master Prioritas & Sifat Surat...');
-    const prioritasBiasaId = crypto.randomUUID();
-    const prioritasSegeraId = crypto.randomUUID();
+    console.log('7. Sinkronisasi Master Prioritas & Sifat Surat...');
+    async function getOrCreatePrioritas(nama: string) {
+      const existing = await db.query.masterPrioritas.findFirst({
+        where: eq(schema.masterPrioritas.nama, nama),
+      });
+      if (existing) return existing.id;
+      const [created] = await db
+        .insert(schema.masterPrioritas)
+        .values({
+          nama,
+          isAktif: true,
+          ...defaultFields,
+        })
+        .returning();
+      return created.id;
+    }
 
-    await db
-      .insert(schema.masterPrioritas)
-      .values([
-        { id: prioritasBiasaId, nama: 'Biasa', isAktif: true, ...defaultFields },
-        { id: prioritasSegeraId, nama: 'Segera / Penting', isAktif: true, ...defaultFields },
-      ])
-      .onConflictDoNothing();
+    const prioritasBiasaId = await getOrCreatePrioritas('Biasa');
+    const prioritasSegeraId = await getOrCreatePrioritas('Segera / Penting');
 
-    const sifatBiasaId = crypto.randomUUID();
-    const sifatRahasiaId = crypto.randomUUID();
+    async function getOrCreateSifat(nama: string) {
+      const existing = await db.query.masterSifatSurat.findFirst({
+        where: eq(schema.masterSifatSurat.nama, nama),
+      });
+      if (existing) return existing.id;
+      const [created] = await db
+        .insert(schema.masterSifatSurat)
+        .values({
+          nama,
+          isAktif: true,
+          ...defaultFields,
+        })
+        .returning();
+      return created.id;
+    }
 
-    await db
-      .insert(schema.masterSifatSurat)
-      .values([
-        { id: sifatBiasaId, nama: 'Biasa', isAktif: true, ...defaultFields },
-        { id: sifatRahasiaId, nama: 'Rahasia / Terbatas', isAktif: true, ...defaultFields },
-      ])
-      .onConflictDoNothing();
+    const sifatBiasaId = await getOrCreateSifat('Biasa');
+    await getOrCreateSifat('Rahasia / Terbatas');
 
     // 8. Master Instansi Relasi
-    console.log('8. Membuat Master Instansi Relasi...');
-    const instansiDinasId = crypto.randomUUID();
-    const instansiPuskesmasId = crypto.randomUUID();
+    console.log('8. Sinkronisasi Master Instansi Relasi...');
+    async function getOrCreateInstansi(
+      nama: string,
+      data: typeof schema.masterInstansi.$inferInsert,
+    ) {
+      const existing = await db.query.masterInstansi.findFirst({
+        where: eq(schema.masterInstansi.nama, nama),
+      });
+      if (existing) return existing.id;
+      const [created] = await db.insert(schema.masterInstansi).values(data).returning();
+      return created.id;
+    }
 
-    await db
-      .insert(schema.masterInstansi)
-      .values([
-        {
-          id: instansiDinasId,
-          nama: 'Dinas Pendidikan & Kebudayaan Provinsi',
-          jenis: 'Instansi Pemerintah',
-          kota: 'Kota Utama',
-          email: 'disdik@provinsi.go.id',
-          isAktif: true,
-          ...defaultFields,
-        },
-        {
-          id: instansiPuskesmasId,
-          nama: 'Puskesmas Kecamatan Pembina',
-          jenis: 'Fasilitas Kesehatan',
-          kota: 'Kota Utama',
-          email: 'puskesmas@kota.go.id',
-          isAktif: true,
-          ...defaultFields,
-        },
-      ])
-      .onConflictDoNothing();
+    const instansiDinasId = await getOrCreateInstansi('Dinas Pendidikan & Kebudayaan Provinsi', {
+      nama: 'Dinas Pendidikan & Kebudayaan Provinsi',
+      jenis: 'Instansi Pemerintah',
+      kota: 'Kota Utama',
+      email: 'disdik@provinsi.go.id',
+      isAktif: true,
+      ...defaultFields,
+    });
+
+    const instansiPuskesmasId = await getOrCreateInstansi('Puskesmas Kecamatan Pembina', {
+      nama: 'Puskesmas Kecamatan Pembina',
+      jenis: 'Fasilitas Kesehatan',
+      kota: 'Kota Utama',
+      email: 'puskesmas@kota.go.id',
+      isAktif: true,
+      ...defaultFields,
+    });
 
     // 9. Sample Data Surat Masuk
     console.log('9. Membuat Contoh Data Surat Masuk...');
-    const suratMasuk1Id = crypto.randomUUID();
-    const suratMasuk2Id = crypto.randomUUID();
+    let suratMasuk1 = await db.query.incomingLetters.findFirst({
+      where: eq(schema.incomingLetters.nomorAgenda, '001/SM/2026'),
+    });
 
-    await db
-      .insert(schema.incomingLetters)
-      .values([
-        {
-          id: suratMasuk1Id,
+    if (!suratMasuk1) {
+      const [created] = await db
+        .insert(schema.incomingLetters)
+        .values({
           nomorAgenda: '001/SM/2026',
           nomorSurat: '005/DISDIK/IV/2026',
           tanggalSurat: '2026-08-01',
@@ -389,104 +347,121 @@ async function main() {
           status: 'DISPOSITIONED',
           createdAt: new Date(),
           updatedAt: new Date(),
-        },
-        {
-          id: suratMasuk2Id,
-          nomorAgenda: '002/SM/2026',
-          nomorSurat: '112/PKM/VIII/2026',
-          tanggalSurat: '2026-08-05',
-          tanggalDiterima: '2026-08-06',
-          pengirim: 'dr. Endang Sri (Kepala Puskesmas)',
-          instansiPengirimId: instansiPuskesmasId,
-          perihal: 'Permohonan Pelaksanaan Pemeriksaan Kesehatan Remaja & DPT',
-          ringkasanIsi: 'Jadwal pemeriksaan kesehatan gratis untuk siswa kelas X.',
-          jenisSuratId: jenisUndanganId,
-          klasifikasiId: klasKesiswaanId,
-          prioritasId: prioritasBiasaId,
-          sifatSuratId: sifatBiasaId,
-          status: 'REGISTERED',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ])
-      .onConflictDoNothing();
+        })
+        .returning();
+      suratMasuk1 = created;
+    }
+
+    const suratMasuk2 = await db.query.incomingLetters.findFirst({
+      where: eq(schema.incomingLetters.nomorAgenda, '002/SM/2026'),
+    });
+
+    if (!suratMasuk2) {
+      await db.insert(schema.incomingLetters).values({
+        nomorAgenda: '002/SM/2026',
+        nomorSurat: '112/PKM/VIII/2026',
+        tanggalSurat: '2026-08-05',
+        tanggalDiterima: '2026-08-06',
+        pengirim: 'dr. Endang Sri (Kepala Puskesmas)',
+        instansiPengirimId: instansiPuskesmasId,
+        perihal: 'Permohonan Pelaksanaan Pemeriksaan Kesehatan Remaja & DPT',
+        ringkasanIsi: 'Jadwal pemeriksaan kesehatan gratis untuk siswa kelas X.',
+        jenisSuratId: jenisUndanganId,
+        klasifikasiId: klasKesiswaanId,
+        prioritasId: prioritasBiasaId,
+        sifatSuratId: sifatBiasaId,
+        status: 'REGISTERED',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
 
     // 10. Sample Disposisi untuk Surat Masuk 1
-    console.log('10. Membuat Contoh Disposisi Kepsek...');
-    await db
-      .insert(schema.incomingDispositions)
-      .values([
-        {
-          id: crypto.randomUUID(),
-          suratId: suratMasuk1Id,
+    if (suratMasuk1) {
+      console.log('10. Membuat Contoh Disposisi Kepsek...');
+      const existingDisp = await db.query.incomingDispositions.findFirst({
+        where: eq(schema.incomingDispositions.suratId, suratMasuk1.id),
+      });
+
+      if (!existingDisp) {
+        await db.insert(schema.incomingDispositions).values({
+          suratId: suratMasuk1.id,
           pemberiDisposisiId: userKepsekId,
           penerimaDisposisiId: userWakasekId,
           instruksi: 'Harap hadir dampingi saya dan siapkan berkas laporan kurikulum sekolah.',
           status: 'MENUNGGU',
           createdAt: new Date(),
           updatedAt: new Date(),
-        },
-      ])
-      .onConflictDoNothing();
+        });
+      }
+    }
 
     // 11. Sample Data Surat Keluar
     console.log('11. Membuat Contoh Data Surat Keluar...');
-    await db
-      .insert(schema.outgoingLetters)
-      .values([
-        {
-          id: crypto.randomUUID(),
-          nomorAgenda: '001/SK/2026',
-          nomorSurat: '421.2/012/SMA-01/2026',
-          jenisSuratId: jenisEdaranId,
-          klasifikasiId: klasKesiswaanId,
-          prioritasId: prioritasBiasaId,
-          sifatSuratId: sifatBiasaId,
-          perihal: 'Surat Edaran Pelaksanaan Penilaian Tengah Semester (PTS) Ganjil',
-          tujuanSurat: 'Seluruh Orang Tua / Wali Murid Kelas X, XI, XII',
-          pembuatId: userAdminId,
-          unitKerjaId: unitTUId,
-          penandatanganId: pegKepsekId,
-          tanggalSurat: '2026-08-10',
-          tanggalTerbit: '2026-08-10',
-          status: 'PUBLISHED',
-          catatanTambahan: 'Telah ditandatangani dan dibagikan via grup sekolah & cetak.',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: crypto.randomUUID(),
-          nomorAgenda: '002/SK/2026',
-          nomorSurat: '421.5/018/SMA-01/2026',
-          jenisSuratId: jenisTugasId,
-          klasifikasiId: klasKepegawaianId,
-          prioritasId: prioritasSegeraId,
-          sifatSuratId: sifatBiasaId,
-          perihal: 'Surat Tugas Pendampingan Kontingen Lomba Bahasa & Seni',
-          tujuanSurat: 'Budi Hermawan, S.Kom (Guru Pembina)',
-          pembuatId: userAdminId,
-          unitKerjaId: unitKesiswaanId,
-          penandatanganId: pegKepsekId,
-          tanggalSurat: '2026-08-12',
-          tanggalTerbit: '2026-08-12',
-          status: 'APPROVED',
-          catatanTambahan: 'Pelaksanaan tugas tanggal 18-20 Agustus 2026.',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ])
-      .onConflictDoNothing();
+    const suratKeluar1 = await db.query.outgoingLetters.findFirst({
+      where: eq(schema.outgoingLetters.nomorAgenda, '001/SK/2026'),
+    });
 
-    console.log('✅ SEEDING DATA DUMMY SEKOLAH BERHASIL!');
-    console.log('\n--- AKUN UNTUK UJI COBA (PASSWORD SAMA: password123) ---');
+    if (!suratKeluar1) {
+      await db.insert(schema.outgoingLetters).values({
+        nomorAgenda: '001/SK/2026',
+        nomorSurat: '421.2/012/SMA-01/2026',
+        jenisSuratId: jenisEdaranId,
+        klasifikasiId: klasKesiswaanId,
+        prioritasId: prioritasBiasaId,
+        sifatSuratId: sifatBiasaId,
+        perihal: 'Surat Edaran Pelaksanaan Penilaian Tengah Semester (PTS) Ganjil',
+        tujuanSurat: 'Seluruh Orang Tua / Wali Murid Kelas X, XI, XII',
+        pembuatId: userAdminId,
+        unitKerjaId: unitTUId,
+        penandatanganId: pegKepsekId,
+        tanggalSurat: '2026-08-10',
+        tanggalTerbit: '2026-08-10',
+        status: 'PUBLISHED',
+        catatanTambahan: 'Telah ditandatangani dan dibagikan via grup sekolah & cetak.',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+
+    const suratKeluar2 = await db.query.outgoingLetters.findFirst({
+      where: eq(schema.outgoingLetters.nomorAgenda, '002/SK/2026'),
+    });
+
+    if (!suratKeluar2) {
+      await db.insert(schema.outgoingLetters).values({
+        nomorAgenda: '002/SK/2026',
+        nomorSurat: '421.5/018/SMA-01/2026',
+        jenisSuratId: jenisTugasId,
+        klasifikasiId: klasKepegawaianId,
+        prioritasId: prioritasSegeraId,
+        sifatSuratId: sifatBiasaId,
+        perihal: 'Surat Tugas Pendampingan Kontingen Lomba Bahasa & Seni',
+        tujuanSurat: 'Budi Hermawan, S.Kom (Guru Pembina)',
+        pembuatId: userAdminId,
+        unitKerjaId: unitKesiswaanId,
+        penandatanganId: pegKepsekId,
+        tanggalSurat: '2026-08-12',
+        tanggalTerbit: '2026-08-12',
+        status: 'APPROVED',
+        catatanTambahan: 'Pelaksanaan tugas tanggal 18-20 Agustus 2026.',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+
+    console.log('\n🎉 SEEDING DATA DUMMY SEKOLAH BERHASIL DILAKUKAN!');
+    console.log('============================================================');
+    console.log('AKUN UJI COBA (PASSWORD SAMA: password123)');
     console.log('1. Admin TU        : username = admin    | password = password123');
     console.log('2. Kepala Sekolah  : username = kepsek   | password = password123');
     console.log('3. Wakasek         : username = wakasek  | password = password123');
     console.log('4. Guru / Staf     : username = guru     | password = password123');
-    console.log('------------------------------------------------------------\n');
+    console.log('============================================================\n');
   } catch (error) {
     console.error('❌ Error saat seeding data dummy:', error);
   } finally {
+    await client.end();
     process.exit(0);
   }
 }
