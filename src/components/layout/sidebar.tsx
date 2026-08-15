@@ -14,6 +14,8 @@ import {
   ChevronRight,
   Pin,
   FolderOpen,
+  GraduationCap,
+  School,
   type LucideIcon,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -29,30 +31,35 @@ const IconMap: Record<string, LucideIcon> = {
   Building2,
   Shield,
   FolderOpen,
+  GraduationCap,
+  School,
 };
 
-// Menu fokus lingkup persuratan sekolah (TU & Kepala Sekolah)
+// Menu fokus lingkup persuratan sekolah (TU, Guru, Wakasek, Kepala Sekolah)
 const menuGroups = [
   {
     title: 'Menu Utama',
     items: [
       { id: '1', nama: 'Dashboard', icon: 'Home', route: '/dashboard' },
       { id: '2', nama: 'Surat Masuk', icon: 'Inbox', route: '/surat-masuk' },
-      { id: '3', nama: 'Surat Keluar', icon: 'Send', route: '/surat-keluar' },
-      { id: '4', nama: 'Buku Agenda & Rekap', icon: 'BookOpen', route: '/agenda-digital' },
+      { id: '3', nama: 'Surat Keluar (Dinas)', icon: 'Send', route: '/surat-keluar' },
+      { id: '4', nama: 'Surat Kesiswaan', icon: 'GraduationCap', route: '/surat-siswa' },
+      { id: '5', nama: 'Buku Agenda & Rekap', icon: 'BookOpen', route: '/agenda-digital' },
     ],
   },
   {
     title: 'Master Data Sekolah',
     items: [
-      { id: '5', nama: 'Guru & Staf Pegawai', icon: 'Users', route: '/master/pegawai' },
-      { id: '6', nama: 'Kode Klasifikasi Surat', icon: 'FileText', route: '/master/jenis-surat' },
-      { id: '7', nama: 'Daftar Instansi Relasi', icon: 'Building2', route: '/master/instansi' },
+      { id: '6', nama: 'Data Siswa', icon: 'GraduationCap', route: '/master/siswa' },
+      { id: '7', nama: 'Rombel / Kelas', icon: 'School', route: '/master/kelas' },
+      { id: '8', nama: 'Guru & Staf Pegawai', icon: 'Users', route: '/master/pegawai' },
+      { id: '9', nama: 'Kode Klasifikasi Surat', icon: 'FileText', route: '/master/jenis-surat' },
+      { id: '10', nama: 'Daftar Instansi Relasi', icon: 'Building2', route: '/master/instansi' },
     ],
   },
   {
     title: 'Pengaturan',
-    items: [{ id: '8', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/iam/users' }],
+    items: [{ id: '11', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/iam/users' }],
   },
 ];
 

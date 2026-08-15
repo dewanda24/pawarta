@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Printer, Inbox, Send, Search } from 'lucide-react';
 import { getIncomingLetters } from '@/features/incoming-letter/actions';
+import { getSuratKeluarList } from '@/features/surat-keluar/actions/surat';
 import { toast } from 'sonner';
 
-interface AgendaItem {
+interface AgendaMasukItem {
   id?: string;
   nomorAgenda?: string;
   nomorSurat?: string;
@@ -20,9 +21,23 @@ interface AgendaItem {
   klasifikasi?: { kode?: string; nama?: string };
 }
 
+interface AgendaKeluarItem {
+  id?: string;
+  nomorAgenda?: string;
+  nomorSurat?: string;
+  tanggalSurat?: string | Date;
+  tanggalTerbit?: string | Date;
+  tujuanSurat?: string;
+  perihal?: string;
+  status?: string;
+  jenisSurat?: { kode?: string; nama?: string };
+  pembuat?: { nama?: string };
+}
+
 export default function AgendaDigitalPage() {
   const [activeTab, setActiveTab] = useState<'masuk' | 'keluar'>('masuk');
-  const [incomingData, setIncomingData] = useState<AgendaItem[]>([]);
+  const [incomingData, setIncomingData] = useState<AgendaMasukItem[]>([]);
+  const [outgoingData, setOutgoingData] = useState<AgendaKeluarItem[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -30,12 +45,19 @@ export default function AgendaDigitalPage() {
     async function loadData() {
       setLoading(true);
       try {
-        const res = await getIncomingLetters({ limit: 100 });
-        if (res.success && res.data) {
-          setIncomingData(res.data as unknown as AgendaItem[]);
+        const [resMasuk, resKeluar] = await Promise.all([
+          getIncomingLetters({ limit: 100 }),
+          getSuratKeluarList({ limit: 100 }),
+        ]);
+
+        if (resMasuk.success && resMasuk.data) {
+          setIncomingData(resMasuk.data as unknown as AgendaMasukItem[]);
+        }
+        if (resKeluar.success && resKeluar.data) {
+          setOutgoingData(resKeluar.data as unknown as AgendaKeluarItem[]);
         }
       } catch {
-        toast.error('Gagal memuat agenda surat');
+        toast.error('Gagal memuat agenda persuratan');
       } finally {
         setLoading(false);
       }
@@ -50,6 +72,17 @@ export default function AgendaDigitalPage() {
       item.nomorSurat?.toLowerCase().includes(q) ||
       item.nomorAgenda?.toLowerCase().includes(q) ||
       item.pengirim?.toLowerCase().includes(q) ||
+      item.perihal?.toLowerCase().includes(q)
+    );
+  });
+
+  const filteredOutgoing = outgoingData.filter((item) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      item.nomorSurat?.toLowerCase().includes(q) ||
+      item.nomorAgenda?.toLowerCase().includes(q) ||
+      item.tujuanSurat?.toLowerCase().includes(q) ||
       item.perihal?.toLowerCase().includes(q)
     );
   });
@@ -103,7 +136,7 @@ export default function AgendaDigitalPage() {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <Inbox className="w-4 h-4" /> Agenda Surat Masuk
+            <Inbox className="w-4 h-4" /> Agenda Surat Masuk ({filteredIncoming.length})
           </button>
           <button
             onClick={() => setActiveTab('keluar')}
@@ -113,7 +146,7 @@ export default function AgendaDigitalPage() {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <Send className="w-4 h-4" /> Agenda Surat Keluar
+            <Send className="w-4 h-4" /> Agenda Surat Keluar ({filteredOutgoing.length})
           </button>
         </div>
 
@@ -149,7 +182,7 @@ export default function AgendaDigitalPage() {
                 {loading ? (
                   <tr>
                     <td colSpan={8} className="p-8 text-center text-gray-500">
-                      Memuat data agenda...
+                      Memuat data agenda surat masuk...
                     </td>
                   </tr>
                 ) : filteredIncoming.length === 0 ? (
@@ -160,7 +193,7 @@ export default function AgendaDigitalPage() {
                   </tr>
                 ) : (
                   filteredIncoming.map((item, idx) => (
-                    <tr key={item.id} className="hover:bg-gray-50/80">
+                    <tr key={item.id || idx} className="hover:bg-gray-50/80">
                       <td className="p-3 text-center border font-medium text-gray-500">
                         {idx + 1}
                       </td>
@@ -191,13 +224,68 @@ export default function AgendaDigitalPage() {
               </tbody>
             </table>
           ) : (
-            <div className="p-12 text-center text-gray-500">
-              <Send className="w-10 h-10 mx-auto text-gray-300 mb-3" />
-              <p className="font-medium text-gray-700">Agenda Surat Keluar</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Daftar penomoran surat keluar yang telah diterbitkan sekolah.
-              </p>
-            </div>
+            <table className="w-full text-sm text-left border-collapse">
+              <thead className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-600 uppercase print:bg-gray-100">
+                <tr>
+                  <th className="p-3.5 text-center w-12 border">No</th>
+                  <th className="p-3.5 border">No. Agenda</th>
+                  <th className="p-3.5 border">Nomor Surat</th>
+                  <th className="p-3.5 border">Tgl Surat</th>
+                  <th className="p-3.5 border">Tujuan Surat</th>
+                  <th className="p-3.5 border">Perihal</th>
+                  <th className="p-3.5 border">Jenis</th>
+                  <th className="p-3.5 border">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="p-8 text-center text-gray-500">
+                      Memuat data agenda surat keluar...
+                    </td>
+                  </tr>
+                ) : filteredOutgoing.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="p-8 text-center text-gray-500">
+                      Belum ada catatan agenda surat keluar.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredOutgoing.map((item, idx) => (
+                    <tr key={item.id || idx} className="hover:bg-gray-50/80">
+                      <td className="p-3 text-center border font-medium text-gray-500">
+                        {idx + 1}
+                      </td>
+                      <td className="p-3 border font-semibold text-emerald-700">
+                        {item.nomorAgenda || '-'}
+                      </td>
+                      <td className="p-3 border font-medium text-gray-900">
+                        {item.nomorSurat || <span className="text-gray-400 italic">Draft</span>}
+                      </td>
+                      <td className="p-3 border whitespace-nowrap">
+                        {item.tanggalSurat
+                          ? new Date(item.tanggalSurat).toLocaleDateString('id-ID')
+                          : '-'}
+                      </td>
+                      <td className="p-3 border font-medium text-gray-800">{item.tujuanSurat}</td>
+                      <td className="p-3 border text-gray-700">{item.perihal}</td>
+                      <td className="p-3 border text-gray-600">{item.jenisSurat?.nama || '-'}</td>
+                      <td className="p-3 border">
+                        <span
+                          className={`inline-block px-2 py-0.5 text-xs font-semibold rounded border ${
+                            item.status === 'APPROVED' || item.status === 'PUBLISHED'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           )}
         </div>
       </div>

@@ -396,58 +396,170 @@ async function main() {
       }
     }
 
-    // 11. Sample Data Surat Keluar
-    console.log('11. Membuat Contoh Data Surat Keluar...');
-    const suratKeluar1 = await db.query.outgoingLetters.findFirst({
-      where: eq(schema.outgoingLetters.nomorAgenda, '001/SK/2026'),
-    });
-
-    if (!suratKeluar1) {
-      await db.insert(schema.outgoingLetters).values({
-        nomorAgenda: '001/SK/2026',
-        nomorSurat: '421.2/012/SMA-01/2026',
-        jenisSuratId: jenisEdaranId,
-        klasifikasiId: klasKesiswaanId,
-        prioritasId: prioritasBiasaId,
-        sifatSuratId: sifatBiasaId,
-        perihal: 'Surat Edaran Pelaksanaan Penilaian Tengah Semester (PTS) Ganjil',
-        tujuanSurat: 'Seluruh Orang Tua / Wali Murid Kelas X, XI, XII',
-        pembuatId: userAdminId,
-        unitKerjaId: unitTUId,
-        penandatanganId: pegKepsekId,
-        tanggalSurat: '2026-08-10',
-        tanggalTerbit: '2026-08-10',
-        status: 'PUBLISHED',
-        catatanTambahan: 'Telah ditandatangani dan dibagikan via grup sekolah & cetak.',
-        createdAt: new Date(),
-        updatedAt: new Date(),
+    // 12. Master Kelas & Siswa
+    console.log('12. Sinkronisasi Master Kelas & Siswa...');
+    async function getOrCreateKelas(
+      kodeKelas: string,
+      data: typeof schema.masterKelas.$inferInsert,
+    ) {
+      const existing = await db.query.masterKelas.findFirst({
+        where: eq(schema.masterKelas.kodeKelas, kodeKelas),
       });
+      if (existing) return existing.id;
+      const [created] = await db.insert(schema.masterKelas).values(data).returning();
+      return created.id;
     }
 
-    const suratKeluar2 = await db.query.outgoingLetters.findFirst({
-      where: eq(schema.outgoingLetters.nomorAgenda, '002/SK/2026'),
+    const kelasX1Id = await getOrCreateKelas('X-MIPA-1', {
+      kodeKelas: 'X-MIPA-1',
+      namaKelas: 'Kelas X MIPA 1',
+      tingkat: 10,
+      jurusan: 'MIPA',
+      waliKelasId: pegWakasekId,
+      tahunAjaran: '2026/2027',
+      isAktif: true,
+      ...defaultFields,
     });
 
-    if (!suratKeluar2) {
-      await db.insert(schema.outgoingLetters).values({
-        nomorAgenda: '002/SK/2026',
-        nomorSurat: '421.5/018/SMA-01/2026',
-        jenisSuratId: jenisTugasId,
-        klasifikasiId: klasKepegawaianId,
-        prioritasId: prioritasSegeraId,
-        sifatSuratId: sifatBiasaId,
-        perihal: 'Surat Tugas Pendampingan Kontingen Lomba Bahasa & Seni',
-        tujuanSurat: 'Budi Hermawan, S.Kom (Guru Pembina)',
-        pembuatId: userAdminId,
-        unitKerjaId: unitKesiswaanId,
-        penandatanganId: pegKepsekId,
-        tanggalSurat: '2026-08-12',
-        tanggalTerbit: '2026-08-12',
-        status: 'APPROVED',
-        catatanTambahan: 'Pelaksanaan tugas tanggal 18-20 Agustus 2026.',
-        createdAt: new Date(),
-        updatedAt: new Date(),
+    const kelasXI2Id = await getOrCreateKelas('XI-MIPA-2', {
+      kodeKelas: 'XI-MIPA-2',
+      namaKelas: 'Kelas XI MIPA 2',
+      tingkat: 11,
+      jurusan: 'MIPA',
+      waliKelasId: pegGuruBKId,
+      tahunAjaran: '2026/2027',
+      isAktif: true,
+      ...defaultFields,
+    });
+
+    const kelasXII1Id = await getOrCreateKelas('XII-IPS-1', {
+      kodeKelas: 'XII-IPS-1',
+      namaKelas: 'Kelas XII IPS 1',
+      tingkat: 12,
+      jurusan: 'IPS',
+      waliKelasId: pegGuruBKId,
+      tahunAjaran: '2026/2027',
+      isAktif: true,
+      ...defaultFields,
+    });
+
+    async function getOrCreateSiswa(nisn: string, data: typeof schema.masterSiswa.$inferInsert) {
+      const existing = await db.query.masterSiswa.findFirst({
+        where: eq(schema.masterSiswa.nisn, nisn),
       });
+      if (existing) return existing.id;
+      const [created] = await db.insert(schema.masterSiswa).values(data).returning();
+      return created.id;
+    }
+
+    const siswa1Id = await getOrCreateSiswa('0071234561', {
+      nis: '23001',
+      nisn: '0071234561',
+      nama: 'Muhammad Farhan Pratama',
+      jenisKelamin: 'L',
+      tempatLahir: 'Kota Utama',
+      tanggalLahir: '2008-05-14',
+      kelasId: kelasX1Id,
+      namaOrtu: 'Bambang Pratama',
+      pekerjaanOrtu: 'PNS',
+      noHpOrtu: '081299887766',
+      alamat: 'Jl. Merdeka No. 12 Kota Utama',
+      status: 'Aktif',
+      isAktif: true,
+      ...defaultFields,
+    });
+
+    const siswa2Id = await getOrCreateSiswa('0071234562', {
+      nis: '23002',
+      nisn: '0071234562',
+      nama: 'Anindya Putri Kirana',
+      jenisKelamin: 'P',
+      tempatLahir: 'Kota Utama',
+      tanggalLahir: '2008-09-20',
+      kelasId: kelasX1Id,
+      namaOrtu: 'Hendra Wijaya',
+      pekerjaanOrtu: 'Wiraswasta',
+      noHpOrtu: '081299887767',
+      alamat: 'Jl. Mawar No. 5 Kota Utama',
+      status: 'Aktif',
+      isAktif: true,
+      ...defaultFields,
+    });
+
+    const siswa3Id = await getOrCreateSiswa('0061234563', {
+      nis: '22015',
+      nisn: '0061234563',
+      nama: 'Rizky Ramadhan',
+      jenisKelamin: 'L',
+      tempatLahir: 'Kota Utama',
+      tanggalLahir: '2007-11-03',
+      kelasId: kelasXI2Id,
+      namaOrtu: 'Agus Santoso',
+      pekerjaanOrtu: 'Karyawan Swasta',
+      noHpOrtu: '081299887768',
+      alamat: 'Jl. Melati No. 8 Kota Utama',
+      status: 'Aktif',
+      isAktif: true,
+      ...defaultFields,
+    });
+
+    await getOrCreateSiswa('0051234565', {
+      nis: '21040',
+      nisn: '0051234565',
+      nama: 'Dimas Aditya Pratama',
+      jenisKelamin: 'L',
+      tempatLahir: 'Kota Utama',
+      tanggalLahir: '2006-03-25',
+      kelasId: kelasXII1Id,
+      namaOrtu: 'Surya Dharma',
+      pekerjaanOrtu: 'TNI/Polri',
+      noHpOrtu: '081299887770',
+      alamat: 'Jl. Cempaka No. 2 Kota Utama',
+      status: 'Aktif',
+      isAktif: true,
+      ...defaultFields,
+    });
+
+    // 13. Sample Surat Dispensasi Siswa
+    console.log('13. Membuat Contoh Surat Kesiswaan (Dispensasi Siswa)...');
+    const existingDispen = await db.query.studentLetters.findFirst({
+      where: eq(schema.studentLetters.tipeSurat, 'DISPENSASI'),
+    });
+
+    if (!existingDispen) {
+      const [newDispen] = await db
+        .insert(schema.studentLetters)
+        .values({
+          tipeSurat: 'DISPENSASI',
+          nomorSurat: '421.2/025/DISPEN/SMA-01/2026',
+          namaKegiatan: 'Olimpiade Sains Nasional (OSN) Tingkat Provinsi',
+          lokasiKegiatan: 'Gedung Balai Diklat Provinsi Jawa Timur',
+          tanggalMulai: '2026-08-20',
+          tanggalSelesai: '2026-08-22',
+          guruPendampingId: pegGuruBKId,
+          keperluan: 'Mengikuti perlombaan OSN Bidang Informatika dan Matematika mewakili sekolah.',
+          catatanKhusus:
+            'Siswa diberikan izin dispensasi tidak mengikuti KBM selama kegiatan berlangsung.',
+          status: 'APPROVED',
+          ...defaultFields,
+        })
+        .returning();
+
+      // Tambahkan peserta dispensasi
+      await db.insert(schema.studentLetterParticipants).values([
+        {
+          studentLetterId: newDispen.id,
+          siswaId: siswa1Id,
+          peran: 'Peserta OSN Informatika',
+          ...defaultFields,
+        },
+        {
+          studentLetterId: newDispen.id,
+          siswaId: siswa2Id,
+          peran: 'Peserta OSN Matematika',
+          ...defaultFields,
+        },
+      ]);
     }
 
     console.log('\n🎉 SEEDING DATA DUMMY SEKOLAH BERHASIL DILAKUKAN!');

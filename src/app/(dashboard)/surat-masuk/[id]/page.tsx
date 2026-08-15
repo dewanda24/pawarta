@@ -23,7 +23,18 @@ export const metadata = {
   title: 'Detail Surat Masuk | PAWARTA',
 };
 
-export default async function DetailSuratMasukPage({ params }: { params: { id: string } }) {
+export default async function DetailSuratMasukPage({
+  params,
+}: {
+  params: Promise<{ id: string }> | { id: string };
+}) {
+  const resolvedParams = await Promise.resolve(params);
+  const id = resolvedParams?.id;
+
+  if (!id) {
+    notFound();
+  }
+
   const [letter] = await db
     .select({
       id: incomingLetters.id,
@@ -48,7 +59,7 @@ export default async function DetailSuratMasukPage({ params }: { params: { id: s
     .leftJoin(masterKlasifikasiSurat, eq(incomingLetters.klasifikasiId, masterKlasifikasiSurat.id))
     .leftJoin(masterPrioritas, eq(incomingLetters.prioritasId, masterPrioritas.id))
     .leftJoin(masterSifatSurat, eq(incomingLetters.sifatSuratId, masterSifatSurat.id))
-    .where(eq(incomingLetters.id, params.id));
+    .where(eq(incomingLetters.id, id));
 
   if (!letter) {
     notFound();

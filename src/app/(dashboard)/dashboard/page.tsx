@@ -2,9 +2,20 @@ import Link from 'next/link';
 import { db } from '@/db';
 import { incomingLetters } from '@/db/schema/incoming-letter';
 import { outgoingLetters } from '@/db/schema/outgoing-letter';
-import { masterPegawai } from '@/db/schema/master';
+import { masterPegawai, masterSiswa } from '@/db/schema/master';
+import { studentLetters } from '@/db/schema/student-letter';
 import { sql, desc } from 'drizzle-orm';
-import { Inbox, Send, Users, PlusCircle, BookOpen, ArrowRight, School } from 'lucide-react';
+import {
+  Inbox,
+  Send,
+  Users,
+  PlusCircle,
+  BookOpen,
+  ArrowRight,
+  School,
+  GraduationCap,
+  FileText,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const metadata = {
@@ -30,10 +41,10 @@ interface RecentKeluarItem {
 }
 
 export default async function DashboardPage() {
-  // Ambil data statistik dengan fallback aman
   let totalMasuk = 0;
   let totalKeluar = 0;
-  let totalPegawai = 0;
+  let totalSiswa = 0;
+  let totalSuratSiswa = 0;
   let recentMasuk: RecentMasukItem[] = [];
   let recentKeluar: RecentKeluarItem[] = [];
 
@@ -50,11 +61,17 @@ export default async function DashboardPage() {
       .where(sql`${outgoingLetters.deletedAt} IS NULL`);
     totalKeluar = Number(keluarCount?.count || 0);
 
-    const [pegawaiCount] = await db
+    const [siswaCount] = await db
       .select({ count: sql<number>`count(*)` })
-      .from(masterPegawai)
-      .where(sql`${masterPegawai.deletedAt} IS NULL`);
-    totalPegawai = Number(pegawaiCount?.count || 0);
+      .from(masterSiswa)
+      .where(sql`${masterSiswa.deletedAt} IS NULL`);
+    totalSiswa = Number(siswaCount?.count || 0);
+
+    const [suratSiswaCount] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(studentLetters)
+      .where(sql`${studentLetters.deletedAt} IS NULL`);
+    totalSuratSiswa = Number(suratSiswaCount?.count || 0);
 
     recentMasuk = await db
       .select({
@@ -100,22 +117,22 @@ export default async function DashboardPage() {
             Selamat Datang di PAWARTA
           </h1>
           <p className="text-blue-100 text-sm mt-1 max-w-xl">
-            Kelola alur surat masuk, penomoran surat keluar, lembar disposisi, dan rekapitulasi buku
-            agenda secara praktis.
+            Kelola alur surat masuk, penomoran surat dinas, surat kesiswaan (dispensasi/keterangan
+            aktif), dan rekap agenda sekolah.
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Link href="/surat-masuk/tambah">
+          <Link href="/surat-siswa">
             <Button className="bg-white text-blue-800 hover:bg-blue-50 font-semibold shadow-sm flex items-center gap-2">
-              <PlusCircle className="w-4 h-4" /> Catat Surat Masuk
+              <GraduationCap className="w-4 h-4" /> Surat Kesiswaan
             </Button>
           </Link>
-          <Link href="/surat-keluar/create">
+          <Link href="/surat-masuk/tambah">
             <Button
               variant="outline"
               className="bg-blue-600/30 border-blue-400/40 text-white hover:bg-blue-600/50 flex items-center gap-2"
             >
-              <Send className="w-4 h-4" /> Buat Surat Keluar
+              <PlusCircle className="w-4 h-4" /> Catat Surat Masuk
             </Button>
           </Link>
         </div>
@@ -144,43 +161,48 @@ export default async function DashboardPage() {
               Surat Keluar
             </p>
             <h3 className="text-2xl font-bold text-gray-900 mt-1">{totalKeluar}</h3>
-            <p className="text-xs text-muted-foreground mt-1">Total diterbitkan</p>
+            <p className="text-xs text-muted-foreground mt-1">Dinas & Administrasi</p>
           </div>
           <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
             <Send className="w-6 h-6" />
           </div>
         </div>
 
-        {/* Card 3: Guru & Pegawai */}
+        {/* Card 3: Surat Kesiswaan */}
         <div className="bg-white p-5 rounded-xl border border-gray-200/80 shadow-xs flex items-center justify-between hover:border-purple-300 transition-colors">
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Guru & Staf
+              Surat Kesiswaan
             </p>
-            <h3 className="text-2xl font-bold text-gray-900 mt-1">{totalPegawai}</h3>
-            <p className="text-xs text-muted-foreground mt-1">Tujuan disposisi</p>
+            <h3 className="text-2xl font-bold text-gray-900 mt-1">{totalSuratSiswa}</h3>
+            <Link
+              href="/surat-siswa"
+              className="text-xs text-purple-600 font-medium hover:underline flex items-center gap-1 mt-1"
+            >
+              Buka Layanan <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
           <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
-            <Users className="w-6 h-6" />
+            <GraduationCap className="w-6 h-6" />
           </div>
         </div>
 
-        {/* Card 4: Buku Agenda */}
+        {/* Card 4: Siswa Terdaftar */}
         <div className="bg-white p-5 rounded-xl border border-gray-200/80 shadow-xs flex items-center justify-between hover:border-amber-300 transition-colors">
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Buku Agenda
+              Siswa Aktif
             </p>
-            <h3 className="text-2xl font-bold text-gray-900 mt-1">Siap Rekap</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mt-1">{totalSiswa}</h3>
             <Link
-              href="/agenda-digital"
+              href="/master/siswa"
               className="text-xs text-amber-600 font-medium hover:underline flex items-center gap-1 mt-1"
             >
-              Buka Rekapitulasi <ArrowRight className="w-3 h-3" />
+              Lihat Data Siswa <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
           <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-            <BookOpen className="w-6 h-6" />
+            <Users className="w-6 h-6" />
           </div>
         </div>
       </div>

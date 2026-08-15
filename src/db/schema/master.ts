@@ -57,8 +57,12 @@ export const masterPegawai = pgTable('master_pegawai', {
 // 5. Master Penandatangan
 export const masterPenandatangan = pgTable('master_penandatangan', {
   ...auditFields,
-  pegawaiId: uuid('pegawai_id').references(() => masterPegawai.id).notNull(),
-  jabatanId: uuid('jabatan_id').references(() => masterJabatan.id).notNull(),
+  pegawaiId: uuid('pegawai_id')
+    .references(() => masterPegawai.id)
+    .notNull(),
+  jabatanId: uuid('jabatan_id')
+    .references(() => masterJabatan.id)
+    .notNull(),
   nipLabel: varchar('nip_label', { length: 50 }), // Label NIP yang akan dicetak
   ttdDigitalUrl: text('ttd_digital_url'),
   parafUrl: text('paraf_url'),
@@ -90,8 +94,12 @@ export const masterKlasifikasiSurat = pgTable('master_klasifikasi_surat', {
 // 8. Mapping Jenis Surat -> Klasifikasi
 export const mappingJenisKlasifikasi = pgTable('mapping_jenis_klasifikasi', {
   ...auditFields,
-  jenisSuratId: uuid('jenis_surat_id').references(() => masterJenisSurat.id).notNull(),
-  klasifikasiSuratId: uuid('klasifikasi_surat_id').references(() => masterKlasifikasiSurat.id).notNull(),
+  jenisSuratId: uuid('jenis_surat_id')
+    .references(() => masterJenisSurat.id)
+    .notNull(),
+  klasifikasiSuratId: uuid('klasifikasi_surat_id')
+    .references(() => masterKlasifikasiSurat.id)
+    .notNull(),
 });
 
 // 9. Master Prioritas
@@ -144,6 +152,36 @@ export const konfigurasiSistem = pgTable('konfigurasi_sistem', {
   marginCetak: varchar('margin_cetak', { length: 100 }), // e.g. "2cm 2cm 2cm 2cm"
 });
 
+// 14. Master Kelas
+export const masterKelas = pgTable('master_kelas', {
+  ...auditFields,
+  kodeKelas: varchar('kode_kelas', { length: 50 }).notNull().unique(), // e.g. "X-MIPA-1"
+  namaKelas: varchar('nama_kelas', { length: 100 }).notNull(), // e.g. "Kelas X MIPA 1"
+  tingkat: integer('tingkat').notNull().default(10), // 10, 11, 12
+  jurusan: varchar('jurusan', { length: 100 }), // MIPA, IPS, dll
+  waliKelasId: uuid('wali_kelas_id').references(() => masterPegawai.id, { onDelete: 'set null' }),
+  tahunAjaran: varchar('tahun_ajaran', { length: 50 }).default('2026/2027'),
+  isAktif: boolean('is_aktif').default(true).notNull(),
+});
+
+// 15. Master Siswa
+export const masterSiswa = pgTable('master_siswa', {
+  ...auditFields,
+  nis: varchar('nis', { length: 50 }).unique(),
+  nisn: varchar('nisn', { length: 50 }).unique().notNull(),
+  nama: varchar('nama', { length: 255 }).notNull(),
+  jenisKelamin: varchar('jenis_kelamin', { length: 10 }).default('L'), // L, P
+  tempatLahir: varchar('tempat_lahir', { length: 100 }),
+  tanggalLahir: varchar('tanggal_lahir', { length: 50 }),
+  kelasId: uuid('kelas_id').references(() => masterKelas.id, { onDelete: 'set null' }),
+  namaOrtu: varchar('nama_ortu', { length: 255 }),
+  pekerjaanOrtu: varchar('pekerjaan_ortu', { length: 100 }),
+  noHpOrtu: varchar('no_hp_ortu', { length: 50 }),
+  alamat: text('alamat'),
+  status: varchar('status', { length: 50 }).default('Aktif').notNull(), // Aktif, Lulus, Pindah, Keluar
+  isAktif: boolean('is_aktif').default(true).notNull(),
+});
+
 // ============================================================================
 // RELATIONS
 // ============================================================================
@@ -165,6 +203,7 @@ export const pegawaiRelations = relations(masterPegawai, ({ one, many }) => ({
     references: [masterJabatan.id],
   }),
   penandatangan: many(masterPenandatangan),
+  kelasWali: many(masterKelas),
 }));
 
 export const unitKerjaRelations = relations(masterUnitKerja, ({ many }) => ({
@@ -208,5 +247,20 @@ export const mappingJenisKlasifikasiRelations = relations(mappingJenisKlasifikas
   klasifikasiSurat: one(masterKlasifikasiSurat, {
     fields: [mappingJenisKlasifikasi.klasifikasiSuratId],
     references: [masterKlasifikasiSurat.id],
+  }),
+}));
+
+export const masterKelasRelations = relations(masterKelas, ({ one, many }) => ({
+  waliKelas: one(masterPegawai, {
+    fields: [masterKelas.waliKelasId],
+    references: [masterPegawai.id],
+  }),
+  siswa: many(masterSiswa),
+}));
+
+export const masterSiswaRelations = relations(masterSiswa, ({ one }) => ({
+  kelas: one(masterKelas, {
+    fields: [masterSiswa.kelasId],
+    references: [masterKelas.id],
   }),
 }));

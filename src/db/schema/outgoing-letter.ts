@@ -139,6 +139,10 @@ export const outgoingLettersRelations = relations(outgoingLetters, ({ one, many 
     fields: [outgoingLetters.jenisSuratId],
     references: [masterJenisSurat.id],
   }),
+  klasifikasi: one(masterKlasifikasiSurat, {
+    fields: [outgoingLetters.klasifikasiId],
+    references: [masterKlasifikasiSurat.id],
+  }),
   instansiTujuan: one(masterInstansi, {
     fields: [outgoingLetters.instansiTujuanId],
     references: [masterInstansi.id],

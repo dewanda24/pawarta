@@ -134,6 +134,60 @@ export async function updateSuratKeluar(id: string, data: Partial<InsertOutgoing
   }
 }
 
+export async function approveSuratKeluar(id: string) {
+  try {
+    const user = await requireAuth();
+
+    const letter = await db.query.outgoingLetters.findFirst({
+      where: eq(outgoingLetters.id, id),
+      with: { klasifikasi: true, jenisSurat: true },
+    });
+
+    if (!letter) {
+      return { success: false, error: 'Surat keluar tidak ditemukan' };
+    }
+
+    const currentYear = new Date().getFullYear();
+    const countTotal = await db.$count(outgoingLetters, isNull(outgoingLetters.deletedAt));
+    const nextSeq = (countTotal + 1).toString().padStart(3, '0');
+
+    // Generate nomor surat dan agenda jika belum ada
+    const klasifikasiKode = letter.klasifikasi?.kode || '421';
+    const jenisKode = letter.jenisSurat?.kode || 'SK';
+    const nomorSuratGenerated =
+      letter.nomorSurat || `${klasifikasiKode}/${nextSeq}/SMA-01/${currentYear}`;
+    const nomorAgendaGenerated = letter.nomorAgenda || `${nextSeq}/${jenisKode}/${currentYear}`;
+    const tanggalTerbitStr = new Date().toISOString().split('T')[0];
+
+    await db
+      .update(outgoingLetters)
+      .set({
+        nomorSurat: nomorSuratGenerated,
+        nomorAgenda: nomorAgendaGenerated,
+        status: 'APPROVED',
+        tanggalTerbit: tanggalTerbitStr,
+        updatedAt: new Date(),
+      })
+      .where(eq(outgoingLetters.id, id));
+
+    await logActivity({
+      userId: user.id!,
+      action: 'APPROVE',
+      entityType: 'SURAT_KELUAR',
+      entityId: id,
+      details: { nomorSurat: nomorSuratGenerated },
+    });
+
+    revalidatePath(`/surat-keluar/${id}`);
+    revalidatePath('/surat-keluar');
+    revalidatePath('/agenda-digital');
+    return { success: true, nomorSurat: nomorSuratGenerated };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Gagal menyetujui surat keluar';
+    return { success: false, error: msg };
+  }
+}
+
 export async function deleteSuratKeluar(id: string) {
   try {
     const user = await requireAuth('SURAT_KELUAR_DELETE');

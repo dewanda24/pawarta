@@ -41,13 +41,21 @@ export const authConfig = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        // Kita akan menambahkan logic fetch roles & permissions di sini jika diperlukan
+      }
+      if (token?.id && !token.role) {
+        const userRolesData = await db.query.userRoles.findFirst({
+          where: (ur, { eq }) => eq(ur.userId, token.id as string),
+          with: { role: true },
+        });
+        token.role = userRolesData?.role?.namaRole || 'Pengguna';
       }
       return token;
     },
     async session({ session, token }) {
       if (token?.id) {
         session.user.id = token.id as string;
+        // @ts-expect-error custom role property
+        session.user.role = token.role as string;
       }
       return session;
     },
