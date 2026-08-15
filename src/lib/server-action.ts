@@ -36,10 +36,12 @@ export async function requireAuth(requiredPermission?: string) {
       throw new Error(`Forbidden: Anda tidak memiliki role.`);
     }
 
-    // Karena Drizzle relations kadang mengembalikan array, kita cek apakah ada permission yang cocok
-    const permissions = hasAccess.role.rolePermissions.map((rp: any) => rp.permission?.nama);
-    if (!permissions.includes(requiredPermission)) {
-       throw new Error(`Forbidden: Anda tidak memiliki akses untuk ${requiredPermission}.`);
+    const roleName = hasAccess.role.namaRole;
+    if (roleName !== 'Super Admin') {
+      const permissions = hasAccess.role.rolePermissions.map((rp: any) => rp.permission?.nama);
+      if (!permissions.includes(requiredPermission)) {
+         throw new Error(`Forbidden: Anda tidak memiliki akses untuk ${requiredPermission}.`);
+      }
     }
   }
 
