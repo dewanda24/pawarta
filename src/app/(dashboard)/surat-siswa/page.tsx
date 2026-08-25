@@ -13,6 +13,8 @@ import {
   Printer,
 } from 'lucide-react';
 
+import { DeleteStudentLetterButton } from '@/components/features/student-letter/DeleteStudentLetterButton';
+
 export const metadata = {
   title: 'Surat Kesiswaan | PAWARTA',
 };
@@ -196,15 +198,18 @@ export default async function SuratSiswaPage() {
                           : '-'}
                       </td>
                       <td className="p-3 text-center">
-                        <Link href={`/surat-siswa/${item.id}`}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2.5 text-xs flex items-center gap-1"
-                          >
-                            <Printer className="w-3.5 h-3.5" /> Cetak
-                          </Button>
-                        </Link>
+                        <div className="flex items-center justify-center gap-1">
+                          <Link href={`/surat-siswa/${item.id}`}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2.5 text-xs flex items-center gap-1"
+                            >
+                              <Printer className="w-3.5 h-3.5" /> Cetak
+                            </Button>
+                          </Link>
+                          <DeleteStudentLetterButton id={item.id} />
+                        </div>
                       </td>
                     </tr>
                   );

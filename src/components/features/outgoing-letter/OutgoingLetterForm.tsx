@@ -260,14 +260,17 @@ export function OutgoingLetterForm({
           </div>
         </div>
 
-        {/* Catatan Tambahan */}
+        {/* Isi / Redaksi Surat */}
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="catatanTambahan">Catatan Tambahan / Ringkasan</Label>
+          <Label htmlFor="catatanTambahan">
+            Isi / Redaksi Surat Dinas (Paragraf Penjelas)
+          </Label>
           <Textarea
             id="catatanTambahan"
             {...register('catatanTambahan')}
-            placeholder="Catatan konsep surat untuk Kepala Sekolah atau arsip TU..."
-            rows={3}
+            placeholder="Tuliskan isi surat secara lengkap di sini. Contoh: Diberitahukan bahwa rapat dinas koordinasi awal tahun pelajaran akan diselenggarakan pada hari Senin..."
+            rows={5}
+            className="text-sm leading-relaxed"
           />
         </div>
       </div>

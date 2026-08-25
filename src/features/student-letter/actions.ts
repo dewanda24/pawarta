@@ -1,4 +1,4 @@
-'use server';
+﻿'use server';
 
 import { db } from '@/db';
 import {
@@ -8,15 +8,21 @@ import {
   masterPegawai,
   masterSekolah,
 } from '@/db/schema';
-import { eq, isNull, desc } from 'drizzle-orm';
+import { eq, isNull, desc, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAuth, logActivity } from '@/lib/server-action';
 
+// ==========================================
+// GET LIST — filter di DB level
+// ==========================================
 export async function getStudentLetters(params?: { tipeSurat?: string }) {
   try {
     await requireAuth();
 
-    const whereClause = isNull(studentLetters.deletedAt);
+    const whereClause = and(
+      isNull(studentLetters.deletedAt),
+      params?.tipeSurat ? eq(studentLetters.tipeSurat, params.tipeSurat) : undefined,
+    );
 
     const data = await db.query.studentLetters.findMany({
       where: whereClause,
@@ -37,17 +43,16 @@ export async function getStudentLetters(params?: { tipeSurat?: string }) {
       orderBy: [desc(studentLetters.createdAt)],
     });
 
-    const filtered = params?.tipeSurat
-      ? data.filter((d) => d.tipeSurat === params.tipeSurat)
-      : data;
-
-    return { success: true, data: filtered };
+    return { success: true, data };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Gagal mengambil surat siswa';
     return { success: false, error: msg };
   }
 }
 
+// ==========================================
+// GET BY ID
+// ==========================================
 export async function getStudentLetterById(id: string) {
   try {
     await requireAuth();
@@ -87,6 +92,42 @@ export async function getStudentLetterById(id: string) {
   }
 }
 
+// ==========================================
+// DELETE (SOFT DELETE)
+// ==========================================
+export async function deleteStudentLetter(id: string) {
+  try {
+    const user = await requireAuth();
+
+    const existing = await db.query.studentLetters.findFirst({
+      where: eq(studentLetters.id, id),
+    });
+    if (!existing) return { success: false, error: 'Surat tidak ditemukan' };
+
+    await db
+      .update(studentLetters)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(eq(studentLetters.id, id));
+
+    await logActivity({
+      userId: user.id!,
+      action: 'DELETE',
+      entityType: 'SURAT_SISWA',
+      entityId: id,
+      details: { tipeSurat: existing.tipeSurat, nomorSurat: existing.nomorSurat },
+    });
+
+    revalidatePath('/surat-siswa');
+    return { success: true };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Gagal menghapus surat';
+    return { success: false, error: msg };
+  }
+}
+
+// ==========================================
+// CREATE DISPENSASI
+// ==========================================
 export interface CreateDispensasiInput {
   namaKegiatan: string;
   lokasiKegiatan: string;
@@ -147,6 +188,9 @@ export async function createSuratDispensasi(input: CreateDispensasiInput) {
   }
 }
 
+// ==========================================
+// CREATE KETERANGAN AKTIF
+// ==========================================
 export interface CreateKeteranganAktifInput {
   siswaId: string;
   keperluan: string;
@@ -195,6 +239,9 @@ export async function createSuratKeteranganAktif(input: CreateKeteranganAktifInp
   }
 }
 
+// ==========================================
+// CREATE PANGGILAN ORTU
+// ==========================================
 export interface CreatePanggilanOrtuInput {
   siswaId: string;
   waktuMenghadap: string;

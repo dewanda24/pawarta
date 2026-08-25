@@ -1,155 +1,203 @@
-import { db } from '@/db';
-import { documentHashes, documentVerifications } from '@/db/schema/archive';
-import { users } from '@/db/schema/iam';
-import { eq } from 'drizzle-orm';
+'use client';
+
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  ShieldCheck,
+  ShieldAlert,
+  Search,
+  School,
+  FileCheck,
+  Calendar,
+  User,
+  ArrowRight,
+  Landmark,
+} from 'lucide-react';
+import Link from 'next/link';
 
-export const metadata = {
-  title: 'Verifikasi Dokumen | PAWARTA',
-};
+export default function VerifikasiPublikPage() {
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any | null>(null);
+  const [searched, setSearched] = useState(false);
 
-export default async function VerifikasiPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ hash?: string }>;
-}) {
-  const { hash } = await searchParams;
-  const hashQuery = hash || '';
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!query.trim()) return;
 
-  let validasiResult = null;
-  let hashData = null;
-
-  if (hashQuery) {
-    const [result] = await db
-      .select({
-        id: documentHashes.id,
-        entityType: documentHashes.entityType,
-        tanggalGenerate: documentHashes.tanggalGenerate,
-        generator: users.nama,
-      })
-      .from(documentHashes)
-      .leftJoin(users, eq(documentHashes.generatorId, users.id))
-      .where(eq(documentHashes.hashSha256, hashQuery));
-
-    if (result) {
-      validasiResult = 'VALID';
-      hashData = result;
-
-      // Log verification (in a real app this would be in a server action or route handler to capture IP properly)
-      await db.insert(documentVerifications).values({
-        hashId: result.id,
-        statusValidasi: true,
-        userAgent: 'Verification Page',
-      });
-    } else {
-      validasiResult = 'INVALID';
+    setLoading(true);
+    setSearched(true);
+    try {
+      const res = await fetch(`/api/v1/verifikasi?q=${encodeURIComponent(query.trim())}`);
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setResult(json.data);
+      } else {
+        setResult(null);
+      }
+    } catch {
+      setResult(null);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-muted/30 p-4">
-      <div className="max-w-md w-full bg-card rounded-xl border shadow-sm overflow-hidden">
-        <div className="bg-primary p-6 text-center text-primary-foreground">
-          <h1 className="text-2xl font-bold">Verifikasi Dokumen</h1>
-          <p className="opacity-90 text-sm mt-1">PAWARTA Enterprise</p>
+    <div className='min-h-screen bg-gradient-to-b from-blue-900 via-indigo-950 to-gray-950 text-white flex flex-col justify-between p-4 sm:p-8'>
+      {/* Top Bar */}
+      <header className='max-w-4xl w-full mx-auto flex items-center justify-between py-4 border-b border-white/10'>
+        <div className='flex items-center gap-2.5'>
+          <div className='w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white shadow-md'>
+            P
+          </div>
+          <div>
+            <span className='font-bold text-base tracking-tight'>PAWARTA</span>
+            <span className='block text-[10px] text-blue-200'>Layanan Verifikasi Dokumen & TTE</span>
+          </div>
         </div>
 
-        <div className="p-6 space-y-6">
-          <p className="text-sm text-center text-muted-foreground">
-            Masukkan kode hash dokumen atau scan QR Code yang tertera pada dokumen fisik/digital
-            Anda.
-          </p>
+        <Link href='/login'>
+          <Button variant='outline' size='sm' className='text-xs text-white border-white/20 bg-white/5 hover:bg-white/10'>
+            Masuk Portal Sistem <ArrowRight className='w-3.5 h-3.5 ml-1' />
+          </Button>
+        </Link>
+      </header>
 
-          <form className="space-y-4">
-            <div>
+      {/* Main Content */}
+      <main className='max-w-2xl w-full mx-auto my-8 space-y-8'>
+        <div className='text-center space-y-3'>
+          <div className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-300 text-xs font-semibold'>
+            <ShieldCheck className='w-3.5 h-3.5 text-blue-400' /> Portal Verifikasi Keabsahan Naskah Dinas
+          </div>
+          <h1 className='text-3xl sm:text-4xl font-extrabold tracking-tight'>
+            Verifikasi Dokumen & Tanda Tangan Elektronik
+          </h1>
+          <p className='text-sm text-gray-300 max-w-lg mx-auto'>
+            Cek validitas dan keaslian dokumen resmi sekolah, surat dinas, maupun surat keterangan kesiswaan yang diterbitkan oleh sistem PAWARTA.
+          </p>
+        </div>
+
+        {/* Search Card */}
+        <div className='bg-white/10 backdrop-blur-md rounded-2xl border border-white/15 p-6 shadow-2xl space-y-4'>
+          <form onSubmit={handleSearch} className='space-y-3'>
+            <div className='relative'>
+              <Search className='w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400' />
               <Input
-                name="hash"
-                defaultValue={hashQuery}
-                placeholder="Masukkan Hash SHA-256..."
+                placeholder='Masukkan Nomor Surat, ID Surat, atau Kode Hash...'
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className='pl-11 h-12 bg-white/90 text-gray-900 placeholder:text-gray-500 text-sm font-medium rounded-xl border-none focus-visible:ring-2 focus-visible:ring-blue-400'
                 required
-                className="text-center font-mono text-xs"
               />
             </div>
-            <Button type="submit" className="w-full">
-              Verifikasi
+            <Button
+              type='submit'
+              disabled={loading}
+              className='w-full h-11 bg-blue-600 hover:bg-blue-500 font-bold text-sm rounded-xl transition-all shadow-lg shadow-blue-600/30'
+            >
+              {loading ? 'Memeriksa Dokumen...' : 'Periksa Keaslian Dokumen'}
             </Button>
           </form>
 
-          {validasiResult === 'VALID' && hashData && (
-            <div className="rounded-md border border-green-200 bg-green-50 p-4 space-y-3">
-              <div className="flex items-center gap-2 text-green-800 font-bold justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-                DOKUMEN ASLI TERVERIFIKASI
-              </div>
-              <div className="text-sm space-y-2 text-green-900 bg-white/50 p-3 rounded border border-green-100">
-                <p>
-                  <span className="font-semibold block text-xs text-green-700">Tipe Dokumen</span>{' '}
-                  {hashData.entityType}
-                </p>
-                <p>
-                  <span className="font-semibold block text-xs text-green-700">
-                    Digenerate Pada
-                  </span>{' '}
-                  {new Date(hashData.tanggalGenerate).toLocaleString('id-ID')}
-                </p>
-                <p>
-                  <span className="font-semibold block text-xs text-green-700">Oleh</span>{' '}
-                  {hashData.generator || 'Sistem'}
-                </p>
+          <p className='text-[11px] text-gray-400 text-center'>
+            Contoh: <span className='font-mono text-gray-300'>421.2/001/DISPEN/...</span> atau scan langsung QR code pada berkas cetak.
+          </p>
+        </div>
 
-                <div className="pt-2 mt-2 border-t border-green-200">
-                  <p className="font-semibold text-xs text-green-700 mb-1">
-                    Status Tanda Tangan Elektronik (TTE)
-                  </p>
-                  <span className="inline-flex items-center rounded-full bg-green-200 px-2 py-0.5 text-xs font-semibold text-green-800">
-                    BSrE Verified (Simulasi)
-                  </span>
+        {/* Verification Result Card */}
+        {searched && (
+          <div>
+            {loading ? (
+              <div className='text-center py-12 text-blue-200 animate-pulse text-sm'>
+                Mencocokkan tanda tangan digital & naskah dinas di database...
+              </div>
+            ) : result ? (
+              <div className='bg-white text-gray-950 rounded-2xl border-2 border-emerald-500 shadow-2xl p-6 sm:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-200'>
+                {/* Result Header */}
+                <div className='flex items-center gap-3 pb-4 border-b border-gray-100'>
+                  <div className='w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0 shadow-inner'>
+                    <ShieldCheck className='w-7 h-7' />
+                  </div>
+                  <div>
+                    <span className='inline-block text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded'>
+                      Dokumen Resmi Sah & Terverifikasi
+                    </span>
+                    <h2 className='text-lg font-bold text-gray-900 mt-0.5'>{result.perihal || result.namaKegiatan || 'Surat Dinas'}</h2>
+                  </div>
+                </div>
+
+                {/* Details Grid */}
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs'>
+                  <div className='bg-gray-50 p-3.5 rounded-xl border border-gray-100 space-y-1'>
+                    <span className='text-gray-500 block flex items-center gap-1.5'>
+                      <FileCheck className='w-3.5 h-3.5 text-blue-600' /> Nomor Dokumen
+                    </span>
+                    <p className='font-bold text-gray-900 text-sm font-mono'>{result.nomorSurat}</p>
+                  </div>
+
+                  <div className='bg-gray-50 p-3.5 rounded-xl border border-gray-100 space-y-1'>
+                    <span className='text-gray-500 block flex items-center gap-1.5'>
+                      <Calendar className='w-3.5 h-3.5 text-blue-600' /> Tanggal Penerbitan
+                    </span>
+                    <p className='font-semibold text-gray-900'>
+                      {result.tanggalSurat || result.createdAt
+                        ? new Date(result.tanggalSurat || result.createdAt).toLocaleDateString('id-ID', { dateStyle: 'full' })
+                        : '-'}
+                    </p>
+                  </div>
+
+                  <div className='bg-gray-50 p-3.5 rounded-xl border border-gray-100 space-y-1 sm:col-span-2'>
+                    <span className='text-gray-500 block flex items-center gap-1.5'>
+                      <Landmark className='w-3.5 h-3.5 text-blue-600' /> Instansi Penerbit
+                    </span>
+                    <p className='font-bold text-gray-900'>{result.sekolah || 'SMA NEGERI CONTOH UTAMA'}</p>
+                  </div>
+
+                  {result.tujuanSurat && (
+                    <div className='bg-gray-50 p-3.5 rounded-xl border border-gray-100 space-y-1 sm:col-span-2'>
+                      <span className='text-gray-500 block'>Penerima / Tujuan Surat:</span>
+                      <p className='font-semibold text-gray-900'>{result.tujuanSurat}</p>
+                    </div>
+                  )}
+
+                  {result.siswa && (
+                    <div className='bg-gray-50 p-3.5 rounded-xl border border-gray-100 space-y-1 sm:col-span-2'>
+                      <span className='text-gray-500 block'>Nama Siswa Terkait:</span>
+                      <p className='font-bold text-gray-900'>{result.siswa.nama} ({result.siswa.nisn || '-'})</p>
+                    </div>
+                  )}
+
+                  <div className='bg-emerald-50/80 p-3.5 rounded-xl border border-emerald-200 space-y-1 sm:col-span-2'>
+                    <span className='text-emerald-800 font-semibold block flex items-center gap-1.5'>
+                      <User className='w-3.5 h-3.5 text-emerald-700' /> Penandatangan Elektronik (TTE)
+                    </span>
+                    <p className='font-bold text-emerald-950'>{result.penandatangan || 'Kepala Sekolah'}</p>
+                    <p className='text-[11px] text-emerald-700 font-mono'>NIP: {result.nip || '-'}</p>
+                  </div>
+                </div>
+
+                <div className='text-center pt-2 text-[11px] text-gray-400'>
+                  Sistem Informasi Administrasi Persuratan Sekolah (PAWARTA) • Integritas Digital Terjamin
                 </div>
               </div>
-            </div>
-          )}
-
-          {validasiResult === 'INVALID' && (
-            <div className="rounded-md border border-red-200 bg-red-50 p-4 space-y-2 text-center">
-              <div className="flex items-center gap-2 text-red-800 font-bold justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="15" y1="9" x2="9" y2="15" />
-                  <line x1="9" y1="9" x2="15" y2="15" />
-                </svg>
-                DOKUMEN TIDAK VALID
+            ) : (
+              <div className='bg-red-500/10 backdrop-blur-md rounded-2xl border-2 border-red-500/30 p-8 text-center space-y-3'>
+                <ShieldAlert className='w-12 h-12 text-red-400 mx-auto' />
+                <h3 className='text-lg font-bold text-red-200'>Dokumen Tidak Ditemukan / Tidak Valid</h3>
+                <p className='text-xs text-red-300 max-w-md mx-auto'>
+                  Nomor surat atau kode hash yang Anda masukkan tidak terdaftar dalam pangkalan data resmi PAWARTA. Pastikan nomor dimasukkan dengan tepat.
+                </p>
               </div>
-              <p className="text-sm text-red-900">
-                Hash tidak ditemukan dalam sistem kami. Dokumen ini mungkin palsu atau telah diubah.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className='max-w-4xl w-full mx-auto text-center py-6 border-t border-white/10 text-xs text-gray-400'>
+        © 2026 PAWARTA — Sistem Persuratan Digital & Tanda Tangan Elektronik Satuan Pendidikan.
+      </footer>
     </div>
   );
 }

@@ -1,9 +1,13 @@
 import { getStudentLetterById } from '@/features/student-letter/actions';
+import { db } from '@/db';
+import { documentHeaders } from '@/db/schema/document';
+import { eq, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { PrintButton } from '@/components/shared/PrintButton';
+import { LetterheadView } from '@/components/shared/LetterheadView';
 
 export const metadata = {
   title: 'Cetak Surat Kesiswaan | PAWARTA',
@@ -20,7 +24,12 @@ export default async function DetailSuratSiswaPage({
   if (!id) {
     notFound();
   }
-  const res = await getStudentLetterById(id);
+  const [res, kopSurat] = await Promise.all([
+    getStudentLetterById(id),
+    db.query.documentHeaders.findFirst({
+      where: and(eq(documentHeaders.isDefault, true), eq(documentHeaders.isAktif, true)),
+    }),
+  ]);
 
   if (!res.success || !res.data) {
     notFound();
@@ -74,20 +83,8 @@ export default async function DetailSuratSiswaPage({
 
       {/* Official Printable Document Container */}
       <div className="bg-white p-8 sm:p-14 rounded-xl border border-gray-200 shadow-sm print:border-none print:shadow-none print:p-0 text-gray-950 font-serif leading-relaxed">
-        {/* Kop Surat Resmi */}
-        <div className="border-b-4 border-double border-gray-900 pb-4 text-center">
-          <h3 className="text-xs sm:text-sm font-semibold tracking-wider uppercase text-gray-700 font-sans">
-            PEMERINTAH PROVINSI JAWA TIMUR • DINAS PENDIDIKAN
-          </h3>
-          <h2 className="text-lg sm:text-2xl font-bold tracking-tight uppercase mt-0.5 font-sans">
-            {sekolah?.nama || 'SMA NEGERI CONTOH UTAMA'}
-          </h2>
-          <p className="text-xs text-gray-600 mt-1 font-sans">
-            {sekolah?.alamat || 'Jl. Pendidikan No. 45 Kota Utama'} • NPSN:{' '}
-            {sekolah?.npsn || '20512345'} • Email: {sekolah?.email || 'info@sekolah.sch.id'} •
-            Website: {sekolah?.website || 'www.sekolah.sch.id'}
-          </p>
-        </div>
+        {/* Kop Surat Resmi Dinamis */}
+        <LetterheadView header={kopSurat} fallbackSekolah={sekolah} />
 
         {/* 1. KONTEN SURAT DISPENSASI */}
         {letter.tipeSurat === 'DISPENSASI' && (

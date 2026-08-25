@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/db';
-import { outgoingLetters, masterUnitKerja } from '@/db/schema';
+import { outgoingLetters, masterUnitKerja, letterAttachments } from '@/db/schema';
 import { eq, isNull, and, ilike, desc } from 'drizzle-orm';
 import { InsertOutgoingLetter } from '../types';
 import { revalidatePath } from 'next/cache';
@@ -210,3 +210,31 @@ export async function deleteSuratKeluar(id: string) {
     return { success: false, error: msg };
   }
 }
+
+export async function deleteOutgoingAttachment(attachmentId: string) {
+  try {
+    const user = await requireAuth('SURAT_KELUAR_UPDATE');
+    const existing = await db.query.letterAttachments.findFirst({
+      where: eq(letterAttachments.id, attachmentId),
+    });
+
+    if (!existing) return { success: false, error: 'Lampiran tidak ditemukan' };
+
+    await db.delete(letterAttachments).where(eq(letterAttachments.id, attachmentId));
+
+    await logActivity({
+      userId: user.id!,
+      action: 'DELETE_ATTACHMENT',
+      entityType: 'letter_attachments',
+      entityId: attachmentId,
+      details: { namaFile: existing.namaFile },
+    });
+
+    revalidatePath(`/surat-keluar/${existing.suratId}`);
+    return { success: true };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Gagal menghapus lampiran';
+    return { success: false, error: msg };
+  }
+}
+

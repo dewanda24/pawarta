@@ -41,21 +41,6 @@ export const recentMenu = pgTable('recent_menu', {
 });
 
 // ==========================================
-// 3. Activity Timeline & Logs
-// ==========================================
-export const activityLogs = pgTable('activity_logs', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id')
-    .references(() => users.id, { onDelete: 'set null' }),
-  aksi: varchar('aksi', { length: 50 }).notNull(), // Create, Update, Delete, Login, Approve, dll
-  modul: varchar('modul', { length: 100 }).notNull(), // Nama modul terkait e.g., Surat Masuk
-  detailAktivitas: text('detail_aktivitas').notNull(), // Deskripsi lengkap
-  ipAddress: varchar('ip_address', { length: 45 }),
-  metadata: json('metadata'), // Menyimpan detail tambahan e.g., ID data yang diubah
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-});
-
-// ==========================================
 // 4. Notification Center
 // ==========================================
 export const notifications = pgTable('notifications', {

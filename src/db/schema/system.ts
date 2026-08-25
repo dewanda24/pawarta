@@ -24,6 +24,31 @@ export const emailLogs = pgTable('email_logs', {
   tanggal: timestamp('tanggal').defaultNow().notNull(),
 });
 
+export const notificationChannels = pgTable('notification_channels', {
+  ...auditFields,
+  nama: varchar('nama', { length: 100 }).notNull(),
+  tipe: varchar('tipe', { length: 50 }).notNull(), // WHATSAPP, EMAIL, TELEGRAM
+  provider: varchar('provider', { length: 100 }).default('FONNTE'),
+  konfigurasi: jsonb('konfigurasi'),
+  isDefault: boolean('is_default').default(false).notNull(),
+  isAktif: boolean('is_aktif').default(true).notNull(),
+});
+
+export const notificationLogs = pgTable('notification_logs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  channelId: uuid('channel_id').references(() => notificationChannels.id, { onDelete: 'set null' }),
+  recipient: varchar('recipient', { length: 255 }).notNull(),
+  recipientName: varchar('recipient_name', { length: 255 }),
+  judul: varchar('judul', { length: 255 }).notNull(),
+  pesan: text('pesan').notNull(),
+  status: varchar('status', { length: 50 }).default('SENT').notNull(),
+  responsePayload: jsonb('response_payload'),
+  errorMessage: text('error_message'),
+  sentAt: timestamp('sent_at').defaultNow(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+
 // ==========================================
 // 2. Backup & Restore
 // ==========================================

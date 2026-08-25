@@ -1,11 +1,14 @@
 import { db } from '@/db';
-import { outgoingLetters } from '@/db/schema/outgoing-letter';
+import { outgoingLetters, letterAttachments } from '@/db/schema/outgoing-letter';
 import { masterPegawai, masterSekolah } from '@/db/schema/master';
-import { eq } from 'drizzle-orm';
+import { documentHeaders } from '@/db/schema/document';
+import { eq, desc, and } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ApproveLetterButton } from '@/components/features/outgoing-letter/ApproveLetterButton';
+import { AttachmentSection } from '@/components/shared/AttachmentSection';
+import { LetterheadView } from '@/components/shared/LetterheadView';
 import { CheckCircle2, ArrowLeft } from 'lucide-react';
 
 export default async function SuratKeluarDetailPage({
@@ -31,13 +34,22 @@ export default async function SuratKeluarDetailPage({
 
   if (!letter) return notFound();
 
-  const sekolah = await db.query.masterSekolah.findFirst({
-    where: eq(masterSekolah.isAktif, true),
-  });
-
-  const kepsek = await db.query.masterPegawai.findFirst({
-    where: eq(masterPegawai.isAktif, true),
-  });
+  const [sekolah, kepsek, kopSurat, attachments] = await Promise.all([
+    db.query.masterSekolah.findFirst({
+      where: eq(masterSekolah.isAktif, true),
+    }),
+    db.query.masterPegawai.findFirst({
+      where: eq(masterPegawai.isAktif, true),
+    }),
+    db.query.documentHeaders.findFirst({
+      where: and(eq(documentHeaders.isDefault, true), eq(documentHeaders.isAktif, true)),
+    }),
+    db
+      .select()
+      .from(letterAttachments)
+      .where(eq(letterAttachments.suratId, letter.id))
+      .orderBy(desc(letterAttachments.createdAt)),
+  ]);
 
   const ttdNama = letter.penandatangan?.nama || kepsek?.nama || 'Kepala Sekolah';
   const ttdNip = letter.penandatangan?.nip || kepsek?.nip || '-';
@@ -83,19 +95,8 @@ export default async function SuratKeluarDetailPage({
 
       {/* Official School Letterhead Format (Visible & Print-Ready) */}
       <div className="bg-white p-8 sm:p-12 rounded-xl border border-gray-200 shadow-sm print:border-none print:shadow-none print:p-0">
-        {/* Kop Surat */}
-        <div className="border-b-4 border-double border-gray-900 pb-4 text-center">
-          <h3 className="text-xs sm:text-sm font-semibold tracking-wider uppercase text-gray-600">
-            PEMERINTAH PROVINSI JAWA TIMUR • DINAS PENDIDIKAN
-          </h3>
-          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-gray-950 uppercase mt-0.5">
-            {sekolah?.nama || 'SMA NEGERI CONTOH UTAMA'}
-          </h2>
-          <p className="text-xs text-gray-600 mt-1">
-            {sekolah?.alamat || 'Jl. Pendidikan No. 45 Kota Utama'} • NPSN:{' '}
-            {sekolah?.npsn || '20512345'} • Email: {sekolah?.email || 'info@sekolah.sch.id'}
-          </p>
-        </div>
+        {/* Kop Surat Dinamis */}
+        <LetterheadView header={kopSurat} fallbackSekolah={sekolah} />
 
         {/* Nomor & Tanggal */}
         <div className="mt-6 flex justify-between items-start text-sm">
@@ -170,6 +171,15 @@ export default async function SuratKeluarDetailPage({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Attachments Section (Hidden on Print) */}
+      <div className="print:hidden">
+        <AttachmentSection
+          suratId={letter.id}
+          tipeSurat="OUTGOING"
+          attachments={attachments}
+        />
       </div>
     </div>
   );

@@ -1,6 +1,10 @@
 import { db } from '@/db';
 
-import { incomingLetters, incomingTimelines } from '@/db/schema/incoming-letter';
+import {
+  incomingLetters,
+  incomingTimelines,
+  incomingLetterAttachments,
+} from '@/db/schema/incoming-letter';
 
 import {
   masterInstansi,
@@ -18,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 import { LetterActions } from '@/components/features/incoming-letter/LetterActions';
+import { AttachmentSection } from '@/components/shared/AttachmentSection';
 
 export const metadata = {
   title: 'Detail Surat Masuk | PAWARTA',
@@ -78,7 +83,7 @@ export default async function DetailSuratMasukPage({
     .where(eq(incomingTimelines.suratId, letter.id))
     .orderBy(desc(incomingTimelines.tanggal));
 
-  const [pegawaiOpts, unitKerjaOpts] = await Promise.all([
+  const [pegawaiOpts, unitKerjaOpts, attachments] = await Promise.all([
     db
       .select({ id: masterPegawai.id, nama: masterPegawai.nama })
       .from(masterPegawai)
@@ -87,6 +92,11 @@ export default async function DetailSuratMasukPage({
       .select({ id: masterUnitKerja.id, nama: masterUnitKerja.nama })
       .from(masterUnitKerja)
       .where(eq(masterUnitKerja.isAktif, true)),
+    db
+      .select()
+      .from(incomingLetterAttachments)
+      .where(eq(incomingLetterAttachments.suratId, letter.id))
+      .orderBy(desc(incomingLetterAttachments.createdAt)),
   ]);
 
   return (
@@ -170,12 +180,11 @@ export default async function DetailSuratMasukPage({
             </div>
           </div>
 
-          <div className="rounded-md border p-6 space-y-4">
-            <h2 className="text-lg font-semibold">Lampiran (Placeholder)</h2>
-            <p className="text-sm text-muted-foreground">
-              Upload file belum diimplementasikan di versi preview ini.
-            </p>
-          </div>
+          <AttachmentSection
+            suratId={letter.id}
+            tipeSurat="INCOMING"
+            attachments={attachments}
+          />
         </div>
 
         <div className="space-y-6">
