@@ -8,6 +8,11 @@ if (!connectionString) {
   throw new Error('DATABASE_URL is missing in environment variables.');
 }
 
-// Gunakan connection pool untuk environment serverless / Vercel
-const client = postgres(connectionString, { max: 1, prepare: false });
+// Gunakan connection pool optimal untuk concurrent queries & serverless pooler
+const client = postgres(connectionString, {
+  max: 10,
+  prepare: false,
+  idle_timeout: 20,
+  connect_timeout: 10,
+});
 export const db = drizzle(client, { schema });

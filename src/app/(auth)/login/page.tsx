@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import LoginForm from './login-form';
 
 export const metadata = {
@@ -14,7 +15,9 @@ export default function LoginPage() {
             Silakan masukkan username dan password Anda
           </p>
         </div>
-        <LoginForm />
+        <Suspense fallback={<div className="py-8 text-center text-xs text-gray-400">Memuat formulir...</div>}>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );
