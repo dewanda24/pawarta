@@ -20,6 +20,8 @@ import {
   Layers,
   Landmark,
   Radio,
+  HelpCircle,
+  ShieldCheck,
   type LucideIcon,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -41,6 +43,8 @@ const IconMap: Record<string, LucideIcon> = {
   Layers,
   Landmark,
   Radio,
+  HelpCircle,
+  ShieldCheck,
 };
 
 // Menu fokus lingkup persuratan sekolah (TU, Guru, Wakasek, Kepala Sekolah)
@@ -49,30 +53,42 @@ const menuGroups = [
     title: 'Menu Utama',
     items: [
       { id: '1', nama: 'Dashboard', icon: 'Home', route: '/dashboard' },
-      { id: '2', nama: 'Surat Masuk', icon: 'Inbox', route: '/surat-masuk' },
-      { id: '2b', nama: 'Disposisi Saya', icon: 'ClipboardList', route: '/disposisi-saya' },
-      { id: '3', nama: 'Surat Keluar (Dinas)', icon: 'Send', route: '/surat-keluar' },
-      { id: '4', nama: 'Surat Kesiswaan', icon: 'GraduationCap', route: '/surat-siswa' },
-      { id: '5', nama: 'Buku Agenda & Rekap', icon: 'BookOpen', route: '/agenda-digital' },
+      { id: '2', nama: 'Disposisi Saya', icon: 'ClipboardList', route: '/disposisi-saya' },
+      { id: '3', nama: 'Buku Agenda & Rekap', icon: 'BookOpen', route: '/agenda-digital' },
+    ],
+  },
+  {
+    title: 'Persuratan Sekolah',
+    items: [
+      { id: '4', nama: 'Surat Masuk', icon: 'Inbox', route: '/surat-masuk' },
+      { id: '5', nama: 'Surat Keluar (Dinas)', icon: 'Send', route: '/surat-keluar' },
+      { id: '6', nama: 'Surat Kesiswaan', icon: 'GraduationCap', route: '/surat-siswa' },
     ],
   },
   {
     title: 'Master Data Sekolah',
     items: [
-      { id: '6', nama: 'Data Siswa', icon: 'GraduationCap', route: '/master/siswa' },
-      { id: '7', nama: 'Rombel / Kelas', icon: 'School', route: '/master/kelas' },
-      { id: '8', nama: 'Guru & Staf Pegawai', icon: 'Users', route: '/master/pegawai' },
-      { id: '9', nama: 'Kode Klasifikasi Surat', icon: 'Layers', route: '/master/klasifikasi' },
-      { id: '9b', nama: 'Jenis Surat', icon: 'FileText', route: '/master/jenis-surat' },
-      { id: '9c', nama: 'Desain KOP Surat', icon: 'Landmark', route: '/master/kop-surat' },
-      { id: '10', nama: 'Daftar Instansi Relasi', icon: 'Building2', route: '/master/instansi' },
+      { id: '7', nama: 'Desain KOP Surat', icon: 'Landmark', route: '/master/kop-surat' },
+      { id: '8', nama: 'Data Siswa', icon: 'GraduationCap', route: '/master/siswa' },
+      { id: '9', nama: 'Rombel / Kelas', icon: 'School', route: '/master/kelas' },
+      { id: '10', nama: 'Guru & Staf Pegawai', icon: 'Users', route: '/master/pegawai' },
+      { id: '11', nama: 'Kode Klasifikasi Surat', icon: 'Layers', route: '/master/klasifikasi' },
+      { id: '12', nama: 'Jenis Surat', icon: 'FileText', route: '/master/jenis-surat' },
+      { id: '13', nama: 'Daftar Instansi Relasi', icon: 'Building2', route: '/master/instansi' },
     ],
   },
   {
-    title: 'Pengaturan',
+    title: 'Pengaturan Sistem',
     items: [
-      { id: '11', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/iam/users' },
-      { id: '12', nama: 'Gateway Notifikasi WA/Email', icon: 'Radio', route: '/settings/notifikasi' },
+      { id: '14', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/iam/users' },
+      { id: '15', nama: 'Gateway Notifikasi WA/Email', icon: 'Radio', route: '/settings/notifikasi' },
+      { id: '16', nama: 'Verifikasi Dokumen Publik', icon: 'ShieldCheck', route: '/verifikasi' },
+    ],
+  },
+  {
+    title: 'Bantuan & SOP',
+    items: [
+      { id: '17', nama: 'Panduan Penggunaan', icon: 'HelpCircle', route: '/bantuan' },
     ],
   },
 ];

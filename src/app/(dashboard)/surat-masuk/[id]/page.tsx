@@ -23,6 +23,7 @@ import Link from 'next/link';
 
 import { LetterActions } from '@/components/features/incoming-letter/LetterActions';
 import { AttachmentSection } from '@/components/shared/AttachmentSection';
+import { Printer, ArrowLeft } from 'lucide-react';
 
 export const metadata = {
   title: 'Detail Surat Masuk | PAWARTA',
@@ -101,14 +102,28 @@ export default async function DetailSuratMasukPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Detail Surat Masuk</h1>
-          <p className="text-muted-foreground">{letter.nomorSurat}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Detail Surat Masuk</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">
+            No: <span className="font-semibold text-gray-900">{letter.nomorSurat}</span> • Agenda:{' '}
+            <span className="font-mono font-bold text-blue-700">{letter.nomorAgenda || '-'}</span>
+          </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Link href="/surat-masuk">
-            <Button variant="outline">Kembali</Button>
+            <Button variant="outline" size="sm" className="h-9 text-xs flex items-center gap-1.5">
+              <ArrowLeft className="w-3.5 h-3.5" /> Kembali
+            </Button>
+          </Link>
+          <Link href={`/surat-masuk/${letter.id}/disposisi`}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 text-xs font-semibold text-blue-700 border-blue-200 hover:bg-blue-50 flex items-center gap-1.5"
+            >
+              <Printer className="w-3.5 h-3.5" /> Cetak Lembar Disposisi
+            </Button>
           </Link>
           <LetterActions
             suratId={letter.id}

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { db } from '@/db';
-import { incomingLetters } from '@/db/schema/incoming-letter';
+import { incomingLetters, incomingDispositions } from '@/db/schema/incoming-letter';
 import { outgoingLetters } from '@/db/schema/outgoing-letter';
 import { masterPegawai, masterSiswa } from '@/db/schema/master';
 import { studentLetters } from '@/db/schema/student-letter';
@@ -15,6 +15,7 @@ import {
   School,
   GraduationCap,
   FileText,
+  ClipboardList,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -43,35 +44,23 @@ interface RecentKeluarItem {
 export default async function DashboardPage() {
   let totalMasuk = 0;
   let totalKeluar = 0;
-  let totalSiswa = 0;
+  let totalDisposisi = 0;
   let totalSuratSiswa = 0;
   let recentMasuk: RecentMasukItem[] = [];
   let recentKeluar: RecentKeluarItem[] = [];
 
   try {
-    const [masukCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(incomingLetters)
-      .where(sql`${incomingLetters.deletedAt} IS NULL`);
-    totalMasuk = Number(masukCount?.count || 0);
+    const [masukCount, keluarCount, disposisiCount, suratSiswaCount] = await Promise.all([
+      db.select({ count: sql<number>`count(*)` }).from(incomingLetters).where(sql`${incomingLetters.deletedAt} IS NULL`),
+      db.select({ count: sql<number>`count(*)` }).from(outgoingLetters).where(sql`${outgoingLetters.deletedAt} IS NULL`),
+      db.select({ count: sql<number>`count(*)` }).from(incomingDispositions),
+      db.select({ count: sql<number>`count(*)` }).from(studentLetters).where(sql`${studentLetters.deletedAt} IS NULL`),
+    ]);
 
-    const [keluarCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(outgoingLetters)
-      .where(sql`${outgoingLetters.deletedAt} IS NULL`);
-    totalKeluar = Number(keluarCount?.count || 0);
-
-    const [siswaCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(masterSiswa)
-      .where(sql`${masterSiswa.deletedAt} IS NULL`);
-    totalSiswa = Number(siswaCount?.count || 0);
-
-    const [suratSiswaCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(studentLetters)
-      .where(sql`${studentLetters.deletedAt} IS NULL`);
-    totalSuratSiswa = Number(suratSiswaCount?.count || 0);
+    totalMasuk = Number(masukCount[0]?.count || 0);
+    totalKeluar = Number(keluarCount[0]?.count || 0);
+    totalDisposisi = Number(disposisiCount[0]?.count || 0);
+    totalSuratSiswa = Number(suratSiswaCount[0]?.count || 0);
 
     recentMasuk = await db
       .select({
@@ -154,7 +143,26 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Card 2: Surat Keluar */}
+        {/* Card 2: Disposisi Masuk */}
+        <div className="bg-white p-5 rounded-xl border border-gray-200/80 shadow-xs flex items-center justify-between hover:border-amber-300 transition-colors">
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Disposisi Masuk
+            </p>
+            <h3 className="text-2xl font-bold text-gray-900 mt-1">{totalDisposisi}</h3>
+            <Link
+              href="/disposisi-saya"
+              className="text-xs text-amber-600 font-medium hover:underline flex items-center gap-1 mt-1"
+            >
+              Lihat Disposisi <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+            <ClipboardList className="w-6 h-6" />
+          </div>
+        </div>
+
+        {/* Card 3: Surat Keluar */}
         <div className="bg-white p-5 rounded-xl border border-gray-200/80 shadow-xs flex items-center justify-between hover:border-emerald-300 transition-colors">
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -168,7 +176,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Card 3: Surat Kesiswaan */}
+        {/* Card 4: Surat Kesiswaan */}
         <div className="bg-white p-5 rounded-xl border border-gray-200/80 shadow-xs flex items-center justify-between hover:border-purple-300 transition-colors">
           <div>
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -184,25 +192,6 @@ export default async function DashboardPage() {
           </div>
           <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
             <GraduationCap className="w-6 h-6" />
-          </div>
-        </div>
-
-        {/* Card 4: Siswa Terdaftar */}
-        <div className="bg-white p-5 rounded-xl border border-gray-200/80 shadow-xs flex items-center justify-between hover:border-amber-300 transition-colors">
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Siswa Aktif
-            </p>
-            <h3 className="text-2xl font-bold text-gray-900 mt-1">{totalSiswa}</h3>
-            <Link
-              href="/master/siswa"
-              className="text-xs text-amber-600 font-medium hover:underline flex items-center gap-1 mt-1"
-            >
-              Lihat Data Siswa <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-            <Users className="w-6 h-6" />
           </div>
         </div>
       </div>
