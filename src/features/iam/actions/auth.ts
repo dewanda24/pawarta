@@ -8,16 +8,24 @@ export async function authenticate(
   formData: FormData,
 ) {
   try {
-    await signIn('credentials', formData);
+    const username = formData.get('username') as string;
+    const password = formData.get('password') as string;
+
+    await signIn('credentials', {
+      username,
+      password,
+      redirectTo: '/dashboard',
+    });
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
         case 'CredentialsSignin':
-          return 'Invalid credentials.';
+          return 'Username atau password salah.';
         default:
-          return 'Something went wrong.';
+          return 'Terjadi kendala saat verifikasi login.';
       }
     }
+    // Wajib melempar kembali error agar Next.js Server Action redirect berjalan
     throw error;
   }
 }

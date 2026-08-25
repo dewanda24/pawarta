@@ -6,6 +6,7 @@ import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 export const authConfig = {
+  trustHost: true, // Wajib untuk deployment Vercel / reverse proxy
   pages: {
     signIn: '/login', // Route login kustom
   },
@@ -17,23 +18,28 @@ export const authConfig = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.username || !credentials?.password) return null;
+        try {
+          if (!credentials?.username || !credentials?.password) return null;
 
-        const user = await db.query.users.findFirst({
-          where: eq(users.username, credentials.username as string),
-        });
+          const user = await db.query.users.findFirst({
+            where: eq(users.username, credentials.username as string),
+          });
 
-        if (!user || user.status !== 'Aktif') return null;
+          if (!user || user.status !== 'Aktif') return null;
 
-        const isValid = await bcrypt.compare(credentials.password as string, user.passwordHash);
-        if (!isValid) return null;
+          const isValid = await bcrypt.compare(credentials.password as string, user.passwordHash);
+          if (!isValid) return null;
 
-        return {
-          id: user.id,
-          name: user.nama,
-          email: user.email,
-          image: user.avatar,
-        };
+          return {
+            id: user.id,
+            name: user.nama,
+            email: user.email,
+            image: user.avatar,
+          };
+        } catch (err) {
+          console.error('Error during authorize():', err);
+          return null;
+        }
       },
     }),
   ],
@@ -43,11 +49,16 @@ export const authConfig = {
         token.id = user.id;
       }
       if (token?.id && !token.role) {
-        const userRolesData = await db.query.userRoles.findFirst({
-          where: (ur, { eq }) => eq(ur.userId, token.id as string),
-          with: { role: true },
-        });
-        token.role = userRolesData?.role?.namaRole || 'Pengguna';
+        try {
+          const userRolesData = await db.query.userRoles.findFirst({
+            where: (ur, { eq }) => eq(ur.userId, token.id as string),
+            with: { role: true },
+          });
+          token.role = userRolesData?.role?.namaRole || 'Pengguna';
+        } catch (e) {
+          console.error('Error fetching role in jwt callback:', e);
+          token.role = 'Pengguna';
+        }
       }
       return token;
     },
