@@ -82,7 +82,7 @@ export default async function DetailSuratSiswaPage({
       </div>
 
       {/* Official Printable Document Container */}
-      <div className="bg-white p-8 sm:p-14 rounded-xl border border-gray-200 shadow-sm print:border-none print:shadow-none print:p-0 text-gray-950 font-serif leading-relaxed">
+      <div className="bg-white p-4 sm:p-10 md:p-14 rounded-xl border border-gray-200 shadow-sm print:border-none print:shadow-none print:p-0 text-gray-950 font-serif leading-relaxed overflow-x-auto">
         {/* Kop Surat Resmi Dinamis */}
         <LetterheadView header={kopSurat} fallbackSekolah={sekolah} />
 

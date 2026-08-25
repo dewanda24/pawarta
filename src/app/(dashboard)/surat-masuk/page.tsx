@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
@@ -168,13 +168,13 @@ export default function SuratMasukPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Surat Masuk</h1>
-          <p className="text-muted-foreground">Kelola semua surat masuk dan disposisi.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Surat Masuk</h1>
+          <p className="text-muted-foreground text-xs sm:text-sm">Kelola semua surat masuk dan disposisi.</p>
         </div>
-        <Link href="/surat-masuk/tambah">
-          <Button className="flex items-center gap-2">
+        <Link href="/surat-masuk/tambah" className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto flex items-center justify-center gap-2 text-xs sm:text-sm">
             <Plus className="w-4 h-4" /> Registrasi Surat Masuk
           </Button>
         </Link>

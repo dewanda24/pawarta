@@ -124,12 +124,12 @@ export default function SuratKeluarPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Surat Keluar</h1>
-          <p className="text-sm text-gray-500">Kelola daftar surat keluar, persetujuan, dan pengiriman.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Surat Keluar</h1>
+          <p className="text-xs sm:text-sm text-gray-500">Kelola daftar surat keluar dinas, persetujuan, dan pengiriman.</p>
         </div>
-        <Button onClick={handleCreate} className="flex items-center gap-2">
+        <Button onClick={handleCreate} className="w-full sm:w-auto flex items-center justify-center gap-2 text-xs sm:text-sm">
           <Plus className="w-4 h-4" /> Buat Draft Baru
         </Button>
       </div>
