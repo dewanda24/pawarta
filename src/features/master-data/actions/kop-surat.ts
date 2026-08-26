@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 
 import { db } from '@/db';
 import { documentHeaders } from '@/db/schema/document';
@@ -9,7 +9,10 @@ import { requireAuth, logActivity } from '@/lib/server-action';
 export interface DocumentHeaderInput {
   namaKop: string;
   logoUrl?: string | null;
+  logoKiriUrl?: string | null;
+  logoKananUrl?: string | null;
   instansiUtama?: string | null;
+  instansiInduk?: string | null;
   namaSekolah?: string | null;
   alamat?: string | null;
   kontak?: string | null;
@@ -61,8 +64,11 @@ export async function createDocumentHeader(data: DocumentHeaderInput) {
       .insert(documentHeaders)
       .values({
         namaKop: data.namaKop,
-        logoUrl: data.logoUrl || null,
+        logoUrl: data.logoKiriUrl || data.logoUrl || null,
+        logoKiriUrl: data.logoKiriUrl || data.logoUrl || null,
+        logoKananUrl: data.logoKananUrl || null,
         instansiUtama: data.instansiUtama || null,
+        instansiInduk: data.instansiInduk || null,
         namaSekolah: data.namaSekolah || null,
         alamat: data.alamat || null,
         kontak: data.kontak || null,
@@ -98,10 +104,15 @@ export async function updateDocumentHeader(id: string, data: Partial<DocumentHea
       await db.update(documentHeaders).set({ isDefault: false });
     }
 
+    const payload: Record<string, unknown> = { ...data };
+    if (data.logoKiriUrl !== undefined) {
+      payload.logoUrl = data.logoKiriUrl;
+    }
+
     await db
       .update(documentHeaders)
       .set({
-        ...data,
+        ...payload,
         updatedAt: new Date(),
       })
       .where(eq(documentHeaders.id, id));

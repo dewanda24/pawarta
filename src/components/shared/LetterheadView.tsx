@@ -2,13 +2,17 @@ import React from 'react';
 
 interface LetterheadProps {
   header?: {
+    namaKop?: string | null;
     instansiUtama?: string | null;
+    instansiInduk?: string | null;
     namaSekolah?: string | null;
     alamat?: string | null;
     kontak?: string | null;
     website?: string | null;
     tipeGaris?: string | null;
     logoUrl?: string | null;
+    logoKiriUrl?: string | null;
+    logoKananUrl?: string | null;
   } | null;
   fallbackSekolah?: {
     nama?: string | null;
@@ -17,70 +21,112 @@ interface LetterheadProps {
     email?: string | null;
     telepon?: string | null;
   } | null;
+  className?: string;
 }
 
-export function LetterheadView({ header, fallbackSekolah }: LetterheadProps) {
-  const instansi =
-    header?.instansiUtama || 'PEMERINTAH PROVINSI JAWA TIMUR • DINAS PENDIDIKAN';
-  const namaSekolah =
-    header?.namaSekolah || fallbackSekolah?.nama || 'SMA NEGERI CONTOH UTAMA';
-  const alamat =
-    header?.alamat || fallbackSekolah?.alamat || 'Jl. Pendidikan No. 45 Kota Utama';
-  const kontak =
-    header?.kontak ||
-    `NPSN: ${fallbackSekolah?.npsn || '20512345'} • Email: ${fallbackSekolah?.email || 'info@sekolah.sch.id'}`;
-  const website = header?.website;
+export function LetterheadView({ header, fallbackSekolah, className = '' }: LetterheadProps) {
+  const instansiUtama = header?.instansiUtama || 'PEMERINTAH DAERAH PROVINSI JAWA TIMUR';
+  const instansiInduk = header?.instansiInduk || 'DINAS PENDIDIKAN';
+  const namaSekolah = header?.namaSekolah || fallbackSekolah?.nama || 'SMA NEGERI CONTOH UTAMA';
+  const alamat = header?.alamat || fallbackSekolah?.alamat || 'Jl. Pendidikan No. 45 Kota Utama';
+
+  const kontakParts: string[] = [];
+  if (header?.kontak) {
+    kontakParts.push(header.kontak);
+  } else {
+    if (fallbackSekolah?.npsn) kontakParts.push(`NPSN: ${fallbackSekolah.npsn}`);
+    if (fallbackSekolah?.telepon) kontakParts.push(`Telp: ${fallbackSekolah.telepon}`);
+    if (fallbackSekolah?.email) kontakParts.push(`e-mail: ${fallbackSekolah.email}`);
+  }
+  if (header?.website) {
+    kontakParts.push(`Website: ${header.website}`);
+  }
+  const kontakText = kontakParts.join(' • ');
+
   const tipeGaris = header?.tipeGaris || 'double_thick';
-  const logoUrl = header?.logoUrl || '/tutwuri.svg';
+
+  // Resolve logos
+  const logoKiri = header?.logoKiriUrl || header?.logoUrl || null;
+  const logoKanan = header?.logoKananUrl || null;
+
+  const hasLeft = Boolean(logoKiri);
+  const hasRight = Boolean(logoKanan);
+  const hasAnyLogo = hasLeft || hasRight;
 
   return (
-    <div className='relative'>
-      <div className='flex items-center justify-between gap-4'>
-        {/* Logo Kiri */}
-        <div className='w-20 sm:w-24 shrink-0 flex items-center justify-center'>
-          {logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={logoUrl}
-              alt='Logo Instansi / Sekolah'
-              className='w-16 h-16 sm:w-20 sm:h-20 object-contain'
-            />
-          ) : (
-            <div className='w-16 h-16 sm:w-20 sm:h-20' />
+    <div className={`relative w-full ${className}`}>
+      <div className="flex items-center justify-between gap-3 sm:gap-4">
+        {/* Kolom Kiri: Logo Kiri atau Balancing Spacer */}
+        {hasAnyLogo && (
+          <div className="w-16 sm:w-24 shrink-0 flex items-center justify-center">
+            {hasLeft ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoKiri!}
+                alt="Logo Kiri"
+                className="w-14 h-14 sm:w-20 sm:h-20 object-contain"
+              />
+            ) : (
+              // Balancing spacer jika hanya ada logo kanan agar teks tetap tepat di tengah
+              <div className="w-14 h-14 sm:w-20 sm:h-20" aria-hidden="true" />
+            )}
+          </div>
+        )}
+
+        {/* Teks KOP Tengah (Hirarki Naskah Dinas Resmi) */}
+        <div className="flex-1 text-center px-1 sm:px-2">
+          {instansiUtama && (
+            <h3 className="text-[11px] sm:text-sm font-bold tracking-wide uppercase text-black font-sans leading-tight">
+              {instansiUtama}
+            </h3>
+          )}
+          {instansiInduk && (
+            <h4 className="text-[11px] sm:text-sm font-bold tracking-wide uppercase text-black font-sans leading-tight mt-0.5">
+              {instansiInduk}
+            </h4>
+          )}
+          <h2 className="text-sm sm:text-xl md:text-2xl font-black tracking-tight text-black uppercase mt-1 font-sans leading-tight">
+            {namaSekolah}
+          </h2>
+          {alamat && (
+            <p className="text-[10px] sm:text-xs font-normal text-black mt-1 font-sans leading-snug">
+              {alamat}
+            </p>
+          )}
+          {kontakText && (
+            <p className="text-[9px] sm:text-[11px] font-normal text-black font-sans leading-snug">
+              {kontakText}
+            </p>
           )}
         </div>
 
-        {/* Teks KOP Tengah */}
-        <div className='flex-1 text-center px-2'>
-          <h3 className='text-xs sm:text-sm font-bold tracking-wider uppercase text-gray-700 font-sans leading-tight'>
-            {instansi}
-          </h3>
-          <h2 className='text-base sm:text-xl font-extrabold tracking-tight text-gray-950 uppercase mt-1 font-sans leading-tight'>
-            {namaSekolah}
-          </h2>
-          <p className='text-[11px] sm:text-xs text-gray-600 mt-1 font-sans leading-snug'>
-            {alamat}
-          </p>
-          <p className='text-[10px] sm:text-[11px] text-gray-500 font-sans leading-snug'>
-            {kontak}
-            {website ? ` • Website: ${website}` : ''}
-          </p>
-        </div>
-
-        {/* Spacer Kanan agar Teks tetap di Tengah Sempurna */}
-        <div className='w-20 sm:w-24 shrink-0 hidden sm:block' />
+        {/* Kolom Kanan: Logo Kanan atau Balancing Spacer */}
+        {hasAnyLogo && (
+          <div className="w-16 sm:w-24 shrink-0 flex items-center justify-center">
+            {hasRight ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoKanan!}
+                alt="Logo Kanan"
+                className="w-14 h-14 sm:w-20 sm:h-20 object-contain"
+              />
+            ) : (
+              // Balancing spacer jika hanya ada logo kiri agar teks tetap tepat di tengah
+              <div className="w-14 h-14 sm:w-20 sm:h-20" aria-hidden="true" />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Garis Pembatas KOP */}
-      <div
-        className={`mt-3 ${
-          tipeGaris === 'double_thick'
-            ? 'border-b-4 border-double border-gray-950'
-            : tipeGaris === 'single_thick'
-            ? 'border-b-2 border-gray-950'
-            : 'border-b border-gray-950'
-        }`}
-      />
+      {tipeGaris === 'double_thick' && (
+        <div className="mt-2.5 space-y-[2px] w-full">
+          <div className="border-b-2 sm:border-b-[2.5px] border-black w-full" />
+          <div className="border-b border-black w-full" />
+        </div>
+      )}
+      {tipeGaris === 'single_thick' && <div className="mt-2.5 border-b-2 border-black w-full" />}
+      {tipeGaris === 'single_thin' && <div className="mt-2.5 border-b border-black w-full" />}
     </div>
   );
 }

@@ -21,13 +21,16 @@ export const templateCategories = pgTable('template_categories', {
 // ==========================================
 export const documentHeaders = pgTable('document_headers', {
   namaKop: varchar('nama_kop', { length: 255 }).notNull(),
-  logoUrl: text('logo_url'),
-  instansiUtama: varchar('instansi_utama', { length: 255 }), // e.g. PEMERINTAH PROVINSI JAWA TIMUR
-  namaSekolah: varchar('nama_sekolah', { length: 255 }),
+  logoUrl: text('logo_url'), // Backwards compatibility
+  logoKiriUrl: text('logo_kiri_url'), // Logo sisi kiri (misal: Logo Pemda / Dinas)
+  logoKananUrl: text('logo_kanan_url'), // Logo sisi kanan (misal: Logo Sekolah / Tut Wuri)
+  instansiUtama: varchar('instansi_utama', { length: 255 }), // e.g. PEMERINTAH DAERAH KABUPATEN SUMEDANG
+  instansiInduk: varchar('instansi_induk', { length: 255 }), // e.g. DINAS PENDIDIKAN
+  namaSekolah: varchar('nama_sekolah', { length: 255 }), // e.g. SMP NEGERI 1 UJUNGJAYA
   alamat: text('alamat'),
   kontak: varchar('kontak', { length: 255 }), // e.g. Telp / Email
   website: varchar('website', { length: 100 }),
-  tipeGaris: varchar('tipe_garis', { length: 50 }).default('single_thick'),
+  tipeGaris: varchar('tipe_garis', { length: 50 }).default('double_thick'),
   isDefault: boolean('is_default').default(false).notNull(),
   isAktif: boolean('is_aktif').default(true).notNull(),
   ...auditFields,
