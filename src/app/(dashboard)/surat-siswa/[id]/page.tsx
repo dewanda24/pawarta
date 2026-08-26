@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { PrintButton } from '@/components/shared/PrintButton';
 import { LetterheadView } from '@/components/shared/LetterheadView';
+import { OfficialSignatureBlock } from '@/components/shared/OfficialSignatureBlock';
 
 export const metadata = {
   title: 'Cetak Surat Kesiswaan | PAWARTA',
@@ -307,30 +308,18 @@ export default async function DetailSuratSiswaPage({
           </div>
         )}
 
-        {/* Tanda Tangan Resmi Kepala Sekolah & QR Code Verifikasi */}
+        {/* Tanda Tangan Resmi Kepala Sekolah Sesuai Perbup Sumedang 9/2026 */}
         <div className="mt-12 flex justify-end">
-          <div className="w-64 text-center space-y-2">
-            <p className="text-xs text-gray-600">
-              {sekolah?.kabupaten || 'Kota Utama'},{' '}
-              {new Date().toLocaleDateString('id-ID', { dateStyle: 'long' })}
-            </p>
-            <p className="font-semibold text-sm">Kepala Sekolah,</p>
-
-            <div className="py-2 flex flex-col items-center">
-              <div className="w-20 h-20 bg-gray-50 border-2 border-emerald-600/60 rounded-lg flex flex-col items-center justify-center p-1 text-[9px] text-emerald-800 font-bold shadow-xs">
-                <CheckCircle2 className="w-6 h-6 text-emerald-600 mb-0.5" />
-                <span>TTE VALID</span>
-                <span className="font-mono text-[8px] text-gray-500">PAWARTA BSrE</span>
-              </div>
-              <span className="text-[10px] text-gray-400 mt-1 font-sans">
-                Dokumen Resmi Ditandatangani Elektronik
-              </span>
-            </div>
-
-            <div>
-              <p className="font-bold underline text-sm">{ttdNama}</p>
-              <p className="text-xs text-gray-600 font-sans">NIP. {ttdNip}</p>
-            </div>
+          <div className="text-left">
+            <OfficialSignatureBlock
+              jabatan={`Kepala ${sekolah?.nama || 'SMP Negeri 1 Ujungjaya'}`}
+              nama={kepsek?.nama || 'Drs. H. Ahmad Wijaya, M.Pd.'}
+              pangkatGolongan={kepsek?.pangkatGolongan || 'Pembina Tingkat I (IV/b)'}
+              nip={kepsek?.nip || '197503122000031001'}
+              tempatTanggal={`${sekolah?.kabupaten || 'Sumedang'}, ${new Date().toLocaleDateString('id-ID', { dateStyle: 'long' })}`}
+              isTte={letter.status === 'APPROVED'}
+              qrCodeUrl="/Lambang_Kabupaten_Sumedang.png"
+            />
           </div>
         </div>
       </div>

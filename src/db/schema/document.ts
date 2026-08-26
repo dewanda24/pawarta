@@ -30,6 +30,7 @@ export const documentHeaders = pgTable('document_headers', {
   alamat: text('alamat'),
   kontak: varchar('kontak', { length: 255 }), // e.g. Telp / Email
   website: varchar('website', { length: 100 }),
+  tipeKop: varchar('tipe_kop', { length: 50 }).default('PERANGKAT_DAERAH'), // PERANGKAT_DAERAH, JABATAN_BUPATI, ATAS_NAMA_BUPATI
   tipeGaris: varchar('tipe_garis', { length: 50 }).default('double_thick'),
   isDefault: boolean('is_default').default(false).notNull(),
   isAktif: boolean('is_aktif').default(true).notNull(),

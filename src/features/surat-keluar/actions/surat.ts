@@ -6,6 +6,7 @@ import { eq, isNull, and, ilike, desc } from 'drizzle-orm';
 import { InsertOutgoingLetter } from '../types';
 import { revalidatePath } from 'next/cache';
 import { requireAuth, logActivity } from '@/lib/server-action';
+import { generateNomorNaskahDinas } from '@/lib/nomor-surat-generator';
 
 export async function getSuratKeluarList(params?: {
   search?: string;
@@ -140,7 +141,7 @@ export async function approveSuratKeluar(id: string) {
 
     const letter = await db.query.outgoingLetters.findFirst({
       where: eq(outgoingLetters.id, id),
-      with: { klasifikasi: true, jenisSurat: true },
+      with: { klasifikasi: true, jenisSurat: true, unitKerja: true },
     });
 
     if (!letter) {
@@ -151,11 +152,20 @@ export async function approveSuratKeluar(id: string) {
     const countTotal = await db.$count(outgoingLetters, isNull(outgoingLetters.deletedAt));
     const nextSeq = (countTotal + 1).toString().padStart(3, '0');
 
-    // Generate nomor surat dan agenda jika belum ada
-    const klasifikasiKode = letter.klasifikasi?.kode || '421';
-    const jenisKode = letter.jenisSurat?.kode || 'SK';
+    // Generate nomor surat resmi sesuai standar Perbup Sumedang No. 9/2026
     const nomorSuratGenerated =
-      letter.nomorSurat || `${klasifikasiKode}/${nextSeq}/SMA-01/${currentYear}`;
+      letter.nomorSurat ||
+      generateNomorNaskahDinas({
+        kodeJenisSurat: letter.jenisSurat?.kode || 'SD',
+        nomorUrut: countTotal + 1,
+        kodeKlasifikasi: letter.klasifikasi?.kode || '000',
+        kodePerangkatDaerah: 'Disdik',
+        kodeBagianBidang: letter.unitKerja?.kode || 'TU',
+        derajatKeamanan: 'B',
+        tanggal: letter.tanggalSurat || new Date(),
+      });
+
+    const jenisKode = letter.jenisSurat?.kode || 'SK';
     const nomorAgendaGenerated = letter.nomorAgenda || `${nextSeq}/${jenisKode}/${currentYear}`;
     const tanggalTerbitStr = new Date().toISOString().split('T')[0];
 
@@ -237,4 +247,3 @@ export async function deleteOutgoingAttachment(attachmentId: string) {
     return { success: false, error: msg };
   }
 }
-

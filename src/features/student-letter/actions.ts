@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 
 import { db } from '@/db';
 import {
@@ -11,6 +11,7 @@ import {
 import { eq, isNull, desc, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAuth, logActivity } from '@/lib/server-action';
+import { generateNomorNaskahDinas } from '@/lib/nomor-surat-generator';
 
 // ==========================================
 // GET LIST — filter di DB level
@@ -24,51 +25,63 @@ export async function getStudentLetters(params?: { tipeSurat?: string }) {
       params?.tipeSurat ? eq(studentLetters.tipeSurat, params.tipeSurat) : undefined,
     );
 
-    const data = await db.query.studentLetters.findMany({
+    const letters = await db.query.studentLetters.findMany({
       where: whereClause,
+      orderBy: [desc(studentLetters.createdAt)],
       with: {
         siswa: {
-          with: { kelas: true },
+          with: {
+            kelas: true,
+          },
         },
         kelas: true,
         guruPendamping: true,
         participants: {
           with: {
             siswa: {
-              with: { kelas: true },
+              with: {
+                kelas: true,
+              },
             },
           },
         },
       },
-      orderBy: [desc(studentLetters.createdAt)],
     });
 
-    return { success: true, data };
+    return { success: true, data: letters };
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : 'Gagal mengambil surat siswa';
+    const msg = error instanceof Error ? error.message : 'Gagal memuat data surat siswa';
     return { success: false, error: msg };
   }
 }
 
 // ==========================================
-// GET BY ID
+// GET SINGLE
 // ==========================================
 export async function getStudentLetterById(id: string) {
   try {
     await requireAuth();
 
     const letter = await db.query.studentLetters.findFirst({
-      where: eq(studentLetters.id, id),
+      where: and(eq(studentLetters.id, id), isNull(studentLetters.deletedAt)),
       with: {
         siswa: {
-          with: { kelas: true },
+          with: {
+            kelas: true,
+          },
         },
-        kelas: true,
+        kelas: {
+          with: {
+            waliKelas: true,
+          },
+        },
         guruPendamping: true,
         participants: {
           with: {
             siswa: {
-              with: { kelas: true },
+              with: {
+                kelas: true,
+              },
             },
           },
         },
@@ -87,7 +100,7 @@ export async function getStudentLetterById(id: string) {
 
     return { success: true, data: letter, sekolah, kepsek };
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : 'Gagal mengambil detail surat';
+    const msg = error instanceof Error ? error.message : 'Gagal memuat detail surat';
     return { success: false, error: msg };
   }
 }
@@ -142,10 +155,13 @@ export async function createSuratDispensasi(input: CreateDispensasiInput) {
   try {
     const user = await requireAuth();
 
-    const currentYear = new Date().getFullYear();
     const countTotal = await db.$count(studentLetters, isNull(studentLetters.deletedAt));
-    const nextSeq = (countTotal + 1).toString().padStart(3, '0');
-    const nomorSurat = `421.2/${nextSeq}/DISPEN/SMA-01/${currentYear}`;
+    const nomorSurat = generateNomorNaskahDinas({
+      kodeJenisSurat: 'SIZIN',
+      nomorUrut: countTotal + 1,
+      kodeKlasifikasi: '421.2',
+      kodePerangkatDaerah: 'Disdik',
+    });
 
     const [created] = await db
       .insert(studentLetters)
@@ -206,10 +222,13 @@ export async function createSuratKeteranganAktif(input: CreateKeteranganAktifInp
 
     if (!siswa) return { success: false, error: 'Siswa tidak ditemukan' };
 
-    const currentYear = new Date().getFullYear();
     const countTotal = await db.$count(studentLetters, isNull(studentLetters.deletedAt));
-    const nextSeq = (countTotal + 1).toString().padStart(3, '0');
-    const nomorSurat = `421.2/${nextSeq}/KET-AKTIF/SMA-01/${currentYear}`;
+    const nomorSurat = generateNomorNaskahDinas({
+      kodeJenisSurat: 'SKET',
+      nomorUrut: countTotal + 1,
+      kodeKlasifikasi: '421.2',
+      kodePerangkatDaerah: 'Disdik',
+    });
 
     const [created] = await db
       .insert(studentLetters)
@@ -261,10 +280,14 @@ export async function createSuratPanggilanOrtu(input: CreatePanggilanOrtuInput) 
 
     if (!siswa) return { success: false, error: 'Siswa tidak ditemukan' };
 
-    const currentYear = new Date().getFullYear();
     const countTotal = await db.$count(studentLetters, isNull(studentLetters.deletedAt));
-    const nextSeq = (countTotal + 1).toString().padStart(3, '0');
-    const nomorSurat = `421.2/${nextSeq}/PANGGILAN-ORTU/SMA-01/${currentYear}`;
+    const nomorSurat = generateNomorNaskahDinas({
+      kodeJenisSurat: 'SPGL',
+      nomorUrut: countTotal + 1,
+      kodeKlasifikasi: '421.2',
+      kodePerangkatDaerah: 'Disdik',
+      derajatKeamanan: 'B',
+    });
 
     const [created] = await db
       .insert(studentLetters)

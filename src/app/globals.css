@@ -97,3 +97,21 @@
     @apply bg-background text-foreground;
   }
 }
+
+/*
+  Standar Cetak Naskah Dinas Resmi (Perbup Sumedang No. 9 Tahun 2026)
+  - Ukuran Kertas: HVS F4 / Folio (215mm x 330mm)
+  - Margin: Kiri 3.0cm (arsip/jilid), Kanan 2.0cm, Atas 2.5cm, Bawah 2.5cm
+*/
+@media print {
+  @page {
+    size: 215mm 330mm;
+    margin: 25mm 20mm 25mm 30mm;
+  }
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

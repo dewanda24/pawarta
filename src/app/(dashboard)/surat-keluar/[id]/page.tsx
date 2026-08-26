@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { ApproveLetterButton } from '@/components/features/outgoing-letter/ApproveLetterButton';
 import { AttachmentSection } from '@/components/shared/AttachmentSection';
 import { LetterheadView } from '@/components/shared/LetterheadView';
+import { OfficialSignatureBlock } from '@/components/shared/OfficialSignatureBlock';
 import { CheckCircle2, ArrowLeft } from 'lucide-react';
 
 export default async function SuratKeluarDetailPage({
@@ -145,41 +146,28 @@ export default async function SuratKeluarDetailPage({
           </p>
         </div>
 
-        {/* Tanda Tangan & QR Code */}
+        {/* Tanda Tangan & QR Code Resmi Sesuai Perbup Sumedang 9/2026 */}
         <div className="mt-12 flex justify-end text-sm">
-          <div className="w-64 text-center space-y-2">
-            <p className="text-gray-700">Kepala Sekolah,</p>
-
-            {letter.status === 'APPROVED' || letter.status === 'PUBLISHED' ? (
-              <div className="py-2 flex flex-col items-center">
-                <div className="w-20 h-20 bg-gray-50 border-2 border-emerald-600/60 rounded-lg flex flex-col items-center justify-center p-1 text-[9px] text-emerald-800 font-bold shadow-xs">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600 mb-0.5" />
-                  <span>TTE VALID</span>
-                  <span className="font-mono text-[8px] text-gray-500">PAWARTA BSrE</span>
-                </div>
-                <span className="text-[10px] text-gray-400 mt-1">Ditandatangani Elektronik</span>
-              </div>
-            ) : (
-              <div className="h-20 flex items-center justify-center text-xs text-gray-400 italic">
-                (Menunggu Tanda Tangan)
-              </div>
-            )}
-
-            <div>
-              <p className="font-bold underline text-gray-950">{ttdNama}</p>
-              <p className="text-xs text-gray-600">NIP. {ttdNip}</p>
-            </div>
+          <div className="text-left">
+            <OfficialSignatureBlock
+              jabatan={letter.penandatangan?.jabatanId ? 'Kepala Sekolah' : 'Kepala Sekolah'}
+              nama={letter.penandatangan?.nama || kepsek?.nama || 'Drs. H. Ahmad Wijaya, M.Pd.'}
+              pangkatGolongan={
+                letter.penandatangan?.pangkatGolongan ||
+                kepsek?.pangkatGolongan ||
+                'Pembina Tingkat I (IV/b)'
+              }
+              nip={letter.penandatangan?.nip || kepsek?.nip || '197503122000031001'}
+              isTte={letter.status === 'APPROVED' || letter.status === 'PUBLISHED'}
+              qrCodeUrl="/Lambang_Kabupaten_Sumedang.png"
+            />
           </div>
         </div>
       </div>
 
       {/* Attachments Section (Hidden on Print) */}
       <div className="print:hidden">
-        <AttachmentSection
-          suratId={letter.id}
-          tipeSurat="OUTGOING"
-          attachments={attachments}
-        />
+        <AttachmentSection suratId={letter.id} tipeSurat="OUTGOING" attachments={attachments} />
       </div>
     </div>
   );

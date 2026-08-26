@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {
   pgTable,
   varchar,
@@ -81,6 +80,7 @@ export const incomingLetters = pgTable('incoming_letters', {
   penerimaId: uuid('penerima_id').references(() => masterPegawai.id, { onDelete: 'set null' }), // Pegawai yang menerima fisik surat
 
   status: varchar('status', { length: 50 }).default('DRAFT').notNull(), // DRAFT, REGISTERED, DISTRIBUTED, DISPOSITIONED, COMPLETED
+  deadlineSla: timestamp('deadline_sla'), // Batas waktu penyelesaian sesuai Pasal 72 Perbup 9/2026
   catatan: text('catatan'),
   deletedAt: timestamp('deleted_at'),
 });

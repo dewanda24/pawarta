@@ -50,6 +50,7 @@ export const masterPegawai = pgTable('master_pegawai', {
   noHp: varchar('no_hp', { length: 50 }),
   unitKerjaId: uuid('unit_kerja_id').references(() => masterUnitKerja.id),
   jabatanId: uuid('jabatan_id').references(() => masterJabatan.id),
+  pangkatGolongan: varchar('pangkat_golongan', { length: 100 }), // Contoh: Pembina Tingkat I (IV/b)
   statusAsn: varchar('status_asn', { length: 50 }), // PNS, PPPK, Honorer, dll
   isAktif: boolean('is_aktif').default(true).notNull(),
 });
@@ -71,11 +72,21 @@ export const masterPenandatangan = pgTable('master_penandatangan', {
   isAktif: boolean('is_aktif').default(true).notNull(),
 });
 
-// 6. Master Jenis Surat
+// 6. Master Jenis Surat (Sesuai Perbup Sumedang No. 9 Tahun 2026)
 export const masterJenisSurat = pgTable('master_jenis_surat', {
   ...auditFields,
   kode: varchar('kode', { length: 50 }).notNull().unique(),
-  nama: varchar('nama', { length: 255 }).notNull(), // Surat Tugas, Undangan, dll
+  nama: varchar('nama', { length: 255 }).notNull(), // Peraturan Daerah, Surat Tugas, Nota Dinas, dll
+  kategori: varchar('kategori', { length: 100 }).default('Naskah Dinas Korespondensi'), // Naskah Dinas Arahan, Naskah Dinas Korespondensi, Naskah Dinas Khusus
+  subKategori: varchar('sub_kategori', { length: 100 }).default('Internal'), // Pengaturan, Penetapan, Penugasan, Internal, Eksternal, Khusus
+  fontFamily: varchar('font_family', { length: 100 }).default('Arial'), // Arial atau Bookman Old Style
+  fontSize: integer('font_size').default(12), // 12 pt
+  lineSpacing: varchar('line_spacing', { length: 20 }).default('1.15'), // '1.0' atau '1.15'
+  marginKiri: varchar('margin_kiri', { length: 20 }).default('3.0cm'), // 3.0 cm
+  marginKanan: varchar('margin_kanan', { length: 20 }).default('2.0cm'), // 2.0 cm
+  marginAtas: varchar('margin_atas', { length: 20 }).default('2.5cm'), // 2.5 cm
+  marginBawah: varchar('margin_bawah', { length: 20 }).default('2.5cm'), // 2.5 cm
+  ukuranKertas: varchar('ukuran_kertas', { length: 50 }).default('F4'), // HVS F4
   deskripsi: text('deskripsi'),
   isAktif: boolean('is_aktif').default(true).notNull(),
 });
@@ -148,8 +159,8 @@ export const konfigurasiSistem = pgTable('konfigurasi_sistem', {
   bahasa: varchar('bahasa', { length: 50 }).default('id-ID'),
   zonaWaktu: varchar('zona_waktu', { length: 50 }).default('Asia/Jakarta'),
   formatTanggal: varchar('format_tanggal', { length: 50 }).default('DD MMMM YYYY'),
-  formatPdf: varchar('format_pdf', { length: 50 }).default('A4'),
-  marginCetak: varchar('margin_cetak', { length: 100 }), // e.g. "2cm 2cm 2cm 2cm"
+  formatPdf: varchar('format_pdf', { length: 50 }).default('F4'),
+  marginCetak: varchar('margin_cetak', { length: 100 }).default('2.5cm 2.0cm 2.5cm 3.0cm'), // Top Right Bottom Left (3cm kiri untuk arsip)
 });
 
 // 14. Master Kelas
