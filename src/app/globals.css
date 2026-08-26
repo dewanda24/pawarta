@@ -108,10 +108,35 @@
     size: 215mm 330mm;
     margin: 25mm 20mm 25mm 30mm;
   }
+
+  /* Sembunyikan seluruh elemen navigasi, header dashboard, footer, dan tombol aksi */
+  header,
+  footer,
+  aside,
+  nav,
+  button,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  html,
   body {
     background-color: #ffffff !important;
     color: #000000 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+    width: 100% !important;
   }
 }

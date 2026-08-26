@@ -81,15 +81,18 @@ const menuGroups = [
     title: 'Pengaturan Sistem',
     items: [
       { id: '14', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/iam/users' },
-      { id: '15', nama: 'Gateway Notifikasi WA/Email', icon: 'Radio', route: '/settings/notifikasi' },
+      {
+        id: '15',
+        nama: 'Gateway Notifikasi WA/Email',
+        icon: 'Radio',
+        route: '/settings/notifikasi',
+      },
       { id: '16', nama: 'Verifikasi Dokumen Publik', icon: 'ShieldCheck', route: '/verifikasi' },
     ],
   },
   {
     title: 'Bantuan & SOP',
-    items: [
-      { id: '17', nama: 'Panduan Penggunaan', icon: 'HelpCircle', route: '/bantuan' },
-    ],
+    items: [{ id: '17', nama: 'Panduan Penggunaan', icon: 'HelpCircle', route: '/bantuan' }],
   },
 ];
 
@@ -99,7 +102,7 @@ export function Sidebar() {
 
   return (
     <aside
-      className={`${collapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 flex flex-col hidden md:flex transition-all duration-300 ease-in-out relative flex-shrink-0 min-h-screen`}
+      className={`${collapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 flex flex-col hidden md:flex print:hidden transition-all duration-300 ease-in-out relative flex-shrink-0 min-h-screen`}
     >
       <div
         className={`flex items-center h-16 px-4 border-b border-gray-200 ${collapsed ? 'justify-center' : 'justify-between'}`}

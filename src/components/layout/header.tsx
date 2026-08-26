@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Search, LayoutGrid, User, Settings, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { NotificationCenter } from './notification-center';
 import { CommandPaletteTrigger } from './command-palette';
 import { signOut } from 'next-auth/react';
@@ -20,21 +20,13 @@ export function Header({ user }: { user?: HeaderUser }) {
   const initial = (displayName.charAt(0) || 'P').toUpperCase();
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 shadow-sm">
+    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40 shadow-sm print:hidden">
       <div className="flex-1 flex items-center gap-4">
         {/* Command Palette Trigger */}
         <CommandPaletteTrigger />
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
-        {/* Quick Actions */}
-        <button
-          title="Modul Sistem"
-          className="hidden md:flex items-center justify-center w-9 h-9 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <LayoutGrid className="w-5 h-5" />
-        </button>
-
         {/* Notification Center */}
         <NotificationCenter />
 
