@@ -180,3 +180,43 @@ export async function deleteDocumentHeader(id: string) {
     return { success: false, error: msg };
   }
 }
+
+export async function uploadLogoFile(formData: FormData) {
+  try {
+    await requireAuth();
+    const file = formData.get('file') as File | null;
+    if (!file) {
+      return { success: false, error: 'File logo wajib disediakan' };
+    }
+
+    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_SIZE) {
+      return { success: false, error: 'Ukuran file logo maksimal 10MB' };
+    }
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const { writeFile, mkdir } = await import('fs/promises');
+    const { join } = await import('path');
+    const { existsSync } = await import('fs');
+
+    const uploadDir = join(process.cwd(), 'public', 'uploads', 'logos');
+    if (!existsSync(uploadDir)) {
+      await mkdir(uploadDir, { recursive: true });
+    }
+
+    const timestamp = Date.now();
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const uniqueFileName = `logo_${timestamp}_${sanitizedName}`;
+    const filePath = join(uploadDir, uniqueFileName);
+    const fileUrl = `/uploads/logos/${uniqueFileName}`;
+
+    await writeFile(filePath, buffer);
+
+    return { success: true, url: fileUrl };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Gagal mengunggah logo';
+    return { success: false, error: msg };
+  }
+}

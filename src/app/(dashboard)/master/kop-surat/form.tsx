@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   createDocumentHeader,
   updateDocumentHeader,
+  uploadLogoFile,
 } from '@/features/master-data/actions/kop-surat';
 import { toast } from 'sonner';
 import { Upload, Image as ImageIcon, Loader2, X, Sparkles, Building2, School } from 'lucide-react';
@@ -76,9 +77,9 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
       alamat: 'Jalan Jaladustan Nomor 29 Ujungjaya Sumedang 45383',
       kontak: 'e-mail : smpn1ujungjaya@gmail.com',
       website: '',
-      logoUrl: '/logo-provinsi.svg',
-      logoKiriUrl: '/logo-provinsi.svg',
-      logoKananUrl: '',
+      logoUrl: '/Lambang_Kabupaten_Sumedang.png',
+      logoKiriUrl: '/Lambang_Kabupaten_Sumedang.png',
+      logoKananUrl: '/LOGO SMPN 1 UJUNGJAYA a (1).png',
       tipeGaris: 'double_thick',
       isDefault: false,
       isAktif: true,
@@ -114,9 +115,9 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
         alamat: 'Jalan Jaladustan Nomor 29 Ujungjaya Sumedang 45383',
         kontak: 'e-mail : smpn1ujungjaya@gmail.com',
         website: '',
-        logoUrl: '/logo-provinsi.svg',
-        logoKiriUrl: '/logo-provinsi.svg',
-        logoKananUrl: '',
+        logoUrl: '/Lambang_Kabupaten_Sumedang.png',
+        logoKiriUrl: '/Lambang_Kabupaten_Sumedang.png',
+        logoKananUrl: '/LOGO SMPN 1 UJUNGJAYA a (1).png',
         tipeGaris: 'double_thick',
         isDefault: false,
         isAktif: true,
@@ -131,6 +132,21 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Instant local preview
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        if (target === 'left') {
+          setValue('logoKiriUrl', dataUrl);
+          setValue('logoUrl', dataUrl);
+        } else {
+          setValue('logoKananUrl', dataUrl);
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+
     if (target === 'left') setIsUploadingLeft(true);
     else setIsUploadingRight(true);
 
@@ -139,30 +155,45 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
       formData.append('file', file);
       formData.append('tipeSurat', 'LOGO');
 
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const json = await res.json();
-      if (res.ok && json.success) {
-        const uploadedUrl = json.url || json.fileUrl;
+      // 1. Try Server Action first
+      const res = await uploadLogoFile(formData);
+      if (res.success && res.url) {
         if (target === 'left') {
-          setValue('logoKiriUrl', uploadedUrl);
-          setValue('logoUrl', uploadedUrl);
-          toast.success('Logo kiri berhasil diunggah!');
+          setValue('logoKiriUrl', res.url);
+          setValue('logoUrl', res.url);
+          toast.success('Logo kiri berhasil disimpan');
         } else {
-          setValue('logoKananUrl', uploadedUrl);
-          toast.success('Logo kanan berhasil diunggah!');
+          setValue('logoKananUrl', res.url);
+          toast.success('Logo kanan berhasil disimpan');
         }
       } else {
-        toast.error(json.error || 'Gagal mengunggah logo');
+        // 2. Fallback to API route if server action had an error
+        const apiRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const json = await apiRes.json();
+        if (apiRes.ok && json.success) {
+          const uploadedUrl = json.url || json.fileUrl;
+          if (target === 'left') {
+            setValue('logoKiriUrl', uploadedUrl);
+            setValue('logoUrl', uploadedUrl);
+            toast.success('Logo kiri berhasil diunggah!');
+          } else {
+            setValue('logoKananUrl', uploadedUrl);
+            toast.success('Logo kanan berhasil diunggah!');
+          }
+        } else {
+          toast.error(res.error || json.error || 'Gagal menyimpan file logo');
+        }
       }
     } catch {
       toast.error('Terjadi kesalahan saat upload logo');
     } finally {
       if (target === 'left') setIsUploadingLeft(false);
       else setIsUploadingRight(false);
+      // Reset input value so re-selecting same file triggers onChange
+      e.target.value = '';
     }
   };
 
@@ -262,7 +293,41 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
               </div>
 
               {/* Logo Kiri Presets */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValue('logoKiriUrl', '/Lambang_Kabupaten_Sumedang.png');
+                    setValue('logoUrl', '/Lambang_Kabupaten_Sumedang.png');
+                  }}
+                  className={`flex items-center gap-2 p-2 rounded-lg border text-left text-xs transition-all ${
+                    watchAll.logoKiriUrl === '/Lambang_Kabupaten_Sumedang.png'
+                      ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500 font-semibold text-blue-900'
+                      : 'bg-gray-50/70 border-gray-200 hover:bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/Lambang_Kabupaten_Sumedang.png" alt="Sumedang" className="w-6 h-6 object-contain" />
+                  <span className="text-[11px] leading-tight font-medium">Kab. Sumedang</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValue('logoKiriUrl', '/Tut Wuri Handayani Logo - Colored - 512x512 - zonalogo.com.png');
+                    setValue('logoUrl', '/Tut Wuri Handayani Logo - Colored - 512x512 - zonalogo.com.png');
+                  }}
+                  className={`flex items-center gap-2 p-2 rounded-lg border text-left text-xs transition-all ${
+                    watchAll.logoKiriUrl === '/Tut Wuri Handayani Logo - Colored - 512x512 - zonalogo.com.png'
+                      ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500 font-semibold text-blue-900'
+                      : 'bg-gray-50/70 border-gray-200 hover:bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/Tut Wuri Handayani Logo - Colored - 512x512 - zonalogo.com.png" alt="Tut Wuri" className="w-6 h-6 object-contain" />
+                  <span className="text-[11px] leading-tight font-medium">Tut Wuri</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -277,24 +342,7 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/logo-provinsi.svg" alt="Daerah" className="w-6 h-6 object-contain" />
-                  <span className="text-[11px] leading-tight">Lambang Daerah</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setValue('logoKiriUrl', '/tutwuri.svg');
-                    setValue('logoUrl', '/tutwuri.svg');
-                  }}
-                  className={`flex items-center gap-2 p-2 rounded-lg border text-left text-xs transition-all ${
-                    watchAll.logoKiriUrl === '/tutwuri.svg'
-                      ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500 font-semibold text-blue-900'
-                      : 'bg-gray-50/70 border-gray-200 hover:bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/tutwuri.svg" alt="Tut Wuri" className="w-6 h-6 object-contain" />
-                  <span className="text-[11px] leading-tight">Tut Wuri</span>
+                  <span className="text-[11px] leading-tight font-medium">Daerah (SVG)</span>
                 </button>
               </div>
 
@@ -357,33 +405,47 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
               </div>
 
               {/* Logo Kanan Presets */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={() => setValue('logoKananUrl', '/tutwuri.svg')}
+                  onClick={() => setValue('logoKananUrl', '/LOGO SMPN 1 UJUNGJAYA a (1).png')}
                   className={`flex items-center gap-2 p-2 rounded-lg border text-left text-xs transition-all ${
-                    watchAll.logoKananUrl === '/tutwuri.svg'
+                    watchAll.logoKananUrl === '/LOGO SMPN 1 UJUNGJAYA a (1).png'
                       ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500 font-semibold text-emerald-900'
                       : 'bg-gray-50/70 border-gray-200 hover:bg-gray-100 text-gray-700'
                   }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/tutwuri.svg" alt="Tut Wuri" className="w-6 h-6 object-contain" />
-                  <span className="text-[11px] leading-tight">Tut Wuri</span>
+                  <img src="/LOGO SMPN 1 UJUNGJAYA a (1).png" alt="SMPN 1" className="w-6 h-6 object-contain" />
+                  <span className="text-[11px] leading-tight font-medium">SMPN 1 Ujungjaya</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setValue('logoKananUrl', '/logo-provinsi.svg')}
+                  onClick={() => setValue('logoKananUrl', '/Tut Wuri Handayani Logo - Colored - 512x512 - zonalogo.com.png')}
                   className={`flex items-center gap-2 p-2 rounded-lg border text-left text-xs transition-all ${
-                    watchAll.logoKananUrl === '/logo-provinsi.svg'
+                    watchAll.logoKananUrl === '/Tut Wuri Handayani Logo - Colored - 512x512 - zonalogo.com.png'
                       ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500 font-semibold text-emerald-900'
                       : 'bg-gray-50/70 border-gray-200 hover:bg-gray-100 text-gray-700'
                   }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/logo-provinsi.svg" alt="Daerah" className="w-6 h-6 object-contain" />
-                  <span className="text-[11px] leading-tight">Lambang Daerah</span>
+                  <img src="/Tut Wuri Handayani Logo - Colored - 512x512 - zonalogo.com.png" alt="Tut Wuri" className="w-6 h-6 object-contain" />
+                  <span className="text-[11px] leading-tight font-medium">Tut Wuri</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setValue('logoKananUrl', '/Lambang_Kabupaten_Sumedang.png')}
+                  className={`flex items-center gap-2 p-2 rounded-lg border text-left text-xs transition-all ${
+                    watchAll.logoKananUrl === '/Lambang_Kabupaten_Sumedang.png'
+                      ? 'bg-emerald-50 border-emerald-500 ring-1 ring-emerald-500 font-semibold text-emerald-900'
+                      : 'bg-gray-50/70 border-gray-200 hover:bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/Lambang_Kabupaten_Sumedang.png" alt="Sumedang" className="w-6 h-6 object-contain" />
+                  <span className="text-[11px] leading-tight font-medium">Kab. Sumedang</span>
                 </button>
               </div>
 
