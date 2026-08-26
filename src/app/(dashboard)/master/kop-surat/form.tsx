@@ -41,10 +41,14 @@ const formSchema = z.object({
 
 export type DocumentHeaderFormValues = z.infer<typeof formSchema>;
 
+export type DocumentHeaderFormInitialData = {
+  [K in keyof DocumentHeaderFormValues]?: DocumentHeaderFormValues[K] | null;
+} & { id?: string };
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initialData?: (Partial<DocumentHeaderFormValues> & { id?: string }) | null;
+  initialData?: DocumentHeaderFormInitialData | null;
 }
 
 export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
