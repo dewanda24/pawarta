@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Star, CheckCircle, Trash2, Pencil, Landmark } from 'lucide-react';
-import { DocumentHeaderForm, DocumentHeaderFormValues } from './form';
+import { DocumentHeaderForm } from './form';
 import { DeleteConfirmDialog } from '@/components/shared/delete-confirm-dialog';
 import {
   getDocumentHeadersList,
@@ -35,9 +35,7 @@ export default function MasterKopSuratPage() {
   const [loading, setLoading] = useState(true);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedData, setSelectedData] = useState<
-    (DocumentHeaderFormValues & { id?: string }) | null
-  >(null);
+  const [selectedData, setSelectedData] = useState<HeaderItem | null>(null);
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
