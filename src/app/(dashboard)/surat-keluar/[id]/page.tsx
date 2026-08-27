@@ -159,7 +159,7 @@ export default async function SuratKeluarDetailPage({
               }
               nip={letter.penandatangan?.nip || kepsek?.nip || '197503122000031001'}
               isTte={letter.status === 'APPROVED' || letter.status === 'PUBLISHED'}
-              qrCodeUrl="/Lambang_Kabupaten_Sumedang.png"
+              qrCodeUrl={`/api/v1/verifikasi/qr/${letter.id}`}
             />
           </div>
         </div>

@@ -318,7 +318,7 @@ export default async function DetailSuratSiswaPage({
               nip={kepsek?.nip || '197503122000031001'}
               tempatTanggal={`${sekolah?.kabupaten || 'Sumedang'}, ${new Date().toLocaleDateString('id-ID', { dateStyle: 'long' })}`}
               isTte={letter.status === 'APPROVED'}
-              qrCodeUrl="/Lambang_Kabupaten_Sumedang.png"
+              qrCodeUrl={`/api/v1/verifikasi/qr/${letter.id}`}
             />
           </div>
         </div>
