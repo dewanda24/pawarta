@@ -38,7 +38,7 @@ export default function LoginForm() {
       });
 
       if (res?.error) {
-        const message = 'Username/email atau password yang Anda masukkan tidak sesuai.';
+        const message = 'Username/email atau kata sandi yang Anda masukkan tidak sesuai.';
         setErrorMsg(message);
         toast.error(message);
         setLoading(false);
@@ -58,9 +58,9 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 w-full">
       {errorMsg && (
-        <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2.5 text-xs text-red-700 animate-in fade-in duration-200">
+        <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 flex items-start gap-3 text-xs text-red-700 animate-in fade-in duration-200">
           <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-          <p className="font-medium">{errorMsg}</p>
+          <p className="font-medium leading-relaxed">{errorMsg}</p>
         </div>
       )}
 
@@ -70,7 +70,7 @@ export default function LoginForm() {
           Username atau Email
         </Label>
         <div className="relative">
-          <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <Input
             id="identifier"
             name="identifier"
@@ -80,7 +80,7 @@ export default function LoginForm() {
             required
             placeholder="Contoh: admin atau nama@sekolah.sch.id"
             autoComplete="username"
-            className="pl-10 h-10 text-xs sm:text-sm bg-gray-50/50 border-gray-200 focus:bg-white transition-colors"
+            className="pl-10 h-11 text-sm bg-gray-50/60 border-gray-200 focus:bg-white transition-all rounded-xl"
             disabled={loading}
           />
         </div>
@@ -94,7 +94,7 @@ export default function LoginForm() {
           </Label>
         </div>
         <div className="relative">
-          <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <Input
             id="password"
             name="password"
@@ -104,18 +104,18 @@ export default function LoginForm() {
             required
             placeholder="Masukkan kata sandi akun"
             autoComplete="current-password"
-            className="pl-10 pr-10 h-10 text-xs sm:text-sm bg-gray-50/50 border-gray-200 focus:bg-white transition-colors"
+            className="pl-10 pr-11 h-11 text-sm bg-gray-50/60 border-gray-200 focus:bg-white transition-all rounded-xl"
             disabled={loading}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none p-1"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none p-1 rounded-md transition-colors"
             tabIndex={-1}
-            aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+            aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
           >
             {showPassword ? (
-              <EyeOff className="w-4 h-4" />
+              <EyeOff className="w-4 h-4 text-gray-600" />
             ) : (
               <Eye className="w-4 h-4" />
             )}
@@ -126,12 +126,12 @@ export default function LoginForm() {
       {/* Submit Button */}
       <Button
         type="submit"
-        className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-md shadow-blue-600/20 transition-all mt-2"
+        className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-md shadow-blue-600/25 transition-all mt-2 cursor-pointer"
         disabled={loading || !identifier.trim() || !password}
       >
         {loading ? (
           <span className="flex items-center gap-2 justify-center">
-            <Loader2 className="w-4 h-4 animate-spin" /> Memeriksa Akun...
+            <Loader2 className="w-4 h-4 animate-spin" /> Memeriksa Kredensial...
           </span>
         ) : (
           'Masuk ke Sistem'
