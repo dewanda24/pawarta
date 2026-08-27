@@ -22,6 +22,7 @@ import {
   Radio,
   HelpCircle,
   ShieldCheck,
+  PenTool,
   type LucideIcon,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -45,6 +46,7 @@ const IconMap: Record<string, LucideIcon> = {
   Radio,
   HelpCircle,
   ShieldCheck,
+  PenTool,
 };
 
 // Menu fokus lingkup persuratan sekolah (TU, Guru, Wakasek, Kepala Sekolah)
@@ -68,31 +70,33 @@ const menuGroups = [
   {
     title: 'Master Data Sekolah',
     items: [
-      { id: '7', nama: 'Desain KOP Surat', icon: 'Landmark', route: '/master/kop-surat' },
-      { id: '8', nama: 'Data Siswa', icon: 'GraduationCap', route: '/master/siswa' },
-      { id: '9', nama: 'Rombel / Kelas', icon: 'School', route: '/master/kelas' },
+      { id: '7', nama: 'Profil & Kepala Sekolah', icon: 'School', route: '/master/sekolah' },
+      { id: '8', nama: 'Desain KOP Surat', icon: 'Landmark', route: '/master/kop-surat' },
+      { id: '9', nama: 'Penandatangan & TTE', icon: 'PenTool', route: '/master/penandatangan' },
       { id: '10', nama: 'Guru & Staf Pegawai', icon: 'Users', route: '/master/pegawai' },
-      { id: '11', nama: 'Kode Klasifikasi Surat', icon: 'Layers', route: '/master/klasifikasi' },
-      { id: '12', nama: 'Jenis Surat', icon: 'FileText', route: '/master/jenis-surat' },
-      { id: '13', nama: 'Daftar Instansi Relasi', icon: 'Building2', route: '/master/instansi' },
+      { id: '11', nama: 'Data Siswa', icon: 'GraduationCap', route: '/master/siswa' },
+      { id: '12', nama: 'Rombel / Kelas', icon: 'FolderOpen', route: '/master/kelas' },
+      { id: '13', nama: 'Kode Klasifikasi Surat', icon: 'Layers', route: '/master/klasifikasi' },
+      { id: '14', nama: 'Jenis Surat', icon: 'FileText', route: '/master/jenis-surat' },
+      { id: '15', nama: 'Daftar Instansi Relasi', icon: 'Building2', route: '/master/instansi' },
     ],
   },
   {
     title: 'Pengaturan Sistem',
     items: [
-      { id: '14', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/iam/users' },
+      { id: '16', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/iam/users' },
       {
-        id: '15',
+        id: '17',
         nama: 'Gateway Notifikasi WA/Email',
         icon: 'Radio',
         route: '/settings/notifikasi',
       },
-      { id: '16', nama: 'Verifikasi Dokumen Publik', icon: 'ShieldCheck', route: '/verifikasi' },
+      { id: '18', nama: 'Verifikasi Dokumen Publik', icon: 'ShieldCheck', route: '/verifikasi' },
     ],
   },
   {
     title: 'Bantuan & SOP',
-    items: [{ id: '17', nama: 'Panduan Penggunaan', icon: 'HelpCircle', route: '/bantuan' }],
+    items: [{ id: '19', nama: 'Panduan Penggunaan', icon: 'HelpCircle', route: '/bantuan' }],
   },
 ];
 
