@@ -1,4 +1,4 @@
-﻿'use server';
+'use server';
 
 import { db } from '@/db';
 import { notifications } from '@/db/schema/workspace';
@@ -19,6 +19,19 @@ export async function getUserNotifications() {
   }
 }
 
+export async function markNotificationAsRead(id: string) {
+  try {
+    const user = await requireAuth();
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id));
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
 export async function markAllNotificationsAsRead() {
   try {
     const user = await requireAuth();
@@ -31,3 +44,4 @@ export async function markAllNotificationsAsRead() {
     return { success: false, error: error.message };
   }
 }
+

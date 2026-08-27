@@ -6,80 +6,129 @@ import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
+import { Loader2, User, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function LoginForm() {
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const rawCallback = searchParams.get('callbackUrl');
+  const callbackUrl =
+    rawCallback && rawCallback.startsWith('/') && !rawCallback.startsWith('//')
+      ? rawCallback
+      : '/dashboard';
 
-  const [username, setUsername] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!identifier.trim() || !password) return;
+
     setLoading(true);
     setErrorMsg('');
 
     try {
       const res = await signIn('credentials', {
-        username,
+        username: identifier.trim(),
         password,
         redirect: false,
       });
 
       if (res?.error) {
-        setErrorMsg('Username atau password tidak sesuai.');
-        toast.error('Gagal masuk: Username atau password salah.');
+        const message = 'Username/email atau password yang Anda masukkan tidak sesuai.';
+        setErrorMsg(message);
+        toast.error(message);
         setLoading(false);
       } else {
         toast.success('Login berhasil! Mengalihkan ke dashboard...');
         window.location.href = callbackUrl;
       }
     } catch (err) {
-      console.error(err);
-      setErrorMsg('Terjadi kesalahan koneksi sistem.');
-      toast.error('Terjadi kesalahan saat menghubungkan ke server.');
+      console.error('Login error:', err);
+      const message = 'Terjadi gangguan koneksi ke server. Silakan coba lagi.';
+      setErrorMsg(message);
+      toast.error(message);
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-sm">
-      <div className="space-y-2">
-        <Label htmlFor="username">Username</Label>
-        <Input
-          id="username"
-          name="username"
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-          placeholder="Masukkan username"
-          autoComplete="username"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          placeholder="Masukkan password"
-          autoComplete="current-password"
-        />
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-4 w-full">
       {errorMsg && (
-        <div className="p-2.5 rounded-lg bg-red-50 border border-red-200">
-          <p className="text-xs text-red-600 font-medium">{errorMsg}</p>
+        <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2.5 text-xs text-red-700 animate-in fade-in duration-200">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+          <p className="font-medium">{errorMsg}</p>
         </div>
       )}
-      <Button type="submit" className="w-full font-semibold" disabled={loading}>
+
+      {/* Identifier: Username atau Email */}
+      <div className="space-y-1.5">
+        <Label htmlFor="identifier" className="text-xs font-semibold text-gray-700">
+          Username atau Email
+        </Label>
+        <div className="relative">
+          <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Input
+            id="identifier"
+            name="identifier"
+            type="text"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            required
+            placeholder="Contoh: admin atau nama@sekolah.sch.id"
+            autoComplete="username"
+            className="pl-10 h-10 text-xs sm:text-sm bg-gray-50/50 border-gray-200 focus:bg-white transition-colors"
+            disabled={loading}
+          />
+        </div>
+      </div>
+
+      {/* Password Field with Show/Hide Toggle */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="password" className="text-xs font-semibold text-gray-700">
+            Kata Sandi / Password
+          </Label>
+        </div>
+        <div className="relative">
+          <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Input
+            id="password"
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            placeholder="Masukkan kata sandi akun"
+            autoComplete="current-password"
+            className="pl-10 pr-10 h-10 text-xs sm:text-sm bg-gray-50/50 border-gray-200 focus:bg-white transition-colors"
+            disabled={loading}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none p-1"
+            tabIndex={-1}
+            aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+          >
+            {showPassword ? (
+              <EyeOff className="w-4 h-4" />
+            ) : (
+              <Eye className="w-4 h-4" />
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Submit Button */}
+      <Button
+        type="submit"
+        className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-md shadow-blue-600/20 transition-all mt-2"
+        disabled={loading || !identifier.trim() || !password}
+      >
         {loading ? (
           <span className="flex items-center gap-2 justify-center">
             <Loader2 className="w-4 h-4 animate-spin" /> Memeriksa Akun...

@@ -8,7 +8,7 @@ import {
   masterPegawai,
   masterSekolah,
 } from '@/db/schema';
-import { eq, isNull, desc, and } from 'drizzle-orm';
+import { eq, isNull, desc, and, ilike } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAuth, logActivity } from '@/lib/server-action';
 import { generateNomorNaskahDinas } from '@/lib/nomor-surat-generator';
@@ -113,9 +113,9 @@ export async function deleteStudentLetter(id: string) {
     const user = await requireAuth();
 
     const existing = await db.query.studentLetters.findFirst({
-      where: eq(studentLetters.id, id),
+      where: and(eq(studentLetters.id, id), isNull(studentLetters.deletedAt)),
     });
-    if (!existing) return { success: false, error: 'Surat tidak ditemukan' };
+    if (!existing) return { success: false, error: 'Surat tidak ditemukan atau sudah dihapus' };
 
     await db
       .update(studentLetters)
@@ -155,10 +155,17 @@ export async function createSuratDispensasi(input: CreateDispensasiInput) {
   try {
     const user = await requireAuth();
 
-    const countTotal = await db.$count(studentLetters, isNull(studentLetters.deletedAt));
+    const currentYear = new Date().getFullYear();
+    const countThisYear = await db.$count(
+      studentLetters,
+      and(
+        isNull(studentLetters.deletedAt),
+        ilike(studentLetters.nomorSurat, `%/SIZIN/%/${currentYear}`)
+      )
+    );
     const nomorSurat = generateNomorNaskahDinas({
       kodeJenisSurat: 'SIZIN',
-      nomorUrut: countTotal + 1,
+      nomorUrut: countThisYear + 1,
       kodeKlasifikasi: '421.2',
       kodePerangkatDaerah: 'Disdik',
     });
@@ -222,10 +229,17 @@ export async function createSuratKeteranganAktif(input: CreateKeteranganAktifInp
 
     if (!siswa) return { success: false, error: 'Siswa tidak ditemukan' };
 
-    const countTotal = await db.$count(studentLetters, isNull(studentLetters.deletedAt));
+    const currentYear = new Date().getFullYear();
+    const countThisYear = await db.$count(
+      studentLetters,
+      and(
+        isNull(studentLetters.deletedAt),
+        ilike(studentLetters.nomorSurat, `%/SKET/%/${currentYear}`)
+      )
+    );
     const nomorSurat = generateNomorNaskahDinas({
       kodeJenisSurat: 'SKET',
-      nomorUrut: countTotal + 1,
+      nomorUrut: countThisYear + 1,
       kodeKlasifikasi: '421.2',
       kodePerangkatDaerah: 'Disdik',
     });
@@ -280,10 +294,17 @@ export async function createSuratPanggilanOrtu(input: CreatePanggilanOrtuInput) 
 
     if (!siswa) return { success: false, error: 'Siswa tidak ditemukan' };
 
-    const countTotal = await db.$count(studentLetters, isNull(studentLetters.deletedAt));
+    const currentYear = new Date().getFullYear();
+    const countThisYear = await db.$count(
+      studentLetters,
+      and(
+        isNull(studentLetters.deletedAt),
+        ilike(studentLetters.nomorSurat, `%/SPGL/%/${currentYear}`)
+      )
+    );
     const nomorSurat = generateNomorNaskahDinas({
       kodeJenisSurat: 'SPGL',
-      nomorUrut: countTotal + 1,
+      nomorUrut: countThisYear + 1,
       kodeKlasifikasi: '421.2',
       kodePerangkatDaerah: 'Disdik',
       derajatKeamanan: 'B',

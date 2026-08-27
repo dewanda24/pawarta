@@ -1,7 +1,9 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { outgoingLetters, studentLetters, masterPegawai, masterSekolah } from '@/db/schema';
-import { eq, or, ilike } from 'drizzle-orm';
+import { eq, or, ilike, and, isNull } from 'drizzle-orm';
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,13 +15,18 @@ export async function GET(req: NextRequest) {
     }
 
     const trimmed = q.trim();
+    const isUuid = UUID_REGEX.test(trimmed);
 
     // 1. Check Outgoing Letters
+    const outgoingWhere = and(
+      isNull(outgoingLetters.deletedAt),
+      isUuid
+        ? or(eq(outgoingLetters.id, trimmed), ilike(outgoingLetters.nomorSurat, trimmed))
+        : ilike(outgoingLetters.nomorSurat, trimmed)
+    );
+
     const outgoing = await db.query.outgoingLetters.findFirst({
-      where: or(
-        eq(outgoingLetters.id, trimmed),
-        ilike(outgoingLetters.nomorSurat, trimmed)
-      ),
+      where: outgoingWhere,
       with: {
         penandatangan: true,
         pembuat: true,
@@ -50,11 +57,15 @@ export async function GET(req: NextRequest) {
     }
 
     // 2. Check Student Letters
+    const studentWhere = and(
+      isNull(studentLetters.deletedAt),
+      isUuid
+        ? or(eq(studentLetters.id, trimmed), ilike(studentLetters.nomorSurat, trimmed))
+        : ilike(studentLetters.nomorSurat, trimmed)
+    );
+
     const student = await db.query.studentLetters.findFirst({
-      where: or(
-        eq(studentLetters.id, trimmed),
-        ilike(studentLetters.nomorSurat, trimmed)
-      ),
+      where: studentWhere,
       with: {
         siswa: { with: { kelas: true } },
         guruPendamping: true,
@@ -86,9 +97,10 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({ success: false, error: 'Dokumen tidak ditemukan' }, { status: 404 });
+    return NextResponse.json({ success: false, error: 'Dokumen tidak ditemukan atau telah dihapus' }, { status: 404 });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Terjadi kesalahan pada verifikasi';
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
+

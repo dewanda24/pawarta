@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { outgoingLetters, studentLetters, masterPegawai, masterSekolah } from '@/db/schema';
-import { eq, or, ilike } from 'drizzle-orm';
+import { eq, or, ilike, and, isNull } from 'drizzle-orm';
 import { ShieldCheck, ShieldAlert, FileCheck, Calendar, Landmark, User, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -9,13 +9,17 @@ export const metadata = {
   title: 'Hasil Verifikasi Dokumen Digital | PAWARTA',
 };
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function VerifikasiDetailPage({
   params,
 }: {
   params: Promise<{ id: string }> | { id: string };
 }) {
   const resolvedParams = await Promise.resolve(params);
-  const id = resolvedParams?.id || '';
+  const rawId = resolvedParams?.id || '';
+  const decodedId = decodeURIComponent(rawId).trim();
+  const isUuid = UUID_REGEX.test(decodedId);
 
   const [sekolah, kepsek] = await Promise.all([
     db.query.masterSekolah.findFirst({ where: eq(masterSekolah.isAktif, true) }),
@@ -23,15 +27,29 @@ export default async function VerifikasiDetailPage({
   ]);
 
   // Check outgoing
+  const outgoingWhere = and(
+    isNull(outgoingLetters.deletedAt),
+    isUuid
+      ? or(eq(outgoingLetters.id, decodedId), ilike(outgoingLetters.nomorSurat, decodedId))
+      : ilike(outgoingLetters.nomorSurat, decodedId)
+  );
+
   const outgoing = await db.query.outgoingLetters.findFirst({
-    where: or(eq(outgoingLetters.id, id), ilike(outgoingLetters.nomorSurat, decodeURIComponent(id))),
+    where: outgoingWhere,
     with: { penandatangan: true },
   });
 
   // Check student letter
+  const studentWhere = and(
+    isNull(studentLetters.deletedAt),
+    isUuid
+      ? or(eq(studentLetters.id, decodedId), ilike(studentLetters.nomorSurat, decodedId))
+      : ilike(studentLetters.nomorSurat, decodedId)
+  );
+
   const student = !outgoing
     ? await db.query.studentLetters.findFirst({
-        where: or(eq(studentLetters.id, id), ilike(studentLetters.nomorSurat, decodeURIComponent(id))),
+        where: studentWhere,
         with: { siswa: true },
       })
     : null;

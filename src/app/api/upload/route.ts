@@ -34,6 +34,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Ukuran file melebihi batas maksimal 20MB' }, { status: 400 });
     }
 
+    // Validate allowed file extensions
+    const ALLOWED_EXTENSIONS = ['.pdf', '.jpg', '.jpeg', '.png', '.webp', '.doc', '.docx', '.xls', '.xlsx'];
+    const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    if (!ALLOWED_EXTENSIONS.includes(fileExt)) {
+      return NextResponse.json(
+        { error: `Format file ${fileExt} tidak diizinkan. Silakan unggah PDF, Dokumen Word/Excel, atau Gambar.` },
+        { status: 400 }
+      );
+    }
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 

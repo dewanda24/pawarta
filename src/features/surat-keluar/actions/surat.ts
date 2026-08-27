@@ -2,7 +2,7 @@
 
 import { db } from '@/db';
 import { outgoingLetters, masterUnitKerja, letterAttachments } from '@/db/schema';
-import { eq, isNull, and, ilike, desc } from 'drizzle-orm';
+import { eq, isNull, and, ilike, desc, or } from 'drizzle-orm';
 import { InsertOutgoingLetter } from '../types';
 import { revalidatePath } from 'next/cache';
 import { requireAuth, logActivity } from '@/lib/server-action';
@@ -22,7 +22,13 @@ export async function getSuratKeluarList(params?: {
 
     const whereClause = and(
       isNull(outgoingLetters.deletedAt),
-      search ? ilike(outgoingLetters.perihal, `%${search}%`) : undefined,
+      search
+        ? or(
+            ilike(outgoingLetters.perihal, `%${search}%`),
+            ilike(outgoingLetters.nomorSurat, `%${search}%`),
+            ilike(outgoingLetters.tujuanSurat, `%${search}%`),
+          )
+        : undefined,
     );
 
     const data = await db.query.outgoingLetters.findMany({
@@ -140,24 +146,30 @@ export async function approveSuratKeluar(id: string) {
     const user = await requireAuth();
 
     const letter = await db.query.outgoingLetters.findFirst({
-      where: eq(outgoingLetters.id, id),
+      where: and(eq(outgoingLetters.id, id), isNull(outgoingLetters.deletedAt)),
       with: { klasifikasi: true, jenisSurat: true, unitKerja: true },
     });
 
     if (!letter) {
-      return { success: false, error: 'Surat keluar tidak ditemukan' };
+      return { success: false, error: 'Surat keluar tidak ditemukan atau sudah dihapus' };
     }
 
     const currentYear = new Date().getFullYear();
-    const countTotal = await db.$count(outgoingLetters, isNull(outgoingLetters.deletedAt));
-    const nextSeq = (countTotal + 1).toString().padStart(3, '0');
+    const countThisYear = await db.$count(
+      outgoingLetters,
+      and(
+        isNull(outgoingLetters.deletedAt),
+        ilike(outgoingLetters.nomorAgenda, `%/SK/${currentYear}`)
+      )
+    );
+    const nextSeq = (countThisYear + 1).toString().padStart(3, '0');
 
     // Generate nomor surat resmi sesuai standar Perbup Sumedang No. 9/2026
     const nomorSuratGenerated =
       letter.nomorSurat ||
       generateNomorNaskahDinas({
         kodeJenisSurat: letter.jenisSurat?.kode || 'SD',
-        nomorUrut: countTotal + 1,
+        nomorUrut: countThisYear + 1,
         kodeKlasifikasi: letter.klasifikasi?.kode || '000',
         kodePerangkatDaerah: 'Disdik',
         kodeBagianBidang: letter.unitKerja?.kode || 'TU',

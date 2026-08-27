@@ -3,7 +3,7 @@
 import { db } from '@/db';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { users, userRoles, loginLogs, sessions } from '@/db/schema';
-import { eq, and, ilike, desc } from 'drizzle-orm';
+import { eq, and, ilike, desc, or, not } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAuth, logActivity } from '@/lib/server-action';
 import bcrypt from 'bcryptjs';
@@ -51,13 +51,18 @@ export async function getUserList(params?: { search?: string; limit?: number; of
 export async function createUser(data: any, roleId: string) {
   try {
     const currentUser = await requireAuth('IAM_USERS_CREATE');
-    // Validasi email
+    const username = data.username || data.email.split('@')[0];
+
+    // Validasi email dan username unik
     const existing = await db.query.users.findFirst({
-      where: eq(users.email, data.email),
+      where: or(eq(users.email, data.email), eq(users.username, username)),
     });
 
     if (existing) {
-      return { success: false, error: 'Email sudah terdaftar' };
+      return {
+        success: false,
+        error: existing.email === data.email ? 'Email sudah terdaftar' : 'Username sudah digunakan',
+      };
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 10);
@@ -66,7 +71,7 @@ export async function createUser(data: any, roleId: string) {
     await db.insert(users).values({
       id,
       nama: data.nama,
-      username: data.username || data.email.split('@')[0],
+      username,
       email: data.email,
       passwordHash: hashedPassword,
       pegawaiId: data.pegawaiId || null,
@@ -99,6 +104,25 @@ export async function createUser(data: any, roleId: string) {
 export async function updateUser(id: string, data: any, roleId?: string) {
   try {
     const currentUser = await requireAuth('IAM_USERS_UPDATE');
+
+    if (data.email || data.username) {
+      const duplicate = await db.query.users.findFirst({
+        where: and(
+          not(eq(users.id, id)),
+          or(
+            data.email ? eq(users.email, data.email) : undefined,
+            data.username ? eq(users.username, data.username) : undefined
+          )
+        ),
+      });
+      if (duplicate) {
+        return {
+          success: false,
+          error: duplicate.email === data.email ? 'Email sudah digunakan pengguna lain' : 'Username sudah digunakan',
+        };
+      }
+    }
+
     const updateData: any = { 
       nama: data.nama, 
       email: data.email,
@@ -137,6 +161,11 @@ export async function updateUser(id: string, data: any, roleId?: string) {
 export async function deleteUser(id: string) {
   try {
     const currentUser = await requireAuth('IAM_USERS_DELETE');
+
+    if (currentUser.id === id) {
+      return { success: false, error: 'Anda tidak dapat menghapus akun Anda sendiri yang sedang aktif digunakan.' };
+    }
+
     await db.delete(users).where(eq(users.id, id));
 
     await logActivity({

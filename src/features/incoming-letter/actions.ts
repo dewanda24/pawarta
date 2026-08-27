@@ -112,7 +112,7 @@ export async function getIncomingLetterById(id: string) {
   try {
     await requireAuth('SURAT_MASUK_READ');
     const data = await db.query.incomingLetters.findFirst({
-      where: eq(incomingLetters.id, id),
+      where: and(eq(incomingLetters.id, id), isNull(incomingLetters.deletedAt)),
       with: {
         instansiPengirim: true,
         jenisSurat: true,
@@ -123,7 +123,7 @@ export async function getIncomingLetterById(id: string) {
         penerima: true,
       },
     });
-    if (!data) return { success: false, error: 'Surat tidak ditemukan' };
+    if (!data) return { success: false, error: 'Surat tidak ditemukan atau sudah dihapus' };
     return { success: true, data };
   } catch (error: any) {
     return { success: false, error: error.message || 'Gagal mengambil data' };
@@ -131,7 +131,7 @@ export async function getIncomingLetterById(id: string) {
 }
 
 // ==========================================
-// CREATE (REGISTER) — auto nomor agenda
+// CREATE (REGISTER) — auto nomor agenda per tahun
 // ==========================================
 export async function registerIncomingLetter(data: IncomingLetterFormValues) {
   const user = await requireAuth();
@@ -146,16 +146,29 @@ export async function registerIncomingLetter(data: IncomingLetterFormValues) {
 
   try {
     const result = await db.transaction(async (tx) => {
-      // Generate nomor agenda otomatis
+      // Generate nomor agenda otomatis per tahun
       const year = new Date().getFullYear();
-      const countExisting = await tx.$count(incomingLetters, isNull(incomingLetters.deletedAt));
-      const nextSeq = (countExisting + 1).toString().padStart(3, '0');
+      const countExistingThisYear = await tx.$count(
+        incomingLetters,
+        and(
+          isNull(incomingLetters.deletedAt),
+          ilike(incomingLetters.nomorAgenda, `%/SM/${year}`)
+        )
+      );
+      const nextSeq = (countExistingThisYear + 1).toString().padStart(3, '0');
       const nomorAgenda = `${nextSeq}/SM/${year}`;
+
+      const instansiPengirimId = validatedFields.data.instansiPengirimId || null;
+      const ringkasanIsi = validatedFields.data.ringkasanIsi || null;
+      const catatan = validatedFields.data.catatan || null;
 
       const [newLetter] = await tx
         .insert(incomingLetters)
         .values({
           ...validatedFields.data,
+          instansiPengirimId,
+          ringkasanIsi,
+          catatan,
           nomorAgenda,
           status: 'REGISTERED',
           createdBy: user.id,
@@ -213,14 +226,24 @@ export async function updateIncomingLetter(id: string, data: IncomingLetterFormV
 
   try {
     const existing = await db.query.incomingLetters.findFirst({
-      where: eq(incomingLetters.id, id),
+      where: and(eq(incomingLetters.id, id), isNull(incomingLetters.deletedAt)),
     });
-    if (!existing) return { error: 'Surat tidak ditemukan' };
+    if (!existing) return { error: 'Surat tidak ditemukan atau sudah dihapus' };
+
+    const instansiPengirimId = validatedFields.data.instansiPengirimId || null;
+    const ringkasanIsi = validatedFields.data.ringkasanIsi || null;
+    const catatan = validatedFields.data.catatan || null;
 
     await db.transaction(async (tx) => {
       await tx
         .update(incomingLetters)
-        .set({ ...validatedFields.data, updatedAt: new Date() })
+        .set({
+          ...validatedFields.data,
+          instansiPengirimId,
+          ringkasanIsi,
+          catatan,
+          updatedAt: new Date(),
+        })
         .where(eq(incomingLetters.id, id));
 
       await tx.insert(incomingTimelines).values({
@@ -263,9 +286,9 @@ export async function deleteIncomingLetter(id: string) {
 
   try {
     const existing = await db.query.incomingLetters.findFirst({
-      where: eq(incomingLetters.id, id),
+      where: and(eq(incomingLetters.id, id), isNull(incomingLetters.deletedAt)),
     });
-    if (!existing) return { error: 'Surat tidak ditemukan' };
+    if (!existing) return { error: 'Surat tidak ditemukan atau sudah dihapus' };
 
     await db
       .update(incomingLetters)
@@ -311,12 +334,18 @@ export async function distributeIncomingLetter(
         .set({ status: 'DISTRIBUTED' })
         .where(eq(incomingLetters.id, suratId));
 
+      const tujuanUnitId = validatedFields.data.tujuanUnitId || null;
+      const tujuanPegawaiId = validatedFields.data.tujuanPegawaiId || null;
+      const catatan = validatedFields.data.catatan || null;
+
       const [newDistribution] = await tx
         .insert(incomingDistributions)
         .values({
-          ...validatedFields.data,
           suratId,
           pengirimId: user.id,
+          tujuanUnitId,
+          tujuanPegawaiId,
+          catatan,
           status: 'TERKIRIM',
           createdBy: user.id,
           deadline: validatedFields.data.deadline ? new Date(validatedFields.data.deadline) : null,
@@ -327,7 +356,7 @@ export async function distributeIncomingLetter(
         suratId,
         aktorId: user.id,
         aktivitas: 'Distribusi',
-        deskripsi: `Surat didistribusikan ke ${validatedFields.data.tujuanUnitId ? 'Unit Kerja' : 'Pegawai'}`,
+        deskripsi: `Surat didistribusikan ke ${tujuanUnitId ? 'Unit Kerja' : 'Pegawai'}`,
       });
 
       await logActivity({
@@ -371,6 +400,8 @@ export async function createInitialDisposition(
         .set({ status: 'DISPOSITIONED' })
         .where(eq(incomingLetters.id, suratId));
 
+      const catatan = validatedFields.data.catatan || null;
+
       const [newDisposition] = await tx
         .insert(incomingDispositions)
         .values({
@@ -378,7 +409,7 @@ export async function createInitialDisposition(
           pemberiDisposisiId: user.id,
           penerimaDisposisiId: validatedFields.data.penerimaDisposisiId,
           instruksi: validatedFields.data.instruksi,
-          catatan: validatedFields.data.catatan,
+          catatan,
           status: 'MENUNGGU',
           createdBy: user.id,
           deadline: validatedFields.data.deadline ? new Date(validatedFields.data.deadline) : null,
@@ -437,8 +468,18 @@ export async function updateDispositionStatus(
 
     if (!existing) return { error: 'Disposisi tidak ditemukan' };
 
-    if (existing.penerimaDisposisiId !== user.id) {
-      return { error: 'Hanya penerima disposisi yang dapat memperbarui status ini' };
+    // Boleh diperbarui oleh penerima disposisi, pembuat disposisi, atau Super Admin / Kepala Sekolah
+    const userRole = await db.query.userRoles.findFirst({
+      where: (ur, { eq }) => eq(ur.userId, user.id),
+      with: { role: true },
+    });
+    const isPrivileged =
+      userRole?.role?.namaRole === 'Super Admin' ||
+      userRole?.role?.namaRole === 'Kepala Sekolah' ||
+      existing.pemberiDisposisiId === user.id;
+
+    if (existing.penerimaDisposisiId !== user.id && !isPrivileged) {
+      return { error: 'Hanya penerima disposisi atau pimpinan/admin yang dapat memperbarui status ini' };
     }
 
     await db.transaction(async (tx) => {
@@ -488,6 +529,7 @@ export async function updateDispositionStatus(
 // GET DISPOSISI SAYA
 // ==========================================
 export async function getMyDispositions(params?: {
+  scope?: 'diterima' | 'diberikan' | 'semua';
   status?: string;
   limit?: number;
   offset?: number;
@@ -495,8 +537,18 @@ export async function getMyDispositions(params?: {
   try {
     const user = await requireAuth();
 
+    let targetCondition;
+    if (params?.scope === 'diberikan') {
+      targetCondition = eq(incomingDispositions.pemberiDisposisiId, user.id);
+    } else if (params?.scope === 'semua') {
+      targetCondition = undefined;
+    } else {
+      // Default: 'diterima'
+      targetCondition = eq(incomingDispositions.penerimaDisposisiId, user.id);
+    }
+
     const whereClause = and(
-      eq(incomingDispositions.penerimaDisposisiId, user.id),
+      targetCondition,
       params?.status ? eq(incomingDispositions.status, params.status) : undefined,
     );
 
@@ -510,12 +562,17 @@ export async function getMyDispositions(params?: {
           },
         },
         pemberiDisposisi: true,
+        penerimaDisposisi: true,
       },
       orderBy: [desc(incomingDispositions.createdAt)],
       ...(params?.limit ? { limit: params.limit, offset: params?.offset ?? 0 } : {}),
     });
 
-    return { success: true, data };
+    return { 
+      success: true, 
+      data, 
+      currentUserId: user.id 
+    };
   } catch (error: any) {
     return { success: false, error: error.message || 'Gagal mengambil data disposisi' };
   }

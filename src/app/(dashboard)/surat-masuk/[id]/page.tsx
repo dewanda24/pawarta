@@ -16,7 +16,7 @@ import {
   masterUnitKerja,
 } from '@/db/schema/master';
 import { users } from '@/db/schema/iam';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and, isNull } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -24,6 +24,7 @@ import Link from 'next/link';
 import { LetterActions } from '@/components/features/incoming-letter/LetterActions';
 import { AttachmentSection } from '@/components/shared/AttachmentSection';
 import { Printer, ArrowLeft } from 'lucide-react';
+import { requireAuth } from '@/lib/server-action';
 
 export const metadata = {
   title: 'Detail Surat Masuk | PAWARTA',
@@ -34,6 +35,8 @@ export default async function DetailSuratMasukPage({
 }: {
   params: Promise<{ id: string }> | { id: string };
 }) {
+  await requireAuth('SURAT_MASUK_READ');
+
   const resolvedParams = await Promise.resolve(params);
   const id = resolvedParams?.id;
 
@@ -65,7 +68,7 @@ export default async function DetailSuratMasukPage({
     .leftJoin(masterKlasifikasiSurat, eq(incomingLetters.klasifikasiId, masterKlasifikasiSurat.id))
     .leftJoin(masterPrioritas, eq(incomingLetters.prioritasId, masterPrioritas.id))
     .leftJoin(masterSifatSurat, eq(incomingLetters.sifatSuratId, masterSifatSurat.id))
-    .where(eq(incomingLetters.id, id));
+    .where(and(eq(incomingLetters.id, id), isNull(incomingLetters.deletedAt)));
 
   if (!letter) {
     notFound();
@@ -84,7 +87,7 @@ export default async function DetailSuratMasukPage({
     .where(eq(incomingTimelines.suratId, letter.id))
     .orderBy(desc(incomingTimelines.tanggal));
 
-  const [pegawaiOpts, unitKerjaOpts, attachments] = await Promise.all([
+  const [pegawaiOpts, unitKerjaOpts, userOpts, attachments] = await Promise.all([
     db
       .select({ id: masterPegawai.id, nama: masterPegawai.nama })
       .from(masterPegawai)
@@ -93,6 +96,10 @@ export default async function DetailSuratMasukPage({
       .select({ id: masterUnitKerja.id, nama: masterUnitKerja.nama })
       .from(masterUnitKerja)
       .where(eq(masterUnitKerja.isAktif, true)),
+    db
+      .select({ id: users.id, nama: users.nama, username: users.username })
+      .from(users)
+      .where(eq(users.status, 'Aktif')),
     db
       .select()
       .from(incomingLetterAttachments)
@@ -127,8 +134,10 @@ export default async function DetailSuratMasukPage({
           </Link>
           <LetterActions
             suratId={letter.id}
+            status={letter.status}
             pegawaiOpts={pegawaiOpts}
             unitKerjaOpts={unitKerjaOpts}
+            userOpts={userOpts}
           />
         </div>
       </div>
@@ -149,13 +158,13 @@ export default async function DetailSuratMasukPage({
               <div>
                 <p className="text-muted-foreground">Tanggal Surat</p>
                 <p className="font-medium">
-                  {new Date(letter.tanggalSurat).toLocaleDateString('id-ID')}
+                  {letter.tanggalSurat ? new Date(letter.tanggalSurat).toLocaleDateString('id-ID') : '-'}
                 </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Tanggal Diterima</p>
                 <p className="font-medium">
-                  {new Date(letter.tanggalDiterima).toLocaleDateString('id-ID')}
+                  {letter.tanggalDiterima ? new Date(letter.tanggalDiterima).toLocaleDateString('id-ID') : '-'}
                 </p>
               </div>
               <div className="col-span-2">
@@ -216,7 +225,7 @@ export default async function DetailSuratMasukPage({
                     <p className="font-medium">{timeline.aktivitas}</p>
                     <p className="text-muted-foreground">{timeline.deskripsi}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(timeline.tanggal).toLocaleString('id-ID')} -{' '}
+                      {timeline.tanggal ? new Date(timeline.tanggal).toLocaleString('id-ID') : '-'} -{' '}
                       {timeline.aktor || 'Sistem'}
                     </p>
                   </div>
@@ -229,3 +238,4 @@ export default async function DetailSuratMasukPage({
     </div>
   );
 }
+

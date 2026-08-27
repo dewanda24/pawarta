@@ -1,8 +1,12 @@
-﻿'use client';
+'use client';
 
 import { Bell, Check, Loader2 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
-import { getUserNotifications, markAllNotificationsAsRead } from '@/features/iam/actions/notifications';
+import {
+  getUserNotifications,
+  markAllNotificationsAsRead,
+  markNotificationAsRead,
+} from '@/features/iam/actions/notifications';
 import Link from 'next/link';
 
 export function NotificationCenter() {
@@ -36,6 +40,20 @@ export function NotificationCenter() {
       setItems((prev) => prev.map((item) => ({ ...item, isRead: true })));
     } catch {
       // ignore
+    }
+  };
+
+  const handleItemClick = async (item: any) => {
+    setOpen(false);
+    if (!item.isRead) {
+      setItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, isRead: true } : i))
+      );
+      try {
+        await markNotificationAsRead(item.id);
+      } catch {
+        // ignore
+      }
     }
   };
 
@@ -86,7 +104,7 @@ export function NotificationCenter() {
                   <Link
                     key={item.id}
                     href={item.linkUrl || '#'}
-                    onClick={() => setOpen(false)}
+                    onClick={() => handleItemClick(item)}
                     className={'block p-3.5 hover:bg-gray-50 transition-colors ' + (!item.isRead ? 'bg-blue-50/30' : '')}
                   >
                     <div className='flex gap-3'>

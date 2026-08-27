@@ -4,7 +4,8 @@ import { incomingLetters, incomingDispositions } from '@/db/schema/incoming-lett
 import { outgoingLetters } from '@/db/schema/outgoing-letter';
 import { masterPegawai, masterSiswa } from '@/db/schema/master';
 import { studentLetters } from '@/db/schema/student-letter';
-import { sql, desc } from 'drizzle-orm';
+import { sql, desc, eq } from 'drizzle-orm';
+import { auth } from '@/lib/auth';
 import {
   Inbox,
   Send,
@@ -42,24 +43,45 @@ interface RecentKeluarItem {
 }
 
 export default async function DashboardPage() {
+  const session = await auth();
+  const userId = session?.user?.id;
+
   let totalMasuk = 0;
   let totalKeluar = 0;
-  let totalDisposisi = 0;
+  let totalDisposisiSekolah = 0;
+  let myDisposisiCount = 0;
   let totalSuratSiswa = 0;
   let recentMasuk: RecentMasukItem[] = [];
   let recentKeluar: RecentKeluarItem[] = [];
 
   try {
-    const [masukCount, keluarCount, disposisiCount, suratSiswaCount] = await Promise.all([
-      db.select({ count: sql<number>`count(*)` }).from(incomingLetters).where(sql`${incomingLetters.deletedAt} IS NULL`),
-      db.select({ count: sql<number>`count(*)` }).from(outgoingLetters).where(sql`${outgoingLetters.deletedAt} IS NULL`),
-      db.select({ count: sql<number>`count(*)` }).from(incomingDispositions),
-      db.select({ count: sql<number>`count(*)` }).from(studentLetters).where(sql`${studentLetters.deletedAt} IS NULL`),
-    ]);
+    const [masukCount, keluarCount, disposisiAllCount, myDisposisiResult, suratSiswaCount] =
+      await Promise.all([
+        db
+          .select({ count: sql<number>`count(*)` })
+          .from(incomingLetters)
+          .where(sql`${incomingLetters.deletedAt} IS NULL`),
+        db
+          .select({ count: sql<number>`count(*)` })
+          .from(outgoingLetters)
+          .where(sql`${outgoingLetters.deletedAt} IS NULL`),
+        db.select({ count: sql<number>`count(*)` }).from(incomingDispositions),
+        userId
+          ? db
+              .select({ count: sql<number>`count(*)` })
+              .from(incomingDispositions)
+              .where(eq(incomingDispositions.penerimaDisposisiId, userId))
+          : Promise.resolve([{ count: 0 }]),
+        db
+          .select({ count: sql<number>`count(*)` })
+          .from(studentLetters)
+          .where(sql`${studentLetters.deletedAt} IS NULL`),
+      ]);
 
     totalMasuk = Number(masukCount[0]?.count || 0);
     totalKeluar = Number(keluarCount[0]?.count || 0);
-    totalDisposisi = Number(disposisiCount[0]?.count || 0);
+    totalDisposisiSekolah = Number(disposisiAllCount[0]?.count || 0);
+    myDisposisiCount = Number(myDisposisiResult[0]?.count || 0);
     totalSuratSiswa = Number(suratSiswaCount[0]?.count || 0);
 
     recentMasuk = await db
@@ -149,12 +171,19 @@ export default async function DashboardPage() {
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
               Disposisi Masuk
             </p>
-            <h3 className="text-2xl font-bold text-gray-900 mt-1">{totalDisposisi}</h3>
+            <div className="flex items-baseline gap-2 mt-1">
+              <h3 className="text-2xl font-bold text-gray-900">{myDisposisiCount}</h3>
+              {totalDisposisiSekolah > 0 && (
+                <span className="text-xs text-gray-500 font-medium">
+                  ({totalDisposisiSekolah} total sekolah)
+                </span>
+              )}
+            </div>
             <Link
               href="/disposisi-saya"
               className="text-xs text-amber-600 font-medium hover:underline flex items-center gap-1 mt-1"
             >
-              Lihat Disposisi <ArrowRight className="w-3 h-3" />
+              Lihat Lembar Disposisi <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
           <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">

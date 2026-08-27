@@ -1,22 +1,27 @@
-﻿import { db } from '@/db';
+import { db } from '@/db';
 import { masterJenisSurat, masterKlasifikasiSurat, masterPrioritas, masterSifatSurat, masterInstansi } from '@/db/schema/master';
 import { incomingLetters } from '@/db/schema/incoming-letter';
-import { eq } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { EditIncomingLetterForm } from '@/components/features/incoming-letter/EditIncomingLetterForm';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { requireAuth } from '@/lib/server-action';
 
 export const metadata = { title: 'Edit Surat Masuk | PAWARTA' };
 
 export default async function EditSuratMasukPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+  await requireAuth('SURAT_MASUK_UPDATE');
+
   const resolvedParams = await Promise.resolve(params);
   const id = resolvedParams?.id;
   if (!id) notFound();
 
   const [letter, jenisSuratOpts, klasifikasiOpts, prioritasOpts, sifatOpts, instansiOpts] = await Promise.all([
-    db.query.incomingLetters.findFirst({ where: eq(incomingLetters.id, id) }),
+    db.query.incomingLetters.findFirst({
+      where: and(eq(incomingLetters.id, id), isNull(incomingLetters.deletedAt)),
+    }),
     db.select().from(masterJenisSurat).where(eq(masterJenisSurat.isAktif, true)),
     db.select().from(masterKlasifikasiSurat).where(eq(masterKlasifikasiSurat.isAktif, true)),
     db.select().from(masterPrioritas).where(eq(masterPrioritas.isAktif, true)),

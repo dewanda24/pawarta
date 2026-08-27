@@ -2,8 +2,8 @@ import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { db } from '@/db';
-import { users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { users, loginLogs } from '@/db/schema';
+import { eq, or } from 'drizzle-orm';
 import { authConfig } from './auth.config';
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
@@ -13,24 +13,74 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        username: { label: 'Username', type: 'text' },
+        username: { label: 'Username atau Email', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         try {
           if (!credentials?.username || !credentials?.password) return null;
 
+          const identifier = (credentials.username as string).trim();
+          const password = credentials.password as string;
+
+          // Cari pengguna berdasarkan username ATAU email
           const user = await db.query.users.findFirst({
-            where: eq(users.username, credentials.username as string),
+            where: or(eq(users.username, identifier), eq(users.email, identifier)),
           });
 
-          if (!user || user.status !== 'Aktif') return null;
+          if (!user) {
+            try {
+              await db.insert(loginLogs).values({
+                aktivitas: 'Failed Login',
+                status: 'Failed',
+                keterangan: `Percobaan login gagal untuk identitas: ${identifier} (Pengguna tidak ditemukan)`,
+              });
+            } catch {
+              // ignore audit error
+            }
+            return null;
+          }
 
-          const isValid = await bcrypt.compare(
-            credentials.password as string,
-            user.passwordHash
-          );
-          if (!isValid) return null;
+          if (user.status !== 'Aktif') {
+            try {
+              await db.insert(loginLogs).values({
+                userId: user.id,
+                aktivitas: 'Failed Login',
+                status: 'Failed',
+                keterangan: `Percobaan login gagal: Akun berstatus ${user.status}`,
+              });
+            } catch {
+              // ignore audit error
+            }
+            return null;
+          }
+
+          const isValid = await bcrypt.compare(password, user.passwordHash);
+          if (!isValid) {
+            try {
+              await db.insert(loginLogs).values({
+                userId: user.id,
+                aktivitas: 'Failed Login',
+                status: 'Failed',
+                keterangan: 'Percobaan login gagal: Password tidak sesuai',
+              });
+            } catch {
+              // ignore audit error
+            }
+            return null;
+          }
+
+          // Catat login berhasil
+          try {
+            await db.insert(loginLogs).values({
+              userId: user.id,
+              aktivitas: 'Login',
+              status: 'Success',
+              keterangan: 'Login berhasil ke sistem PAWARTA',
+            });
+          } catch {
+            // ignore audit error
+          }
 
           return {
             id: user.id,

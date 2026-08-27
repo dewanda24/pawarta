@@ -16,15 +16,19 @@ export function DispositionDialog({
   open,
   onOpenChange,
   suratId,
+  userOpts = [],
   pegawaiOpts = [],
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   suratId: string;
-  pegawaiOpts: any[];
+  userOpts?: any[];
+  pegawaiOpts?: any[];
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  const options = userOpts.length > 0 ? userOpts : pegawaiOpts;
 
   const {
     register,
@@ -56,46 +60,55 @@ export function DispositionDialog({
         <DialogHeader>
           <DialogTitle>Disposisi Surat</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label>Penerima Disposisi</Label>
+            <Label>Penerima Disposisi (Akun Pengguna)</Label>
             <select
               {...register('penerimaDisposisiId')}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              <option value="">-- Pilih Pegawai --</option>
-              {pegawaiOpts.map((opt) => (
+              <option value="">-- Pilih Penerima Disposisi --</option>
+              {options.map((opt) => (
                 <option key={opt.id} value={opt.id}>
-                  {opt.nama}
+                  {opt.nama} {opt.username ? `(@${opt.username})` : ''}
                 </option>
               ))}
             </select>
-            {errors.penerimaDisposisiId && <span className="text-xs text-red-500">{errors.penerimaDisposisiId.message}</span>}
+            {errors.penerimaDisposisiId && (
+              <span className="text-xs text-red-500">{errors.penerimaDisposisiId.message}</span>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label>Instruksi</Label>
-            <Input {...register('instruksi')} placeholder="Contoh: Segera tindaklanjuti" />
-            {errors.instruksi && <span className="text-xs text-red-500">{errors.instruksi.message}</span>}
+            <Input {...register('instruksi')} placeholder="Contoh: Segera tindaklanjuti dan koordinasikan" />
+            {errors.instruksi && (
+              <span className="text-xs text-red-500">{errors.instruksi.message}</span>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label>Catatan Tambahan (Opsional)</Label>
-            <Input {...register('catatan')} />
+            <Input {...register('catatan')} placeholder="Catatan atau arahan khusus..." />
           </div>
 
           <div className="space-y-2">
-            <Label>Deadline (Opsional)</Label>
+            <Label>Batas Waktu / Deadline (Opsional)</Label>
             <Input type="date" {...register('deadline')} />
           </div>
 
           <div className="pt-4 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
               Batal
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Menyimpan...' : 'Kirim'}
+            <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+              {loading ? 'Menyimpan...' : 'Kirim Disposisi'}
             </Button>
           </div>
         </form>
@@ -103,3 +116,4 @@ export function DispositionDialog({
     </Dialog>
   );
 }
+

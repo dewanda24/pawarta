@@ -2,7 +2,7 @@ import { db } from '@/db';
 import { incomingLetters } from '@/db/schema/incoming-letter';
 import { masterInstansi, masterSifatSurat, masterPegawai, masterSekolah } from '@/db/schema/master';
 import { documentHeaders } from '@/db/schema/document';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNull } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -11,6 +11,7 @@ import { PrintButton } from '@/components/shared/PrintButton';
 import { LetterheadView } from '@/components/shared/LetterheadView';
 import { OfficialSignatureBlock } from '@/components/shared/OfficialSignatureBlock';
 import { getSlaInfo } from '@/lib/sla-calculator';
+import { requireAuth } from '@/lib/server-action';
 
 export const metadata = {
   title: 'Lembar Disposisi Resmi | PAWARTA',
@@ -21,12 +22,14 @@ export default async function LembarDisposisiPage({
 }: {
   params: Promise<{ id: string }> | { id: string };
 }) {
+  await requireAuth('SURAT_MASUK_READ');
+
   const resolvedParams = await Promise.resolve(params);
   const id = resolvedParams?.id;
 
   if (!id) notFound();
 
-  const [letter, kopSurat, kepsek, sekolah] = await Promise.all([
+  const [letter, kopSurat, sekolah] = await Promise.all([
     db
       .select({
         id: incomingLetters.id,
@@ -45,13 +48,10 @@ export default async function LembarDisposisiPage({
       .from(incomingLetters)
       .leftJoin(masterInstansi, eq(incomingLetters.instansiPengirimId, masterInstansi.id))
       .leftJoin(masterSifatSurat, eq(incomingLetters.sifatSuratId, masterSifatSurat.id))
-      .where(eq(incomingLetters.id, id))
+      .where(and(eq(incomingLetters.id, id), isNull(incomingLetters.deletedAt)))
       .then((res) => res[0]),
     db.query.documentHeaders.findFirst({
       where: and(eq(documentHeaders.isDefault, true), eq(documentHeaders.isAktif, true)),
-    }),
-    db.query.masterPegawai.findFirst({
-      where: eq(masterPegawai.isAktif, true),
     }),
     db.query.masterSekolah.findFirst({
       where: eq(masterSekolah.isAktif, true),
@@ -59,6 +59,19 @@ export default async function LembarDisposisiPage({
   ]);
 
   if (!letter) notFound();
+
+  // Cari kepala sekolah berdasarkan kepalaSekolahId di sekolah atau fallback ke pegawai aktif
+  let kepsek: any = null;
+  if (sekolah?.kepalaSekolahId) {
+    kepsek = await db.query.masterPegawai.findFirst({
+      where: eq(masterPegawai.id, sekolah.kepalaSekolahId),
+    });
+  }
+  if (!kepsek) {
+    kepsek = await db.query.masterPegawai.findFirst({
+      where: eq(masterPegawai.isAktif, true),
+    });
+  }
 
   const sla = getSlaInfo(letter.tanggalDiterima || new Date(), letter.sifat, letter.deadlineSla);
 
@@ -115,7 +128,7 @@ export default async function LembarDisposisiPage({
               </p>
               <p>
                 <span className="w-28 inline-block font-semibold">Tanggal Diterima</span>:{' '}
-                {letter.tanggalDiterima || '-'}
+                {letter.tanggalDiterima ? new Date(letter.tanggalDiterima).toLocaleDateString('id-ID') : '-'}
               </p>
               <p>
                 <span className="w-28 inline-block font-semibold">Sifat Surat</span>:{' '}
@@ -130,7 +143,7 @@ export default async function LembarDisposisiPage({
               </p>
               <p>
                 <span className="w-28 inline-block font-semibold">Tanggal Surat</span>:{' '}
-                {letter.tanggalSurat || '-'}
+                {letter.tanggalSurat ? new Date(letter.tanggalSurat).toLocaleDateString('id-ID') : '-'}
               </p>
               <p>
                 <span className="w-28 inline-block font-semibold">Asal Surat</span>:{' '}
