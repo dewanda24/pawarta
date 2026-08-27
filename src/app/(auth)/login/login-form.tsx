@@ -38,7 +38,7 @@ export default function LoginForm() {
       });
 
       if (res?.error) {
-        const message = 'Username/email atau kata sandi yang Anda masukkan tidak sesuai.';
+        const message = 'Username/email atau kata sandi tidak sesuai.';
         setErrorMsg(message);
         toast.error(message);
         setLoading(false);
@@ -56,21 +56,21 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 w-full">
+    <form onSubmit={handleSubmit} className="space-y-3.5 w-full">
       {errorMsg && (
-        <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 flex items-start gap-3 text-xs text-red-700 animate-in fade-in duration-200">
+        <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-xs text-red-700 animate-in fade-in duration-200">
           <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-          <p className="font-medium leading-relaxed">{errorMsg}</p>
+          <p className="font-medium leading-tight">{errorMsg}</p>
         </div>
       )}
 
       {/* Identifier: Username atau Email */}
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         <Label htmlFor="identifier" className="text-xs font-semibold text-gray-700">
           Username atau Email
         </Label>
         <div className="relative">
-          <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <Input
             id="identifier"
             name="identifier"
@@ -78,23 +78,21 @@ export default function LoginForm() {
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             required
-            placeholder="Contoh: admin atau nama@sekolah.sch.id"
+            placeholder="Contoh: admin atau user@sekolah.sch.id"
             autoComplete="username"
-            className="pl-10 h-11 text-sm bg-gray-50/60 border-gray-200 focus:bg-white transition-all rounded-xl"
+            className="pl-9 h-10 text-xs sm:text-sm bg-gray-50/60 border-gray-200 focus:bg-white transition-all rounded-xl"
             disabled={loading}
           />
         </div>
       </div>
 
       {/* Password Field with Show/Hide Toggle */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="password" className="text-xs font-semibold text-gray-700">
-            Kata Sandi / Password
-          </Label>
-        </div>
+      <div className="space-y-1">
+        <Label htmlFor="password" className="text-xs font-semibold text-gray-700">
+          Kata Sandi / Password
+        </Label>
         <div className="relative">
-          <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <Input
             id="password"
             name="password"
@@ -104,13 +102,13 @@ export default function LoginForm() {
             required
             placeholder="Masukkan kata sandi akun"
             autoComplete="current-password"
-            className="pl-10 pr-11 h-11 text-sm bg-gray-50/60 border-gray-200 focus:bg-white transition-all rounded-xl"
+            className="pl-9 pr-10 h-10 text-xs sm:text-sm bg-gray-50/60 border-gray-200 focus:bg-white transition-all rounded-xl"
             disabled={loading}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none p-1 rounded-md transition-colors"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none p-1 rounded-md transition-colors"
             tabIndex={-1}
             aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
           >
@@ -126,7 +124,7 @@ export default function LoginForm() {
       {/* Submit Button */}
       <Button
         type="submit"
-        className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-md shadow-blue-600/25 transition-all mt-2 cursor-pointer"
+        className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-md shadow-blue-600/25 transition-all mt-1 cursor-pointer"
         disabled={loading || !identifier.trim() || !password}
       >
         {loading ? (
