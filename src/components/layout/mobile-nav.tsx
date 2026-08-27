@@ -24,6 +24,7 @@ import {
   HelpCircle,
   ShieldCheck,
   PenTool,
+  Sliders,
   type LucideIcon,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
@@ -48,6 +49,7 @@ const IconMap: Record<string, LucideIcon> = {
   HelpCircle,
   ShieldCheck,
   PenTool,
+  Sliders,
 };
 
 const menuGroups = [
@@ -72,6 +74,12 @@ const menuGroups = [
     items: [
       { id: '7', nama: 'Profil & Kepala Sekolah', icon: 'School', route: '/master/sekolah' },
       { id: '8', nama: 'Desain KOP Surat', icon: 'Landmark', route: '/master/kop-surat' },
+      {
+        id: '8b',
+        nama: 'Template & Margin Surat',
+        icon: 'Sliders',
+        route: '/master/template-surat',
+      },
       { id: '9', nama: 'Penandatangan & TTE', icon: 'PenTool', route: '/master/penandatangan' },
       { id: '10', nama: 'Guru & Staf Pegawai', icon: 'Users', route: '/master/pegawai' },
       { id: '11', nama: 'Data Siswa', icon: 'GraduationCap', route: '/master/siswa' },
@@ -85,15 +93,18 @@ const menuGroups = [
     title: 'Pengaturan Sistem',
     items: [
       { id: '16', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/iam/users' },
-      { id: '17', nama: 'Gateway Notifikasi WA/Email', icon: 'Radio', route: '/settings/notifikasi' },
+      {
+        id: '17',
+        nama: 'Gateway Notifikasi WA/Email',
+        icon: 'Radio',
+        route: '/settings/notifikasi',
+      },
       { id: '18', nama: 'Verifikasi Dokumen Publik', icon: 'ShieldCheck', route: '/verifikasi' },
     ],
   },
   {
     title: 'Bantuan & SOP',
-    items: [
-      { id: '19', nama: 'Panduan Penggunaan', icon: 'HelpCircle', route: '/bantuan' },
-    ],
+    items: [{ id: '19', nama: 'Panduan Penggunaan', icon: 'HelpCircle', route: '/bantuan' }],
   },
 ];
 
@@ -105,7 +116,11 @@ const bottomNavItems = [
   { label: 'Siswa', icon: GraduationCap, route: '/surat-siswa' },
 ];
 
-export function MobileNav({ user }: { user?: { name?: string | null; email?: string | null; role?: string | null } }) {
+export function MobileNav({
+  user,
+}: {
+  user?: { name?: string | null; email?: string | null; role?: string | null };
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
@@ -113,46 +128,48 @@ export function MobileNav({ user }: { user?: { name?: string | null; email?: str
     <>
       {/* Mobile Drawer Backdrop & Menu */}
       {isOpen && (
-        <div className='fixed inset-0 z-50 md:hidden'>
+        <div className="fixed inset-0 z-50 md:hidden">
           {/* Backdrop */}
           <div
-            className='fixed inset-0 bg-gray-900/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200'
+            className="fixed inset-0 bg-gray-900/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
             onClick={() => setIsOpen(false)}
           />
 
           {/* Drawer Content */}
-          <div className='fixed inset-y-0 left-0 max-w-xs w-full bg-white shadow-2xl flex flex-col z-50 animate-in slide-in-from-left duration-300'>
+          <div className="fixed inset-y-0 left-0 max-w-xs w-full bg-white shadow-2xl flex flex-col z-50 animate-in slide-in-from-left duration-300">
             {/* Drawer Header */}
-            <div className='p-4 border-b border-gray-200 flex items-center justify-between bg-blue-700 text-white'>
-              <div className='flex items-center gap-2.5'>
-                <div className='w-8 h-8 rounded-lg bg-white text-blue-700 font-bold flex items-center justify-center text-sm shadow-xs'>
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-blue-700 text-white">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-white text-blue-700 font-bold flex items-center justify-center text-sm shadow-xs">
                   P
                 </div>
                 <div>
-                  <h2 className='font-bold text-base tracking-tight leading-tight'>PAWARTA</h2>
-                  <p className='text-[10px] text-blue-100'>Persuratan Digital Sekolah</p>
+                  <h2 className="font-bold text-base tracking-tight leading-tight">PAWARTA</h2>
+                  <p className="text-[10px] text-blue-100">Persuratan Digital Sekolah</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className='p-1.5 rounded-lg text-blue-100 hover:bg-blue-600 hover:text-white transition-colors'
+                className="p-1.5 rounded-lg text-blue-100 hover:bg-blue-600 hover:text-white transition-colors"
               >
-                <X className='w-5 h-5' />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* User Profile Bar in Drawer */}
             {user && (
-              <div className='p-3.5 bg-blue-50/70 border-b border-blue-100 flex items-center justify-between'>
-                <div className='min-w-0 flex-1 pr-2'>
-                  <p className='font-bold text-xs text-gray-900 truncate'>{user.name || 'Pengguna'}</p>
-                  <p className='text-[10px] text-blue-700 font-medium'>{user.role || 'Staf'}</p>
+              <div className="p-3.5 bg-blue-50/70 border-b border-blue-100 flex items-center justify-between">
+                <div className="min-w-0 flex-1 pr-2">
+                  <p className="font-bold text-xs text-gray-900 truncate">
+                    {user.name || 'Pengguna'}
+                  </p>
+                  <p className="text-[10px] text-blue-700 font-medium">{user.role || 'Staf'}</p>
                 </div>
                 <Button
-                  variant='ghost'
-                  size='sm'
+                  variant="ghost"
+                  size="sm"
                   onClick={() => signOut({ callbackUrl: '/login' })}
-                  className='h-7 text-xs text-red-600 hover:bg-red-50 hover:text-red-700 px-2'
+                  className="h-7 text-xs text-red-600 hover:bg-red-50 hover:text-red-700 px-2"
                 >
                   Keluar
                 </Button>
@@ -160,15 +177,16 @@ export function MobileNav({ user }: { user?: { name?: string | null; email?: str
             )}
 
             {/* Nav Items List */}
-            <div className='flex-1 overflow-y-auto p-3 space-y-5'>
+            <div className="flex-1 overflow-y-auto p-3 space-y-5">
               {menuGroups.map((group, idx) => (
                 <div key={idx}>
-                  <p className='px-2 mb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider'>
+                  <p className="px-2 mb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                     {group.title}
                   </p>
-                  <div className='space-y-0.5'>
+                  <div className="space-y-0.5">
                     {group.items.map((item) => {
-                      const Icon = item.icon && IconMap[item.icon] ? IconMap[item.icon] : FolderOpen;
+                      const Icon =
+                        item.icon && IconMap[item.icon] ? IconMap[item.icon] : FolderOpen;
                       const isActive =
                         pathname === item.route || pathname?.startsWith(`${item.route}/`);
                       return (
@@ -182,8 +200,10 @@ export function MobileNav({ user }: { user?: { name?: string | null; email?: str
                               : 'text-gray-700 hover:bg-gray-100'
                           }`}
                         >
-                          <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-gray-500'}`} />
-                          <span className='truncate'>{item.nama}</span>
+                          <Icon
+                            className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-gray-500'}`}
+                          />
+                          <span className="truncate">{item.nama}</span>
                         </Link>
                       );
                     })}
@@ -193,7 +213,7 @@ export function MobileNav({ user }: { user?: { name?: string | null; email?: str
             </div>
 
             {/* Drawer Footer */}
-            <div className='p-3 border-t border-gray-100 text-center text-[10px] text-gray-400 bg-gray-50'>
+            <div className="p-3 border-t border-gray-100 text-center text-[10px] text-gray-400 bg-gray-50">
               PAWARTA Mobile Web App • v1.0
             </div>
           </div>
@@ -201,22 +221,26 @@ export function MobileNav({ user }: { user?: { name?: string | null; email?: str
       )}
 
       {/* Floating Bottom Navigation Bar for Mobile */}
-      <nav className='md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-40 px-2 py-1.5 shadow-lg flex items-center justify-around'>
+      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-40 px-2 py-1.5 shadow-lg flex items-center justify-around">
         {bottomNavItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.route || (item.route !== '/dashboard' && pathname?.startsWith(`${item.route}/`));
+          const isActive =
+            pathname === item.route ||
+            (item.route !== '/dashboard' && pathname?.startsWith(`${item.route}/`));
           return (
             <Link
               key={item.route}
               href={item.route}
               className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all ${
-                isActive ? 'text-blue-700 font-bold' : 'text-gray-500 hover:text-gray-900 font-medium'
+                isActive
+                  ? 'text-blue-700 font-bold'
+                  : 'text-gray-500 hover:text-gray-900 font-medium'
               }`}
             >
               <div className={`p-1 rounded-full ${isActive ? 'bg-blue-100 text-blue-700' : ''}`}>
-                <Icon className='w-4 h-4' />
+                <Icon className="w-4 h-4" />
               </div>
-              <span className='text-[10px] mt-0.5 leading-none'>{item.label}</span>
+              <span className="text-[10px] mt-0.5 leading-none">{item.label}</span>
             </Link>
           );
         })}
@@ -224,12 +248,12 @@ export function MobileNav({ user }: { user?: { name?: string | null; email?: str
         {/* More Button to trigger Drawer */}
         <button
           onClick={() => setIsOpen(true)}
-          className='flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl text-gray-500 hover:text-gray-900 font-medium transition-all'
+          className="flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl text-gray-500 hover:text-gray-900 font-medium transition-all"
         >
-          <div className='p-1 rounded-full'>
-            <Menu className='w-4 h-4' />
+          <div className="p-1 rounded-full">
+            <Menu className="w-4 h-4" />
           </div>
-          <span className='text-[10px] mt-0.5 leading-none'>Semua</span>
+          <span className="text-[10px] mt-0.5 leading-none">Semua</span>
         </button>
       </nav>
     </>

@@ -21,6 +21,8 @@ import {
   HelpCircle,
   ShieldCheck,
   PlusCircle,
+  Sliders,
+  type LucideIcon,
 } from 'lucide-react';
 
 interface CommandItem {
@@ -28,40 +30,202 @@ interface CommandItem {
   title: string;
   category: string;
   route: string;
-  icon: any;
+  icon: LucideIcon;
   keywords: string;
 }
 
 const COMMAND_ITEMS: CommandItem[] = [
   // Menu Utama
-  { id: '1', title: 'Dashboard', category: 'Menu Utama', route: '/dashboard', icon: Home, keywords: 'beranda home statistik ringkasan' },
-  { id: '2', title: 'Disposisi Saya', category: 'Menu Utama', route: '/disposisi-saya', icon: ClipboardList, keywords: 'tugas disposisi tindak lanjut' },
-  { id: '3', title: 'Buku Agenda & Rekapitulasi', category: 'Menu Utama', route: '/agenda-digital', icon: BookOpen, keywords: 'agenda rekap export excel laporan' },
+  {
+    id: '1',
+    title: 'Dashboard',
+    category: 'Menu Utama',
+    route: '/dashboard',
+    icon: Home,
+    keywords: 'beranda home statistik ringkasan',
+  },
+  {
+    id: '2',
+    title: 'Disposisi Saya',
+    category: 'Menu Utama',
+    route: '/disposisi-saya',
+    icon: ClipboardList,
+    keywords: 'tugas disposisi tindak lanjut',
+  },
+  {
+    id: '3',
+    title: 'Buku Agenda & Rekapitulasi',
+    category: 'Menu Utama',
+    route: '/agenda-digital',
+    icon: BookOpen,
+    keywords: 'agenda rekap export excel laporan',
+  },
 
   // Persuratan
-  { id: '4', title: 'Surat Masuk', category: 'Persuratan', route: '/surat-masuk', icon: Inbox, keywords: 'surat masuk agenda masuk' },
-  { id: '5', title: 'Catat Surat Masuk Baru', category: 'Persuratan', route: '/surat-masuk/tambah', icon: PlusCircle, keywords: 'registrasi catat tambah surat masuk' },
-  { id: '6', title: 'Surat Keluar (Dinas)', category: 'Persuratan', route: '/surat-keluar', icon: Send, keywords: 'surat keluar dinas nota dinas' },
-  { id: '7', title: 'Buat Draft Surat Keluar', category: 'Persuratan', route: '/surat-keluar/create', icon: PlusCircle, keywords: 'buat draft surat keluar baru' },
-  { id: '8', title: 'Surat Kesiswaan', category: 'Persuratan', route: '/surat-siswa', icon: GraduationCap, keywords: 'surat siswa kesiswaan' },
-  { id: '9', title: 'Buat Surat Dispensasi Siswa', category: 'Persuratan', route: '/surat-siswa/dispensasi', icon: PlusCircle, keywords: 'dispensasi lomba izin siswa' },
-  { id: '10', title: 'Buat Surat Keterangan Siswa Aktif', category: 'Persuratan', route: '/surat-siswa/keterangan-aktif', icon: PlusCircle, keywords: 'keterangan aktif beasiswa siswa' },
-  { id: '11', title: 'Buat Surat Panggilan Orang Tua / BK', category: 'Persuratan', route: '/surat-siswa/panggilan-ortu', icon: PlusCircle, keywords: 'panggilan orang tua wali murid bk' },
+  {
+    id: '4',
+    title: 'Surat Masuk',
+    category: 'Persuratan',
+    route: '/surat-masuk',
+    icon: Inbox,
+    keywords: 'surat masuk agenda masuk',
+  },
+  {
+    id: '5',
+    title: 'Catat Surat Masuk Baru',
+    category: 'Persuratan',
+    route: '/surat-masuk/tambah',
+    icon: PlusCircle,
+    keywords: 'registrasi catat tambah surat masuk',
+  },
+  {
+    id: '6',
+    title: 'Surat Keluar (Dinas)',
+    category: 'Persuratan',
+    route: '/surat-keluar',
+    icon: Send,
+    keywords: 'surat keluar dinas nota dinas',
+  },
+  {
+    id: '7',
+    title: 'Buat Draft Surat Keluar',
+    category: 'Persuratan',
+    route: '/surat-keluar/create',
+    icon: PlusCircle,
+    keywords: 'buat draft surat keluar baru',
+  },
+  {
+    id: '8',
+    title: 'Surat Kesiswaan',
+    category: 'Persuratan',
+    route: '/surat-siswa',
+    icon: GraduationCap,
+    keywords: 'surat siswa kesiswaan',
+  },
+  {
+    id: '9',
+    title: 'Buat Surat Dispensasi Siswa',
+    category: 'Persuratan',
+    route: '/surat-siswa/dispensasi',
+    icon: PlusCircle,
+    keywords: 'dispensasi lomba izin siswa',
+  },
+  {
+    id: '10',
+    title: 'Buat Surat Keterangan Siswa Aktif',
+    category: 'Persuratan',
+    route: '/surat-siswa/keterangan-aktif',
+    icon: PlusCircle,
+    keywords: 'keterangan aktif beasiswa siswa',
+  },
+  {
+    id: '11',
+    title: 'Buat Surat Panggilan Orang Tua / BK',
+    category: 'Persuratan',
+    route: '/surat-siswa/panggilan-ortu',
+    icon: PlusCircle,
+    keywords: 'panggilan orang tua wali murid bk',
+  },
 
   // Master Data
-  { id: '12', title: 'Desain KOP Surat & Logo', category: 'Master Data', route: '/master/kop-surat', icon: Landmark, keywords: 'kop surat logo kepala naskah' },
-  { id: '13', title: 'Data Siswa', category: 'Master Data', route: '/master/siswa', icon: GraduationCap, keywords: 'siswa murid peserta didik' },
-  { id: '14', title: 'Rombel / Kelas', category: 'Master Data', route: '/master/kelas', icon: School, keywords: 'kelas rombel tingkat' },
-  { id: '15', title: 'Guru & Pegawai', category: 'Master Data', route: '/master/pegawai', icon: Users, keywords: 'guru staf pegawai ptk' },
-  { id: '16', title: 'Kode Klasifikasi Surat', category: 'Master Data', route: '/master/klasifikasi', icon: Layers, keywords: 'kode klasifikasi penomoran' },
-  { id: '17', title: 'Jenis Surat', category: 'Master Data', route: '/master/jenis-surat', icon: FileText, keywords: 'jenis surat format' },
-  { id: '18', title: 'Daftar Instansi Relasi', category: 'Master Data', route: '/master/instansi', icon: Building2, keywords: 'instansi dinas luar pengirim tujuan' },
+  {
+    id: '12',
+    title: 'Desain KOP Surat & Logo',
+    category: 'Master Data',
+    route: '/master/kop-surat',
+    icon: Landmark,
+    keywords: 'kop surat logo kepala naskah',
+  },
+  {
+    id: '12b',
+    title: 'Template & Margin Surat',
+    category: 'Master Data',
+    route: '/master/template-surat',
+    icon: Sliders,
+    keywords: 'template margin kertas layout a4 f4 ukuran spasi tipografi',
+  },
+  {
+    id: '13',
+    title: 'Data Siswa',
+    category: 'Master Data',
+    route: '/master/siswa',
+    icon: GraduationCap,
+    keywords: 'siswa murid peserta didik',
+  },
+  {
+    id: '14',
+    title: 'Rombel / Kelas',
+    category: 'Master Data',
+    route: '/master/kelas',
+    icon: School,
+    keywords: 'kelas rombel tingkat',
+  },
+  {
+    id: '15',
+    title: 'Guru & Pegawai',
+    category: 'Master Data',
+    route: '/master/pegawai',
+    icon: Users,
+    keywords: 'guru staf pegawai ptk',
+  },
+  {
+    id: '16',
+    title: 'Kode Klasifikasi Surat',
+    category: 'Master Data',
+    route: '/master/klasifikasi',
+    icon: Layers,
+    keywords: 'kode klasifikasi penomoran',
+  },
+  {
+    id: '17',
+    title: 'Jenis Surat',
+    category: 'Master Data',
+    route: '/master/jenis-surat',
+    icon: FileText,
+    keywords: 'jenis surat format',
+  },
+  {
+    id: '18',
+    title: 'Daftar Instansi Relasi',
+    category: 'Master Data',
+    route: '/master/instansi',
+    icon: Building2,
+    keywords: 'instansi dinas luar pengirim tujuan',
+  },
 
   // Pengaturan & Bantuan
-  { id: '19', title: 'Pengguna & Hak Akses (IAM)', category: 'Pengaturan', route: '/iam/users', icon: Shield, keywords: 'user pengguna akun role hak akses' },
-  { id: '20', title: 'Gateway Notifikasi WA/Email', category: 'Pengaturan', route: '/settings/notifikasi', icon: Radio, keywords: 'whatsapp gateway fonnte wablas email smtp notifikasi' },
-  { id: '21', title: 'Portal Verifikasi Dokumen Publik', category: 'Pengaturan', route: '/verifikasi', icon: ShieldCheck, keywords: 'verifikasi qr code tte tanda tangan' },
-  { id: '22', title: 'Panduan Penggunaan & SOP', category: 'Bantuan', route: '/bantuan', icon: HelpCircle, keywords: 'bantuan panduan sop faq petunjuk' },
+  {
+    id: '19',
+    title: 'Pengguna & Hak Akses (IAM)',
+    category: 'Pengaturan',
+    route: '/iam/users',
+    icon: Shield,
+    keywords: 'user pengguna akun role hak akses',
+  },
+  {
+    id: '20',
+    title: 'Gateway Notifikasi WA/Email',
+    category: 'Pengaturan',
+    route: '/settings/notifikasi',
+    icon: Radio,
+    keywords: 'whatsapp gateway fonnte wablas email smtp notifikasi',
+  },
+  {
+    id: '21',
+    title: 'Portal Verifikasi Dokumen Publik',
+    category: 'Pengaturan',
+    route: '/verifikasi',
+    icon: ShieldCheck,
+    keywords: 'verifikasi qr code tte tanda tangan',
+  },
+  {
+    id: '22',
+    title: 'Panduan Penggunaan & SOP',
+    category: 'Bantuan',
+    route: '/bantuan',
+    icon: HelpCircle,
+    keywords: 'bantuan panduan sop faq petunjuk',
+  },
 ];
 
 export function CommandPaletteTrigger() {
@@ -90,7 +254,7 @@ export function CommandPaletteTrigger() {
       (item) =>
         item.title.toLowerCase().includes(q) ||
         item.category.toLowerCase().includes(q) ||
-        item.keywords.toLowerCase().includes(q)
+        item.keywords.toLowerCase().includes(q),
     );
   }, [query]);
 
@@ -116,10 +280,7 @@ export function CommandPaletteTrigger() {
 
       {open && (
         <div className="fixed inset-0 z-50 bg-gray-900/60 backdrop-blur-xs flex items-start justify-center pt-[10vh] p-4">
-          <div
-            className="fixed inset-0"
-            onClick={() => setOpen(false)}
-          />
+          <div className="fixed inset-0" onClick={() => setOpen(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-gray-200 z-10 animate-in fade-in zoom-in-95 duration-150">
             {/* Input Header */}
             <div className="flex items-center px-4 border-b border-gray-100 bg-white">
@@ -159,8 +320,12 @@ export function CommandPaletteTrigger() {
                           <Icon className="w-4 h-4" />
                         </div>
                         <div className="min-w-0 truncate">
-                          <p className="font-semibold text-gray-900 group-hover:text-blue-700 truncate">{item.title}</p>
-                          <p className="text-[10px] text-gray-400 group-hover:text-blue-500 font-mono truncate">{item.route}</p>
+                          <p className="font-semibold text-gray-900 group-hover:text-blue-700 truncate">
+                            {item.title}
+                          </p>
+                          <p className="text-[10px] text-gray-400 group-hover:text-blue-500 font-mono truncate">
+                            {item.route}
+                          </p>
                         </div>
                       </div>
                       <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-500 group-hover:bg-blue-100 group-hover:text-blue-700 shrink-0 font-medium">

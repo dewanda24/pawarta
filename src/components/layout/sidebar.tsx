@@ -23,6 +23,7 @@ import {
   HelpCircle,
   ShieldCheck,
   PenTool,
+  Sliders,
   type LucideIcon,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -47,6 +48,7 @@ const IconMap: Record<string, LucideIcon> = {
   HelpCircle,
   ShieldCheck,
   PenTool,
+  Sliders,
 };
 
 // Menu fokus lingkup persuratan sekolah (TU, Guru, Wakasek, Kepala Sekolah)
@@ -72,6 +74,12 @@ const menuGroups = [
     items: [
       { id: '7', nama: 'Profil & Kepala Sekolah', icon: 'School', route: '/master/sekolah' },
       { id: '8', nama: 'Desain KOP Surat', icon: 'Landmark', route: '/master/kop-surat' },
+      {
+        id: '8b',
+        nama: 'Template & Margin Surat',
+        icon: 'Sliders',
+        route: '/master/template-surat',
+      },
       { id: '9', nama: 'Penandatangan & TTE', icon: 'PenTool', route: '/master/penandatangan' },
       { id: '10', nama: 'Guru & Staf Pegawai', icon: 'Users', route: '/master/pegawai' },
       { id: '11', nama: 'Data Siswa', icon: 'GraduationCap', route: '/master/siswa' },
