@@ -10,18 +10,35 @@ export const metadata = {
   title: 'Cetak Surat Persetujuan Orang Tua | PAWARTA',
 };
 
-export default async function CetakPersetujuanPage({
-  params,
-}: {
-  params: Promise<{ id: string }> | { id: string };
-}) {
-  const resolvedParams = await Promise.resolve(params);
-  const id = resolvedParams?.id;
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
 
-  if (!id) notFound();
+export default async function CetakPersetujuanPage({ params }: PageProps) {
+  const { id } = await params;
+
+  if (!id) {
+    notFound();
+  }
 
   const res = await getConsentDetailById(id);
-  if (!res.success || !res.data) notFound();
+  if (!res.success || !res.data) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50">
+        <div className="bg-white p-8 rounded-2xl max-w-md w-full shadow-lg border border-gray-200 space-y-4">
+          <h2 className="text-xl font-bold text-gray-900">Dokumen Tidak Ditemukan</h2>
+          <p className="text-xs text-gray-500">
+            {res.error || 'Dokumen surat persetujuan tidak dapat dimuat.'}
+          </p>
+          <Link href="/persetujuan-ortu">
+            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-2">
+              Kembali ke Formulir
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const consent = res.data;
   const sekolah = res.sekolah;

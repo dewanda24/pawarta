@@ -21,18 +21,38 @@ export const metadata = {
   title: 'Surat Persetujuan Berhasil Diterbitkan | PAWARTA',
 };
 
-export default async function PersetujuanSuksesPage({
-  params,
-}: {
-  params: Promise<{ id: string }> | { id: string };
-}) {
-  const resolvedParams = await Promise.resolve(params);
-  const id = resolvedParams?.id;
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
 
-  if (!id) notFound();
+export default async function PersetujuanSuksesPage({ params }: PageProps) {
+  const { id } = await params;
+
+  if (!id) {
+    notFound();
+  }
 
   const res = await getConsentDetailById(id);
-  if (!res.success || !res.data) notFound();
+  if (!res.success || !res.data) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6 text-center">
+        <div className="bg-white text-slate-900 p-8 rounded-3xl max-w-md w-full shadow-2xl space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
+            <FileCheck className="w-7 h-7" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900">Dokumen Belum Ditemukan</h2>
+          <p className="text-xs text-gray-500">
+            {res.error || 'Data persetujuan orang tua sedang diproses atau tidak ditemukan.'}
+          </p>
+          <Link href="/persetujuan-ortu">
+            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-2">
+              Kembali ke Formulir
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const consent = res.data;
   const sekolah = res.sekolah;
