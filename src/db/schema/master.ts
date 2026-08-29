@@ -62,11 +62,14 @@ export const masterPenandatangan = pgTable('master_penandatangan', {
     .references(() => masterPegawai.id)
     .notNull(),
   jabatanId: uuid('jabatan_id')
-    .references(() => masterJabatan.id)
-    .notNull(),
+    .references(() => masterJabatan.id),
+  jabatanDokumen: varchar('jabatan_dokumen', { length: 255 }), // e.g. "Kepala Sekolah", "Plt. Kepala Sekolah"
   nipLabel: varchar('nip_label', { length: 50 }), // Label NIP yang akan dicetak
+  jenisTtd: varchar('jenis_ttd', { length: 50 }).default('DIGITAL_LOCAL').notNull(), // DIGITAL_LOCAL, BSRE_TTE, MANUAL
   ttdDigitalUrl: text('ttd_digital_url'),
   parafUrl: text('paraf_url'),
+  spesimenUrl: text('spesimen_url'),
+  tteConfig: text('tte_config'), // Config metadata (JSON stringified)
   masaBerlakuMulai: varchar('masa_berlaku_mulai', { length: 50 }),
   masaBerlakuSelesai: varchar('masa_berlaku_selesai', { length: 50 }),
   isAktif: boolean('is_aktif').default(true).notNull(),

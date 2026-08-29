@@ -48,7 +48,11 @@ export const outgoingLetters = pgTable('outgoing_letters', {
   }),
   tanggalSurat: date('tanggal_surat'),
   tanggalTerbit: date('tanggal_terbit'),
-  status: varchar('status', { length: 50 }).notNull().default('DRAFT'), // DRAFT, REVIEW, APPROVED, PUBLISHED
+  status: varchar('status', { length: 50 }).notNull().default('DRAFT'), // DRAFT, DIAJUKAN, DIPERIKSA, REVISI, APPROVED, SIGNED, PUBLISHED, ARCHIVED
+  statusDetail: text('status_detail'),
+  signedAt: timestamp('signed_at'),
+  signerSnapshot: json('signer_snapshot'), // Snapshot nama, NIP, jabatan penandatangan saat diterbitkan
+  documentSnapshot: json('document_snapshot'), // Historical snapshot kop, sekolah, penandatangan, nomor, format final
   catatanTambahan: text('catatan_tambahan'),
   ...auditFields,
 });

@@ -113,15 +113,15 @@ export default function VerifikasiPublikPage() {
                 Mencocokkan tanda tangan digital & naskah dinas di database...
               </div>
             ) : result ? (
-              <div className='bg-white text-gray-950 rounded-2xl border-2 border-emerald-500 shadow-2xl p-6 sm:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-200'>
+              <div className={`bg-white text-gray-950 rounded-2xl border-2 ${result.statusKeabsahan === 'DIBATALKAN' ? 'border-red-500' : 'border-emerald-500'} shadow-2xl p-6 sm:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-200`}>
                 {/* Result Header */}
                 <div className='flex items-center gap-3 pb-4 border-b border-gray-100'>
-                  <div className='w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 shrink-0 shadow-inner'>
-                    <ShieldCheck className='w-7 h-7' />
+                  <div className={`w-12 h-12 rounded-xl ${result.statusKeabsahan === 'DIBATALKAN' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'} flex items-center justify-center shrink-0 shadow-inner`}>
+                    {result.statusKeabsahan === 'DIBATALKAN' ? <ShieldAlert className='w-7 h-7' /> : <ShieldCheck className='w-7 h-7' />}
                   </div>
                   <div>
-                    <span className='inline-block text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded'>
-                      Dokumen Resmi Sah & Terverifikasi
+                    <span className={`inline-block text-[11px] font-bold uppercase tracking-wider ${result.statusKeabsahan === 'DIBATALKAN' ? 'text-red-700 bg-red-50' : 'text-emerald-700 bg-emerald-50'} px-2 py-0.5 rounded`}>
+                      {result.statusKeabsahan === 'DIBATALKAN' ? 'DOKUMEN TELAH DIBATALKAN / DICABUT' : 'Dokumen Resmi Sah & Terverifikasi'}
                     </span>
                     <h2 className='text-lg font-bold text-gray-900 mt-0.5'>{result.perihal || result.namaKegiatan || 'Surat Dinas'}</h2>
                   </div>
@@ -130,50 +130,60 @@ export default function VerifikasiPublikPage() {
                 {/* Details Grid */}
                 <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs'>
                   <div className='bg-gray-50 p-3.5 rounded-xl border border-gray-100 space-y-1'>
-                    <span className='text-gray-500 block flex items-center gap-1.5'>
+                    <span className='text-gray-500 flex items-center gap-1.5'>
                       <FileCheck className='w-3.5 h-3.5 text-blue-600' /> Nomor Dokumen
                     </span>
                     <p className='font-bold text-gray-900 text-sm font-mono'>{result.nomorSurat}</p>
                   </div>
 
                   <div className='bg-gray-50 p-3.5 rounded-xl border border-gray-100 space-y-1'>
-                    <span className='text-gray-500 block flex items-center gap-1.5'>
+                    <span className='text-gray-500 flex items-center gap-1.5'>
                       <Calendar className='w-3.5 h-3.5 text-blue-600' /> Tanggal Penerbitan
                     </span>
                     <p className='font-semibold text-gray-900'>
-                      {result.tanggalSurat || result.createdAt
-                        ? new Date(result.tanggalSurat || result.createdAt).toLocaleDateString('id-ID', { dateStyle: 'full' })
+                      {result.tanggalSurat || result.tanggalTerbit || result.createdAt
+                        ? new Date(result.tanggalSurat || result.tanggalTerbit || result.createdAt).toLocaleDateString('id-ID', { dateStyle: 'full' })
                         : '-'}
                     </p>
                   </div>
 
                   <div className='bg-gray-50 p-3.5 rounded-xl border border-gray-100 space-y-1 sm:col-span-2'>
-                    <span className='text-gray-500 block flex items-center gap-1.5'>
-                      <Landmark className='w-3.5 h-3.5 text-blue-600' /> Instansi Penerbit
+                    <span className='text-gray-500 flex items-center gap-1.5'>
+                      <Landmark className='w-3.5 h-3.5 text-blue-600' /> Satuan Pendidikan Penerbit
                     </span>
-                    <p className='font-bold text-gray-900'>{result.sekolah || 'SMA NEGERI CONTOH UTAMA'}</p>
+                    <p className='font-bold text-gray-900'>{result.sekolah || 'SMP NEGERI 1 UJUNGJAYA'}</p>
                   </div>
 
                   {result.tujuanSurat && (
                     <div className='bg-gray-50 p-3.5 rounded-xl border border-gray-100 space-y-1 sm:col-span-2'>
-                      <span className='text-gray-500 block'>Penerima / Tujuan Surat:</span>
+                      <span className='text-gray-500 block'>Penerima / Tujuan Naskah:</span>
                       <p className='font-semibold text-gray-900'>{result.tujuanSurat}</p>
                     </div>
                   )}
 
                   {result.siswa && (
                     <div className='bg-gray-50 p-3.5 rounded-xl border border-gray-100 space-y-1 sm:col-span-2'>
-                      <span className='text-gray-500 block'>Nama Siswa Terkait:</span>
-                      <p className='font-bold text-gray-900'>{result.siswa.nama} ({result.siswa.nisn || '-'})</p>
+                      <span className='text-gray-500 block'>Siswa Terkait:</span>
+                      <p className='font-bold text-gray-900'>{result.siswa.nama} (NISN: {result.siswa.nisn || '-'})</p>
                     </div>
                   )}
 
                   <div className='bg-emerald-50/80 p-3.5 rounded-xl border border-emerald-200 space-y-1 sm:col-span-2'>
-                    <span className='text-emerald-800 font-semibold block flex items-center gap-1.5'>
-                      <User className='w-3.5 h-3.5 text-emerald-700' /> Penandatangan Elektronik (TTE)
-                    </span>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-emerald-800 font-semibold flex items-center gap-1.5'>
+                        <User className='w-3.5 h-3.5 text-emerald-700' /> Penandatangan Elektronik (TTE)
+                      </span>
+                      <span className='text-[10px] bg-emerald-200/70 text-emerald-900 font-semibold px-2 py-0.5 rounded'>
+                        {result.jenisTtd === 'BSRE_TTE' ? 'Sertifikat BSrE' : 'TTE Digital PAWARTA'}
+                      </span>
+                    </div>
                     <p className='font-bold text-emerald-950'>{result.penandatangan || 'Kepala Sekolah'}</p>
-                    <p className='text-[11px] text-emerald-700 font-mono'>NIP: {result.nip || '-'}</p>
+                    <p className='text-[11px] text-emerald-800'>{result.jabatanPenandatangan || 'Kepala Sekolah'} • <span className='font-mono'>{result.nip || '-'}</span></p>
+                    {result.signedAt && (
+                      <p className='text-[10px] text-emerald-600 font-mono pt-1'>
+                        Waktu Pengesahan: {new Date(result.signedAt).toLocaleString('id-ID')}
+                      </p>
+                    )}
                   </div>
                 </div>
 

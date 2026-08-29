@@ -7,6 +7,7 @@ import {
   masterSiswa,
   masterPegawai,
   masterSekolah,
+  documentHeaders,
 } from '@/db/schema';
 import { eq, isNull, desc, and, ilike } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
@@ -155,6 +156,14 @@ export async function createSuratDispensasi(input: CreateDispensasiInput) {
   try {
     const user = await requireAuth();
 
+    const [sekolah, kopSurat, kepsek] = await Promise.all([
+      db.query.masterSekolah.findFirst({ where: eq(masterSekolah.isAktif, true) }),
+      db.query.documentHeaders.findFirst({
+        where: and(eq(documentHeaders.isDefault, true), eq(documentHeaders.isAktif, true)),
+      }),
+      db.query.masterPegawai.findFirst({ where: eq(masterPegawai.isAktif, true) }),
+    ]);
+
     const currentYear = new Date().getFullYear();
     const countThisYear = await db.$count(
       studentLetters,
@@ -170,6 +179,28 @@ export async function createSuratDispensasi(input: CreateDispensasiInput) {
       kodePerangkatDaerah: 'Disdik',
     });
 
+    const now = new Date();
+    const documentSnapshot = {
+      tipeSurat: 'DISPENSASI',
+      nomorSurat,
+      kegiatan: input.namaKegiatan,
+      lokasi: input.lokasiKegiatan,
+      tanggalMulai: input.tanggalMulai,
+      tanggalSelesai: input.tanggalSelesai,
+      keperluan: input.keperluan,
+      sekolah: {
+        nama: kopSurat?.namaSekolah || sekolah?.nama || 'SMP NEGERI 1 UJUNGJAYA',
+        npsn: sekolah?.npsn || null,
+        alamat: kopSurat?.alamat || sekolah?.alamat || null,
+      },
+      penandatangan: {
+        nama: kepsek?.nama || 'Kepala Sekolah',
+        nip: kepsek?.nip ? `NIP. ${kepsek.nip}` : '-',
+        jabatan: 'Kepala Sekolah',
+      },
+      createdAt: now.toISOString(),
+    };
+
     const [created] = await db
       .insert(studentLetters)
       .values({
@@ -181,6 +212,8 @@ export async function createSuratDispensasi(input: CreateDispensasiInput) {
         tanggalSelesai: input.tanggalSelesai,
         guruPendampingId: input.guruPendampingId || null,
         keperluan: input.keperluan,
+        documentSnapshot,
+        signedAt: now,
         status: 'APPROVED',
       })
       .returning();
@@ -223,9 +256,17 @@ export async function createSuratKeteranganAktif(input: CreateKeteranganAktifInp
   try {
     const user = await requireAuth();
 
-    const siswa = await db.query.masterSiswa.findFirst({
-      where: eq(masterSiswa.id, input.siswaId),
-    });
+    const [siswa, sekolah, kopSurat, kepsek] = await Promise.all([
+      db.query.masterSiswa.findFirst({
+        where: eq(masterSiswa.id, input.siswaId),
+        with: { kelas: true },
+      }),
+      db.query.masterSekolah.findFirst({ where: eq(masterSekolah.isAktif, true) }),
+      db.query.documentHeaders.findFirst({
+        where: and(eq(documentHeaders.isDefault, true), eq(documentHeaders.isAktif, true)),
+      }),
+      db.query.masterPegawai.findFirst({ where: eq(masterPegawai.isAktif, true) }),
+    ]);
 
     if (!siswa) return { success: false, error: 'Siswa tidak ditemukan' };
 
@@ -244,6 +285,31 @@ export async function createSuratKeteranganAktif(input: CreateKeteranganAktifInp
       kodePerangkatDaerah: 'Disdik',
     });
 
+    const now = new Date();
+    const documentSnapshot = {
+      tipeSurat: 'KETERANGAN_AKTIF',
+      nomorSurat,
+      keperluan: input.keperluan,
+      siswa: {
+        nama: siswa.nama,
+        nisn: siswa.nisn,
+        nis: siswa.nis,
+        kelas: siswa.kelas?.namaKelas || '-',
+        namaOrtu: siswa.namaOrtu,
+      },
+      sekolah: {
+        nama: kopSurat?.namaSekolah || sekolah?.nama || 'SMP NEGERI 1 UJUNGJAYA',
+        npsn: sekolah?.npsn || null,
+        alamat: kopSurat?.alamat || sekolah?.alamat || null,
+      },
+      penandatangan: {
+        nama: kepsek?.nama || 'Kepala Sekolah',
+        nip: kepsek?.nip ? `NIP. ${kepsek.nip}` : '-',
+        jabatan: 'Kepala Sekolah',
+      },
+      createdAt: now.toISOString(),
+    };
+
     const [created] = await db
       .insert(studentLetters)
       .values({
@@ -252,6 +318,8 @@ export async function createSuratKeteranganAktif(input: CreateKeteranganAktifInp
         siswaId: input.siswaId,
         kelasId: siswa.kelasId,
         keperluan: input.keperluan,
+        documentSnapshot,
+        signedAt: now,
         status: 'APPROVED',
       })
       .returning();
@@ -288,9 +356,17 @@ export async function createSuratPanggilanOrtu(input: CreatePanggilanOrtuInput) 
   try {
     const user = await requireAuth();
 
-    const siswa = await db.query.masterSiswa.findFirst({
-      where: eq(masterSiswa.id, input.siswaId),
-    });
+    const [siswa, sekolah, kopSurat, kepsek] = await Promise.all([
+      db.query.masterSiswa.findFirst({
+        where: eq(masterSiswa.id, input.siswaId),
+        with: { kelas: true },
+      }),
+      db.query.masterSekolah.findFirst({ where: eq(masterSekolah.isAktif, true) }),
+      db.query.documentHeaders.findFirst({
+        where: and(eq(documentHeaders.isDefault, true), eq(documentHeaders.isAktif, true)),
+      }),
+      db.query.masterPegawai.findFirst({ where: eq(masterPegawai.isAktif, true) }),
+    ]);
 
     if (!siswa) return { success: false, error: 'Siswa tidak ditemukan' };
 
@@ -310,6 +386,35 @@ export async function createSuratPanggilanOrtu(input: CreatePanggilanOrtuInput) 
       derajatKeamanan: 'B',
     });
 
+    const now = new Date();
+    const documentSnapshot = {
+      tipeSurat: 'PANGGILAN_ORTU',
+      nomorSurat,
+      waktuMenghadap: input.waktuMenghadap,
+      menghadapKepada: input.menghadapKepada,
+      ruangan: input.ruangan,
+      keperluan: input.keperluan,
+      catatanKhusus: input.catatanKhusus,
+      siswa: {
+        nama: siswa.nama,
+        nisn: siswa.nisn,
+        nis: siswa.nis,
+        kelas: siswa.kelas?.namaKelas || '-',
+        namaOrtu: siswa.namaOrtu,
+      },
+      sekolah: {
+        nama: kopSurat?.namaSekolah || sekolah?.nama || 'SMP NEGERI 1 UJUNGJAYA',
+        npsn: sekolah?.npsn || null,
+        alamat: kopSurat?.alamat || sekolah?.alamat || null,
+      },
+      penandatangan: {
+        nama: kepsek?.nama || 'Kepala Sekolah',
+        nip: kepsek?.nip ? `NIP. ${kepsek.nip}` : '-',
+        jabatan: 'Kepala Sekolah',
+      },
+      createdAt: now.toISOString(),
+    };
+
     const [created] = await db
       .insert(studentLetters)
       .values({
@@ -322,6 +427,8 @@ export async function createSuratPanggilanOrtu(input: CreatePanggilanOrtuInput) 
         ruangan: input.ruangan,
         keperluan: input.keperluan,
         catatanKhusus: input.catatanKhusus,
+        documentSnapshot,
+        signedAt: now,
         status: 'APPROVED',
       })
       .returning();

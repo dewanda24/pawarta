@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, text, uuid, json, timestamp } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { auditFields } from './utils';
 import { masterSiswa, masterKelas, masterPegawai } from './master';
@@ -26,6 +26,8 @@ export const studentLetters = pgTable('student_letters', {
   menghadapKepada: varchar('menghadap_kepada', { length: 100 }),
   ruangan: varchar('ruangan', { length: 100 }),
   catatanKhusus: text('catatan_khusus'),
+  documentSnapshot: json('document_snapshot'), // Historical immutable snapshot (kop, sekolah, kepsek, siswa)
+  signedAt: timestamp('signed_at'),
   status: varchar('status', { length: 50 }).default('APPROVED').notNull(),
 });
 
@@ -39,6 +41,38 @@ export const studentLetterParticipants = pgTable('student_letter_participants', 
     .references(() => masterSiswa.id, { onDelete: 'cascade' })
     .notNull(),
   peran: varchar('peran', { length: 100 }).default('Peserta'),
+});
+
+// 3. Parent Consents (Surat Persetujuan / Pernyataan Orang Tua)
+export const parentConsents = pgTable('parent_consents', {
+  ...auditFields,
+  kategori: varchar('kategori', { length: 50 }).default('5_HARI_KERJA').notNull(), // '5_HARI_KERJA', 'EKSKUL', 'STUDY_TOUR'
+  siswaId: uuid('siswa_id')
+    .references(() => masterSiswa.id, { onDelete: 'cascade' })
+    .notNull(),
+  kelasId: uuid('kelas_id').references(() => masterKelas.id, { onDelete: 'set null' }),
+
+  // Data Orang Tua / Wali
+  namaOrtu: varchar('nama_ortu', { length: 255 }).notNull(),
+  pekerjaanOrtu: varchar('pekerjaan_ortu', { length: 100 }),
+  noHpOrtu: varchar('no_hp_ortu', { length: 50 }).notNull(),
+  alamatOrtu: text('alamat_ortu'),
+  hubungan: varchar('hubungan', { length: 50 }).default('Orang Tua Kandung'), // Ayah, Ibu, Wali
+
+  // Keputusan & Catatan
+  statusPersetujuan: varchar('status_persetujuan', { length: 50 }).notNull(), // 'SETUJU', 'TIDAK_SETUJU'
+  alasanPenolakan: text('alasan_penolakan'),
+  kesiapanFasilitas: json('kesiapan_fasilitas'), // e.g. { bekalMakan: true, transportasi: true, ibadah: true }
+
+  // Tanda Tangan & Audit Trail
+  ttdDigital: text('ttd_digital').notNull(), // Base64 data URL gambar tanda tangan
+  ipAddress: varchar('ip_address', { length: 100 }),
+  userAgent: text('user_agent'),
+  signedAt: timestamp('signed_at').defaultNow().notNull(),
+
+  // Nomor Surat & Snapshot
+  nomorSurat: varchar('nomor_surat', { length: 100 }),
+  documentSnapshot: json('document_snapshot'), // Snapshot nama sekolah, kepsek, kop surat, siswa saat ttd
 });
 
 // ==========================================
@@ -78,3 +112,15 @@ export const studentLetterParticipantsRelations = relations(
     }),
   }),
 );
+
+export const parentConsentsRelations = relations(parentConsents, ({ one }) => ({
+  siswa: one(masterSiswa, {
+    fields: [parentConsents.siswaId],
+    references: [masterSiswa.id],
+  }),
+  kelas: one(masterKelas, {
+    fields: [parentConsents.kelasId],
+    references: [masterKelas.id],
+  }),
+}));
+

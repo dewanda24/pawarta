@@ -22,8 +22,11 @@ import {
   ShieldCheck,
   PlusCircle,
   Sliders,
+  FileSearch,
+  UserCheck,
   type LucideIcon,
 } from 'lucide-react';
+import { executeGlobalSearch, GlobalSearchResultItem } from '@/features/system/actions/global-search';
 
 interface CommandItem {
   id: string;
@@ -50,7 +53,7 @@ const COMMAND_ITEMS: CommandItem[] = [
     category: 'Menu Utama',
     route: '/disposisi-saya',
     icon: ClipboardList,
-    keywords: 'tugas disposisi tindak lanjut',
+    keywords: 'tugas disposisi tindak lanjut antrean',
   },
   {
     id: '3',
@@ -84,7 +87,7 @@ const COMMAND_ITEMS: CommandItem[] = [
     category: 'Persuratan',
     route: '/surat-keluar',
     icon: Send,
-    keywords: 'surat keluar dinas nota dinas',
+    keywords: 'surat keluar dinas nota dinas perbup',
   },
   {
     id: '7',
@@ -134,7 +137,7 @@ const COMMAND_ITEMS: CommandItem[] = [
     category: 'Master Data',
     route: '/master/kop-surat',
     icon: Landmark,
-    keywords: 'kop surat logo kepala naskah',
+    keywords: 'kop surat logo kepala naskah header',
   },
   {
     id: '12b',
@@ -150,7 +153,7 @@ const COMMAND_ITEMS: CommandItem[] = [
     category: 'Master Data',
     route: '/master/siswa',
     icon: GraduationCap,
-    keywords: 'siswa murid peserta didik',
+    keywords: 'siswa murid peserta didik nisn',
   },
   {
     id: '14',
@@ -158,7 +161,7 @@ const COMMAND_ITEMS: CommandItem[] = [
     category: 'Master Data',
     route: '/master/kelas',
     icon: School,
-    keywords: 'kelas rombel tingkat',
+    keywords: 'kelas rombel tingkat wali',
   },
   {
     id: '15',
@@ -166,7 +169,15 @@ const COMMAND_ITEMS: CommandItem[] = [
     category: 'Master Data',
     route: '/master/pegawai',
     icon: Users,
-    keywords: 'guru staf pegawai ptk',
+    keywords: 'guru staf pegawai ptk nip',
+  },
+  {
+    id: '15b',
+    title: 'Pejabat Penandatangan & TTE',
+    category: 'Master Data',
+    route: '/master/penandatangan',
+    icon: ShieldCheck,
+    keywords: 'penandatangan kepsek tte pejabat wewenang',
   },
   {
     id: '16',
@@ -182,7 +193,7 @@ const COMMAND_ITEMS: CommandItem[] = [
     category: 'Master Data',
     route: '/master/jenis-surat',
     icon: FileText,
-    keywords: 'jenis surat format',
+    keywords: 'jenis surat format perbup sumedang',
   },
   {
     id: '18',
@@ -203,6 +214,14 @@ const COMMAND_ITEMS: CommandItem[] = [
     keywords: 'user pengguna akun role hak akses',
   },
   {
+    id: '19b',
+    title: 'Matriks Hak Akses (RBAC)',
+    category: 'Pengaturan',
+    route: '/iam/role-matrix',
+    icon: ShieldCheck,
+    keywords: 'matrix role permission rbac hak akses',
+  },
+  {
     id: '20',
     title: 'Gateway Notifikasi WA/Email',
     category: 'Pengaturan',
@@ -216,7 +235,7 @@ const COMMAND_ITEMS: CommandItem[] = [
     category: 'Pengaturan',
     route: '/verifikasi',
     icon: ShieldCheck,
-    keywords: 'verifikasi qr code tte tanda tangan',
+    keywords: 'verifikasi qr code tte tanda tangan keabsahan',
   },
   {
     id: '22',
@@ -232,6 +251,8 @@ export function CommandPaletteTrigger() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [liveResults, setLiveResults] = useState<GlobalSearchResultItem[]>([]);
+  const [isSearchingDb, setIsSearchingDb] = useState(false);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -247,7 +268,31 @@ export function CommandPaletteTrigger() {
     return () => document.removeEventListener('keydown', down);
   }, [open]);
 
-  const filteredItems = useMemo(() => {
+  // Debounced live DB search
+  useEffect(() => {
+    if (!query.trim() || query.trim().length < 2) {
+      setLiveResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearchingDb(true);
+      try {
+        const res = await executeGlobalSearch(query);
+        if (res.success && res.data) {
+          setLiveResults(res.data);
+        }
+      } catch {
+        setLiveResults([]);
+      } finally {
+        setIsSearchingDb(false);
+      }
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const filteredMenuItems = useMemo(() => {
     if (!query.trim()) return COMMAND_ITEMS;
     const q = query.toLowerCase().trim();
     return COMMAND_ITEMS.filter(
@@ -271,7 +316,7 @@ export function CommandPaletteTrigger() {
         className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 hover:bg-gray-100 hover:text-gray-900 px-4 py-2 rounded-lg border border-gray-200 w-full sm:w-64 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
       >
         <Search className="w-4 h-4" />
-        <span className="flex-1 text-left hidden sm:inline-block">Cari menu & surat...</span>
+        <span className="flex-1 text-left hidden sm:inline-block">Cari menu, surat, siswa...</span>
         <span className="text-left sm:hidden">Cari...</span>
         <kbd className="hidden sm:inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-1.5 font-mono text-[10px] font-medium text-gray-500">
           <span className="text-xs">⌘</span>K
@@ -281,7 +326,7 @@ export function CommandPaletteTrigger() {
       {open && (
         <div className="fixed inset-0 z-50 bg-gray-900/60 backdrop-blur-xs flex items-start justify-center pt-[10vh] p-4">
           <div className="fixed inset-0" onClick={() => setOpen(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col border border-gray-200 z-10 animate-in fade-in zoom-in-95 duration-150">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col border border-gray-200 z-10 animate-in fade-in zoom-in-95 duration-150">
             {/* Input Header */}
             <div className="flex items-center px-4 border-b border-gray-100 bg-white">
               <Search className="w-4 h-4 text-gray-400 shrink-0" />
@@ -290,7 +335,7 @@ export function CommandPaletteTrigger() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="flex-1 h-12 bg-transparent border-0 px-3 text-sm focus:outline-none focus:ring-0 text-gray-900 placeholder:text-gray-400"
-                placeholder="Ketik menu, registrasi surat, dispensasi, KOP..."
+                placeholder="Cari nomor surat, perihal, nama siswa, pegawai, menu..."
               />
               <button
                 onClick={() => setOpen(false)}
@@ -302,44 +347,92 @@ export function CommandPaletteTrigger() {
 
             {/* Results List */}
             <div className="max-h-[60vh] overflow-y-auto p-2 divide-y divide-gray-50">
-              {filteredItems.length === 0 ? (
-                <div className="py-10 text-center text-xs text-gray-400">
-                  Tidak ditemukan menu atau perintah untuk &quot;{query}&quot;
+              {/* 1. Live Database Search Results (If query entered) */}
+              {liveResults.length > 0 && (
+                <div className="pb-2">
+                  <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50/70 rounded-lg flex items-center justify-between mb-1">
+                    <span>Hasil Pencarian Database Dokumen</span>
+                    <span className="font-normal font-mono">{liveResults.length} hasil</span>
+                  </div>
+                  <div className="space-y-0.5">
+                    {liveResults.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => handleSelect(item.route)}
+                        className="w-full flex items-center justify-between px-3 py-2 text-xs text-gray-800 hover:bg-blue-50/70 rounded-xl transition-colors text-left group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-1.5 rounded-lg bg-blue-100/70 text-blue-700">
+                            {item.category === 'Data Siswa' ? (
+                              <GraduationCap className="w-4 h-4" />
+                            ) : item.category === 'Pegawai & Guru' ? (
+                              <Users className="w-4 h-4" />
+                            ) : (
+                              <FileSearch className="w-4 h-4" />
+                            )}
+                          </div>
+                          <div className="min-w-0 truncate">
+                            <p className="font-semibold text-gray-900 group-hover:text-blue-700 truncate">
+                              {item.title}
+                            </p>
+                            <p className="text-[10px] text-gray-500 truncate">{item.subtitle}</p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-medium shrink-0 ml-2">
+                          {item.category}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                filteredItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => handleSelect(item.route)}
-                      className="w-full flex items-center justify-between px-3 py-2.5 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-xl transition-colors text-left group"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="p-1.5 rounded-lg bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0 truncate">
-                          <p className="font-semibold text-gray-900 group-hover:text-blue-700 truncate">
-                            {item.title}
-                          </p>
-                          <p className="text-[10px] text-gray-400 group-hover:text-blue-500 font-mono truncate">
-                            {item.route}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-500 group-hover:bg-blue-100 group-hover:text-blue-700 shrink-0 font-medium">
-                        {item.category}
-                      </span>
-                    </button>
-                  );
-                })
               )}
+
+              {/* 2. Menu Navigation Results */}
+              <div>
+                {liveResults.length > 0 && (
+                  <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 my-1">
+                    Menu & Layanan Sistem
+                  </div>
+                )}
+                {filteredMenuItems.length === 0 && liveResults.length === 0 ? (
+                  <div className="py-10 text-center text-xs text-gray-400">
+                    Tidak ditemukan data atau perintah untuk &quot;{query}&quot;
+                  </div>
+                ) : (
+                  filteredMenuItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => handleSelect(item.route)}
+                        className="w-full flex items-center justify-between px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 rounded-xl transition-colors text-left group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="p-1.5 rounded-lg bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0 truncate">
+                            <p className="font-semibold text-gray-900 group-hover:text-blue-700 truncate">
+                              {item.title}
+                            </p>
+                            <p className="text-[10px] text-gray-400 group-hover:text-blue-500 font-mono truncate">
+                              {item.route}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-500 shrink-0 font-medium">
+                          {item.category}
+                        </span>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
             </div>
 
             {/* Footer Tip */}
             <div className="p-2.5 border-t border-gray-100 text-[11px] text-gray-400 bg-gray-50 flex items-center justify-between px-4">
-              <span>Navigasi Cepat PAWARTA</span>
+              <span>Navigasi Cepat & Pencarian Global PAWARTA</span>
               <span className="font-mono">ESC untuk tutup</span>
             </div>
           </div>

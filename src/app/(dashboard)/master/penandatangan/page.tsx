@@ -80,17 +80,47 @@ export default function PenandatanganPage() {
   const columns: ColumnDef<any>[] = [
     {
       accessorKey: 'pegawai.nama',
-      header: 'Nama Pegawai',
-      cell: ({ row }) => row.original.pegawai?.nama || '-',
+      header: 'Nama Pegawai & NIP',
+      cell: ({ row }) => (
+        <div>
+          <p className="font-semibold text-gray-900">{row.original.pegawai?.nama || '-'}</p>
+          <p className="text-[11px] text-gray-500 font-mono">{row.original.nipLabel || (row.original.pegawai?.nip ? `NIP. ${row.original.pegawai.nip}` : '-')}</p>
+        </div>
+      ),
     },
     {
-      accessorKey: 'jabatan.nama',
-      header: 'Jabatan',
-      cell: ({ row }) => row.original.jabatan?.nama || '-',
+      accessorKey: 'jabatanDokumen',
+      header: 'Jabatan pada Dokumen',
+      cell: ({ row }) => (
+        <div>
+          <span className="font-medium text-gray-900">{row.original.jabatanDokumen || row.original.jabatan?.nama || 'Kepala Sekolah'}</span>
+          <span className="block text-[11px] text-gray-400">Unit: {row.original.pegawai?.unitKerja?.nama || 'Sekolah'}</span>
+        </div>
+      ),
     },
     {
-      accessorKey: 'nipLabel',
-      header: 'NIP Label',
+      accessorKey: 'jenisTtd',
+      header: 'Mekanisme TTE',
+      cell: ({ row }) => {
+        const jenis = row.original.jenisTtd || 'DIGITAL_LOCAL';
+        const label = jenis === 'BSRE_TTE' ? 'BSrE / BSSN' : jenis === 'MANUAL' ? 'Basah / Manual' : 'QR & Digital Hash';
+        const badgeClass = jenis === 'BSRE_TTE' ? 'bg-purple-100 text-purple-800' : jenis === 'MANUAL' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800';
+        return (
+          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${badgeClass}`}>
+            {label}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: 'masaBerlakuMulai',
+      header: 'Masa Berlaku',
+      cell: ({ row }) => {
+        const mulai = row.original.masaBerlakuMulai;
+        const selesai = row.original.masaBerlakuSelesai;
+        if (!mulai && !selesai) return <span className="text-xs text-gray-400">Tetap</span>;
+        return <span className="text-xs text-gray-700">{mulai || '-'} s/d {selesai || 'Selesai'}</span>;
+      },
     },
     {
       accessorKey: 'isAktif',

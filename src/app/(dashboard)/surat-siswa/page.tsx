@@ -7,6 +7,7 @@ import {
   GraduationCap,
   PlusCircle,
   FileText,
+  FileCheck,
   UserCheck,
   PhoneCall,
   Printer,
@@ -56,7 +57,12 @@ export default async function SuratSiswaPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 w-full lg:w-auto">
+          <Link href="/surat-siswa/persetujuan-5-hari-kerja" className="w-full">
+            <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-xs flex items-center justify-center gap-2 text-xs sm:text-sm h-9 sm:h-10">
+              <FileCheck className="w-4 h-4" /> Persetujuan 5 Hari
+            </Button>
+          </Link>
           <Link href="/surat-siswa/dispensasi" className="w-full">
             <Button className="w-full bg-white text-blue-900 hover:bg-blue-50 font-semibold shadow-xs flex items-center justify-center gap-2 text-xs sm:text-sm h-9 sm:h-10">
               <PlusCircle className="w-4 h-4" /> Dispensasi
@@ -82,7 +88,21 @@ export default async function SuratSiswaPage() {
       </div>
 
       {/* Quick Action Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <Link href="/surat-siswa/persetujuan-5-hari-kerja" className="group">
+          <div className="bg-white p-4 sm:p-5 rounded-xl border border-gray-200 shadow-xs hover:border-emerald-500 hover:shadow-md transition-all">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <FileCheck className="w-5 h-5" />
+            </div>
+            <h3 className="font-bold text-gray-900 text-sm sm:text-base group-hover:text-emerald-600 transition-colors">
+              Persetujuan 5 Hari Kerja
+            </h3>
+            <p className="text-xs text-gray-500 mt-1">
+              Monitoring & rekap persetujuan wali murid dengan tanda tangan digital publik.
+            </p>
+          </div>
+        </Link>
+
         <Link href="/surat-siswa/dispensasi" className="group">
           <div className="bg-white p-4 sm:p-5 rounded-xl border border-gray-200 shadow-xs hover:border-blue-500 hover:shadow-md transition-all">
             <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">

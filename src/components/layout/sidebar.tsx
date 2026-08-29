@@ -93,6 +93,7 @@ const menuGroups = [
     title: 'Pengaturan Sistem',
     items: [
       { id: '16', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/iam/users' },
+      { id: '16b', nama: 'Matriks Hak Akses (RBAC)', icon: 'ShieldCheck', route: '/iam/role-matrix' },
       {
         id: '17',
         nama: 'Gateway Notifikasi WA/Email',

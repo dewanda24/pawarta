@@ -19,7 +19,12 @@ export async function getPenandatanganList(params?: { limit?: number; offset?: n
     const data = await db.query.masterPenandatangan.findMany({
       where: whereClause,
       with: {
-        pegawai: true,
+        pegawai: {
+          with: {
+            jabatan: true,
+            unitKerja: true,
+          },
+        },
         jabatan: true,
       },
       ...(limit ? { limit, offset } : {}),

@@ -1,7 +1,15 @@
 'use server';
 
 import { db } from '@/db';
-import { outgoingLetters, masterUnitKerja, letterAttachments } from '@/db/schema';
+import {
+  outgoingLetters,
+  masterUnitKerja,
+  masterPegawai,
+  masterSekolah,
+  documentHeaders,
+  letterAttachments,
+  masterPenandatangan,
+} from '@/db/schema';
 import { eq, isNull, and, ilike, desc, or } from 'drizzle-orm';
 import { InsertOutgoingLetter } from '../types';
 import { revalidatePath } from 'next/cache';
@@ -12,6 +20,7 @@ export async function getSuratKeluarList(params?: {
   search?: string;
   limit?: number;
   offset?: number;
+  status?: string;
 }) {
   try {
     await requireAuth('SURAT_KELUAR_READ');
@@ -19,9 +28,11 @@ export async function getSuratKeluarList(params?: {
     const search = params?.search;
     const limit = params?.limit;
     const offset = params?.offset ?? 0;
+    const status = params?.status;
 
     const whereClause = and(
       isNull(outgoingLetters.deletedAt),
+      status ? eq(outgoingLetters.status, status) : undefined,
       search
         ? or(
             ilike(outgoingLetters.perihal, `%${search}%`),
@@ -37,6 +48,7 @@ export async function getSuratKeluarList(params?: {
         jenisSurat: true,
         instansiTujuan: true,
         pembuat: true,
+        penandatangan: true,
       },
       ...(limit ? { limit, offset } : {}),
       orderBy: [desc(outgoingLetters.createdAt)],
@@ -121,6 +133,16 @@ export async function createSuratKeluar(data: CreateSuratKeluarInput) {
 export async function updateSuratKeluar(id: string, data: Partial<InsertOutgoingLetter>) {
   try {
     const user = await requireAuth('SURAT_KELUAR_UPDATE');
+    
+    // Cegah edit konten jika sudah APPROVED / SIGNED tanpa pembatalan/revisi resmi
+    const existing = await db.query.outgoingLetters.findFirst({
+      where: eq(outgoingLetters.id, id),
+    });
+
+    if (existing && (existing.status === 'APPROVED' || existing.status === 'PUBLISHED') && !data.status) {
+      return { success: false, error: 'Dokumen yang telah disetujui / diterbitkan bersifat immutable dan tidak dapat diubah langsung.' };
+    }
+
     await db
       .update(outgoingLetters)
       .set({ ...data, updatedAt: new Date() })
@@ -134,6 +156,7 @@ export async function updateSuratKeluar(id: string, data: Partial<InsertOutgoing
     });
 
     revalidatePath('/surat-keluar');
+    revalidatePath(`/surat-keluar/${id}`);
     return { success: true };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Gagal mengubah surat keluar';
@@ -141,13 +164,50 @@ export async function updateSuratKeluar(id: string, data: Partial<InsertOutgoing
   }
 }
 
+/**
+ * Pengajuan Surat Keluar ke Tahap Pemeriksaan (Review)
+ */
+export async function submitSuratKeluarForReview(id: string) {
+  try {
+    const user = await requireAuth('SURAT_KELUAR_UPDATE');
+    await db
+      .update(outgoingLetters)
+      .set({ status: 'DIAJUKAN', updatedAt: new Date() })
+      .where(eq(outgoingLetters.id, id));
+
+    await logActivity({
+      userId: user.id!,
+      action: 'SUBMIT_REVIEW',
+      entityType: 'SURAT_KELUAR',
+      entityId: id,
+    });
+
+    revalidatePath(`/surat-keluar/${id}`);
+    revalidatePath('/surat-keluar');
+    return { success: true };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Gagal mengajukan surat keluar';
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Persetujuan & Penandatanganan Surat Keluar (Menghasilkan Nomor Resmi & Document Snapshot Immutable)
+ */
 export async function approveSuratKeluar(id: string) {
   try {
-    const user = await requireAuth();
+    const user = await requireAuth('SURAT_KELUAR_APPROVE');
 
     const letter = await db.query.outgoingLetters.findFirst({
       where: and(eq(outgoingLetters.id, id), isNull(outgoingLetters.deletedAt)),
-      with: { klasifikasi: true, jenisSurat: true, unitKerja: true },
+      with: {
+        klasifikasi: true,
+        jenisSurat: true,
+        unitKerja: true,
+        instansiTujuan: true,
+        pembuat: true,
+        penandatangan: true,
+      },
     });
 
     if (!letter) {
@@ -180,6 +240,60 @@ export async function approveSuratKeluar(id: string) {
     const jenisKode = letter.jenisSurat?.kode || 'SK';
     const nomorAgendaGenerated = letter.nomorAgenda || `${nextSeq}/${jenisKode}/${currentYear}`;
     const tanggalTerbitStr = new Date().toISOString().split('T')[0];
+    const now = new Date();
+
+    // Ambil Data Master untuk Pembuatan Snapshot Historis
+    const [sekolah, kopSurat, penandatanganAktif] = await Promise.all([
+      db.query.masterSekolah.findFirst({ where: eq(masterSekolah.isAktif, true) }),
+      db.query.documentHeaders.findFirst({
+        where: and(eq(documentHeaders.isDefault, true), eq(documentHeaders.isAktif, true)),
+      }),
+      db.query.masterPenandatangan.findFirst({
+        where: and(eq(masterPenandatangan.isAktif, true)),
+        with: { pegawai: true, jabatan: true },
+      }),
+    ]);
+
+    const signerPegawai = letter.penandatangan || penandatanganAktif?.pegawai;
+    const signerName = signerPegawai?.nama || 'Kepala Sekolah';
+    const signerNip = penandatanganAktif?.nipLabel || (signerPegawai?.nip ? `NIP. ${signerPegawai.nip}` : '-');
+    const signerTitle = penandatanganAktif?.jabatanDokumen || signerPegawai?.jabatanId || 'Kepala Sekolah';
+
+    const signerSnapshot = {
+      nama: signerName,
+      nip: signerNip,
+      jabatanDokumen: signerTitle,
+      pangkatGolongan: signerPegawai?.pangkatGolongan || null,
+      jenisTtd: penandatanganAktif?.jenisTtd || 'DIGITAL_LOCAL',
+      signedAt: now.toISOString(),
+      signedByUserId: user.id,
+    };
+
+    const documentSnapshot = {
+      nomorSurat: nomorSuratGenerated,
+      nomorAgenda: nomorAgendaGenerated,
+      tanggalSurat: letter.tanggalSurat,
+      tanggalTerbit: tanggalTerbitStr,
+      perihal: letter.perihal,
+      tujuanSurat: letter.tujuanSurat,
+      instansiTujuan: letter.instansiTujuan?.nama || null,
+      jenisSurat: letter.jenisSurat?.nama || 'Surat Dinas',
+      kodeKlasifikasi: letter.klasifikasi?.kode || '000',
+      namaKlasifikasi: letter.klasifikasi?.nama || 'Umum',
+      sekolah: {
+        nama: kopSurat?.namaSekolah || sekolah?.nama || 'SMP NEGERI 1 UJUNGJAYA',
+        npsn: sekolah?.npsn || null,
+        alamat: kopSurat?.alamat || sekolah?.alamat || null,
+        kontak: kopSurat?.kontak || sekolah?.telepon || null,
+        website: kopSurat?.website || sekolah?.website || null,
+        logoKiri: kopSurat?.logoKiriUrl || kopSurat?.logoUrl || null,
+        logoKanan: kopSurat?.logoKananUrl || null,
+        instansiUtama: kopSurat?.instansiUtama || 'PEMERINTAH DAERAH KABUPATEN SUMEDANG',
+        instansiInduk: kopSurat?.instansiInduk || 'DINAS PENDIDIKAN',
+      },
+      signer: signerSnapshot,
+      approvedAt: now.toISOString(),
+    };
 
     await db
       .update(outgoingLetters)
@@ -188,7 +302,10 @@ export async function approveSuratKeluar(id: string) {
         nomorAgenda: nomorAgendaGenerated,
         status: 'APPROVED',
         tanggalTerbit: tanggalTerbitStr,
-        updatedAt: new Date(),
+        signedAt: now,
+        signerSnapshot,
+        documentSnapshot,
+        updatedAt: now,
       })
       .where(eq(outgoingLetters.id, id));
 
@@ -197,12 +314,13 @@ export async function approveSuratKeluar(id: string) {
       action: 'APPROVE',
       entityType: 'SURAT_KELUAR',
       entityId: id,
-      details: { nomorSurat: nomorSuratGenerated },
+      details: { nomorSurat: nomorSuratGenerated, signer: signerName },
     });
 
     revalidatePath(`/surat-keluar/${id}`);
     revalidatePath('/surat-keluar');
     revalidatePath('/agenda-digital');
+    revalidatePath('/dashboard');
     return { success: true, nomorSurat: nomorSuratGenerated };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Gagal menyetujui surat keluar';

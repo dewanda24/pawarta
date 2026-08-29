@@ -35,6 +35,10 @@ export default async function SuratKeluarDetailPage({
 
   if (!letter) return notFound();
 
+  const snapshot = (letter.documentSnapshot as any) || null;
+  const signerSnap = snapshot?.signer || (letter.signerSnapshot as any) || null;
+  const sekolahSnap = snapshot?.sekolah || null;
+
   const [sekolah, kepsek, kopSurat, attachments] = await Promise.all([
     db.query.masterSekolah.findFirst({
       where: eq(masterSekolah.isAktif, true),
@@ -52,8 +56,12 @@ export default async function SuratKeluarDetailPage({
       .orderBy(desc(letterAttachments.createdAt)),
   ]);
 
-  const ttdNama = letter.penandatangan?.nama || kepsek?.nama || 'Kepala Sekolah';
-  const ttdNip = letter.penandatangan?.nip || kepsek?.nip || '-';
+  const displayKop = snapshot?.kopSurat || kopSurat;
+  const displaySekolah = sekolahSnap || sekolah;
+  const ttdNama = signerSnap?.nama || letter.penandatangan?.nama || kepsek?.nama || 'Kepala Sekolah';
+  const ttdNip = signerSnap?.nip || (letter.penandatangan?.nip ? `NIP. ${letter.penandatangan.nip}` : kepsek?.nip ? `NIP. ${kepsek.nip}` : '-');
+  const ttdJabatan = signerSnap?.jabatanDokumen || 'Kepala Sekolah';
+  const ttdPangkat = signerSnap?.pangkatGolongan || letter.penandatangan?.pangkatGolongan || kepsek?.pangkatGolongan || 'Pembina Tingkat I (IV/b)';
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -97,7 +105,7 @@ export default async function SuratKeluarDetailPage({
       {/* Official School Letterhead Format (Visible & Print-Ready) */}
       <div className="bg-white p-8 sm:p-12 rounded-xl border border-gray-200 shadow-sm print:border-none print:shadow-none print:p-0">
         {/* Kop Surat Dinamis */}
-        <LetterheadView header={kopSurat} fallbackSekolah={sekolah} />
+        <LetterheadView header={displayKop} fallbackSekolah={displaySekolah} />
 
         {/* Nomor & Tanggal */}
         <div className="mt-6 flex justify-between items-start text-sm">
@@ -118,7 +126,7 @@ export default async function SuratKeluarDetailPage({
           </div>
           <div className="text-right text-gray-700">
             <p>
-              {sekolah?.kabupaten || 'Kota Utama'},{' '}
+              {displaySekolah?.kabupaten || 'Kabupaten Sumedang'},{' '}
               {letter.tanggalSurat
                 ? new Date(letter.tanggalSurat).toLocaleDateString('id-ID', { dateStyle: 'long' })
                 : new Date().toLocaleDateString('id-ID', { dateStyle: 'long' })}
@@ -150,14 +158,10 @@ export default async function SuratKeluarDetailPage({
         <div className="mt-12 flex justify-end text-sm">
           <div className="text-left">
             <OfficialSignatureBlock
-              jabatan={letter.penandatangan?.jabatanId ? 'Kepala Sekolah' : 'Kepala Sekolah'}
-              nama={letter.penandatangan?.nama || kepsek?.nama || 'Drs. H. Ahmad Wijaya, M.Pd.'}
-              pangkatGolongan={
-                letter.penandatangan?.pangkatGolongan ||
-                kepsek?.pangkatGolongan ||
-                'Pembina Tingkat I (IV/b)'
-              }
-              nip={letter.penandatangan?.nip || kepsek?.nip || '197503122000031001'}
+              jabatan={ttdJabatan}
+              nama={ttdNama}
+              pangkatGolongan={ttdPangkat}
+              nip={ttdNip}
               isTte={letter.status === 'APPROVED' || letter.status === 'PUBLISHED'}
               qrCodeUrl={`/api/v1/verifikasi/qr/${letter.id}`}
             />
