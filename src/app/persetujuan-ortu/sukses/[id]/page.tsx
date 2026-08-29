@@ -149,7 +149,7 @@ export default async function PersetujuanSuksesPage({ params }: PageProps) {
                 <span className="text-gray-500 block text-[11px]">Waktu Penandatanganan:</span>
                 <span className="font-semibold text-slate-800 text-[11px]">
                   {consent.signedAt
-                    ? new Date(consent.signedAt).toLocaleDateString('id-ID', {
+                    ? new Date(consent.signedAt).toLocaleString('id-ID', {
                         dateStyle: 'full',
                         timeStyle: 'short',
                       })

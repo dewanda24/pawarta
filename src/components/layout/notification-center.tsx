@@ -115,7 +115,7 @@ export function NotificationCenter() {
                         <p className='text-xs font-semibold text-gray-900 truncate'>{item.judul}</p>
                         <p className='text-xs text-gray-600 mt-0.5 line-clamp-2'>{item.pesan}</p>
                         <p className='text-[10px] text-gray-400 mt-1'>
-                          {new Date(item.createdAt).toLocaleDateString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(item.createdAt).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
                         </p>
                       </div>
                     </div>
