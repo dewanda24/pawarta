@@ -144,9 +144,9 @@ async function main() {
       },
       {
         id: crypto.randomUUID(),
-        nama: 'MTsN 2 Kota',
-        npsn: '87654321',
-        jenjang: 'MTs',
+        nama: 'SMPN 1 UJUNGJAYA',
+        npsn: '20208421',
+        jenjang: 'SMP',
         status: 'Negeri',
         isAktif: true,
         kepalaSekolahId: pegawais[1].id,

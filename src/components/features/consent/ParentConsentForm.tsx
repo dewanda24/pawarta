@@ -540,9 +540,9 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
         {statusPersetujuan === 'SETUJU' && (
           <div className="space-y-2.5 pt-2">
             <Label className="text-xs font-semibold text-gray-800">
-              Komitmen & Kesiapan Pendampingan Orang Tua:
+              Ketentuan Komitmen dan Tanggung Jawab Orang Tua/Wali:
             </Label>
-            <div className="space-y-2 text-xs text-gray-700 bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <div className="space-y-2.5 text-xs text-gray-700 bg-gray-50 p-4 rounded-xl border border-gray-200">
               <label className="flex items-start gap-2.5 cursor-pointer">
                 <input
                   type="checkbox"
@@ -551,7 +551,7 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
                   className="mt-0.5 rounded text-blue-600"
                 />
                 <span className="text-gray-800 font-medium">
-                  Siap memfasilitasi bekal makan siang dan perlengkapan ibadah harian anak di sekolah.
+                  1. Mendukung dan mematuhi tata tertib serta jadwal Kegiatan Belajar Mengajar (KBM) dari hari Senin sampai dengan Jumat.
                 </span>
               </label>
 
@@ -563,7 +563,19 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
                   className="mt-0.5 rounded text-blue-600"
                 />
                 <span className="text-gray-800 font-medium">
-                  Siap mengkondisikan sarana transportasi dan antar-jemput anak tepat waktu saat jam kepulangan sekolah.
+                  2. Aktif menjalin komunikasi dengan pihak sekolah serta menghadiri kegiatan/pertemuan orang tua yang diselenggarakan sekolah.
+                </span>
+              </label>
+
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={ibadah}
+                  onChange={(e) => setIbadah(e.target.checked)}
+                  className="mt-0.5 rounded text-blue-600"
+                />
+                <span className="text-gray-800 font-medium">
+                  3. Memastikan kedisiplinan kehadiran anak dan menyelesaikan kewajiban administrasi sekolah tepat waktu.
                 </span>
               </label>
 
@@ -575,7 +587,7 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
                   className="mt-0.5 rounded text-blue-600"
                 />
                 <span className="text-gray-800 font-medium">
-                  Siap mendampingi dan memantau kegiatan belajar anak secara mandiri di rumah pada hari Sabtu dan Minggu.
+                  4. Melakukan pengawasan, pendampingan belajar mandiri, dan penguatan pendidikan karakter anak dalam lingkungan keluarga pada hari Sabtu dan Minggu.
                 </span>
               </label>
             </div>

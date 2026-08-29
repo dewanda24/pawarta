@@ -55,10 +55,6 @@ export function LetterheadView({
             src={logoGaruda}
             alt="Lambang Negara"
             className="w-16 h-16 object-contain"
-            onError={(e) => {
-              // fallback ke logo pemda jika garuda tidak tersedia
-              (e.target as HTMLImageElement).src = '/Lambang_Kabupaten_Sumedang.png';
-            }}
           />
         </div>
         <h2 className="text-base sm:text-lg font-bold tracking-wider text-black font-sans uppercase">

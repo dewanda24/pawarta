@@ -2,6 +2,7 @@ import { getConsentDetailById } from '@/features/student-letter/consent-actions'
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { stripNomorPrefix } from '@/lib/nomor-surat-generator';
 import {
   CheckCircle2,
   Printer,
@@ -92,7 +93,7 @@ export default async function PersetujuanSuksesPage({ params }: PageProps) {
             </h1>
             <p className="text-xs text-gray-500 max-w-md mx-auto">
               Terima kasih telah menandatangani surat persetujuan program 5 hari sekolah untuk{' '}
-              <strong className="text-slate-800">{sekolah?.nama || 'Sekolah'}</strong>.
+              <strong className="text-slate-800">{sekolah?.nama || 'SMPN 1 UJUNGJAYA'}</strong>.
             </p>
           </div>
 
@@ -101,7 +102,7 @@ export default async function PersetujuanSuksesPage({ params }: PageProps) {
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <span className="text-gray-500">Nomor Registrasi Surat</span>
               <span className="font-mono font-bold text-blue-800 text-xs sm:text-sm">
-                {consent.nomorSurat || 'SPERT/421.3/' + consent.id.slice(0, 8)}
+                {stripNomorPrefix(consent.nomorSurat) || '421.3/' + consent.id.slice(0, 8)}
               </span>
             </div>
 

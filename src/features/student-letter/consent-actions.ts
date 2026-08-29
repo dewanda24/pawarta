@@ -145,7 +145,7 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
     const kategori = input.kategori || '5_HARI_KERJA';
 
     // 1. Ambil data Siswa, Sekolah, Kop Surat, dan Kepala Sekolah untuk snapshot
-    const [siswa, sekolah, kopSurat, kepsek] = await Promise.all([
+    const [siswa, sekolah, kepsek] = await Promise.all([
       db.query.masterSiswa.findFirst({
         where: eq(masterSiswa.id, input.siswaId),
         with: { kelas: true },
@@ -153,13 +153,20 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
       db.query.masterSekolah.findFirst({
         where: eq(masterSekolah.isAktif, true),
       }),
-      db.query.documentHeaders.findFirst({
-        where: and(eq(documentHeaders.isDefault, true), eq(documentHeaders.isAktif, true)),
-      }),
       db.query.masterPegawai.findFirst({
         where: eq(masterPegawai.isAktif, true),
       }),
     ]);
+
+    let kopSurat = await db.query.documentHeaders.findFirst({
+      where: and(eq(documentHeaders.isDefault, true), eq(documentHeaders.isAktif, true)),
+    });
+    if (!kopSurat) {
+      kopSurat = await db.query.documentHeaders.findFirst({
+        where: eq(documentHeaders.isAktif, true),
+        orderBy: [desc(documentHeaders.isDefault), desc(documentHeaders.createdAt)],
+      });
+    }
 
     if (!siswa) throw new Error('Data siswa tidak ditemukan dalam sistem');
 
@@ -186,7 +193,7 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
       kodeJenisSurat: 'SPERT', // Surat Pernyataan / Persetujuan
       nomorUrut: totalCount,
       kodeKlasifikasi: '421.3', // Kesiswaan & Kurikulum
-      kodePerangkatDaerah: sekolah?.npsn ? `SMAN-${sekolah.npsn.slice(-4)}` : 'SMAN',
+      kodePerangkatDaerah: 'SMPN-1-UJJ',
       tanggal: now,
     });
 
@@ -337,9 +344,15 @@ export async function getConsentDetailById(id: string) {
       where: eq(masterPegawai.isAktif, true),
     });
 
-    const kopSurat = await db.query.documentHeaders.findFirst({
+    let kopSurat = await db.query.documentHeaders.findFirst({
       where: and(eq(documentHeaders.isDefault, true), eq(documentHeaders.isAktif, true)),
     });
+    if (!kopSurat) {
+      kopSurat = await db.query.documentHeaders.findFirst({
+        where: eq(documentHeaders.isAktif, true),
+        orderBy: [desc(documentHeaders.isDefault), desc(documentHeaders.createdAt)],
+      });
+    }
 
     return {
       success: true,

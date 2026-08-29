@@ -171,3 +171,15 @@ export function generateNomorNaskahDinas(params: GenerateNomorParams): string {
   // Default fallback untuk format standar naskah dinas
   return `Nomor: ${cleanKlasifikasi}/${cleanSeq}/${year}`;
 }
+
+/**
+ * Membersihkan prefix 'Nomor:' atau 'NOMOR' dari string nomor surat
+ * agar tidak redundan / dobel ketika dicetak pada naskah dinas bertabel.
+ */
+export function stripNomorPrefix(nomor?: string | null): string {
+  if (!nomor) return '';
+  return nomor
+    .replace(/^nomor\s*:\s*/i, '')
+    .replace(/^nomor\s+/i, '')
+    .trim();
+}
