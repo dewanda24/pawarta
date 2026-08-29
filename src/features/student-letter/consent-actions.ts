@@ -279,7 +279,11 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
       resultId = created.id;
     }
 
-    revalidatePath('/surat-siswa/persetujuan-5-hari-kerja');
+    try {
+      revalidatePath('/surat-siswa/persetujuan-5-hari-kerja');
+    } catch {
+      // Safe outside Next.js request context
+    }
     return {
       success: true,
       data: {
@@ -288,6 +292,7 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
       },
     };
   } catch (error: unknown) {
+    console.error('Error in submitParentConsent:', error);
     const msg = error instanceof Error ? error.message : 'Gagal memproses surat persetujuan';
     return { success: false, error: msg };
   }

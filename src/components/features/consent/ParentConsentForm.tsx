@@ -216,14 +216,16 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
         toast.error(res.error || 'Gagal menyimpan persetujuan');
       }
     } catch (err: unknown) {
-      toast.error('Terjadi kesalahan saat memproses data');
+      console.error('Submit parent consent error:', err);
+      const msg = err instanceof Error ? err.message : 'Terjadi kesalahan saat memproses data';
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8 text-gray-900">
       {/* 1. BAGIAN DATA SISWA */}
       <div className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-xs space-y-5">
         <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
@@ -238,16 +240,16 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-gray-700">
+            <Label className="text-xs font-semibold text-gray-800">
               Kelas Siswa <span className="text-red-500">*</span>
             </Label>
             <Select value={selectedKelasId} onValueChange={(val) => setSelectedKelasId(val)}>
-              <SelectTrigger className="h-11 bg-gray-50/50 border-gray-300">
+              <SelectTrigger className="h-11 bg-white border-gray-300 text-gray-900 font-medium shadow-xs">
                 <SelectValue placeholder="-- Pilih Kelas --" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white text-gray-900 border-gray-200 shadow-lg">
                 {classList.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
+                  <SelectItem key={c.id} value={c.id} className="text-gray-900 hover:bg-blue-50 font-medium">
                     {c.namaKelas} ({c.kodeKelas})
                   </SelectItem>
                 ))}
@@ -256,7 +258,7 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-gray-700">
+            <Label className="text-xs font-semibold text-gray-800">
               Nama Lengkap Siswa <span className="text-red-500">*</span>
             </Label>
             <Select
@@ -264,7 +266,7 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
               onValueChange={handleSelectStudent}
               disabled={!selectedKelasId || loadingStudents}
             >
-              <SelectTrigger className="h-11 bg-gray-50/50 border-gray-300">
+              <SelectTrigger className="h-11 bg-white border-gray-300 text-gray-900 font-medium shadow-xs">
                 <SelectValue
                   placeholder={
                     !selectedKelasId
@@ -275,9 +277,9 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
                   }
                 />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-white text-gray-900 border-gray-200 shadow-lg">
                 {students.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
+                  <SelectItem key={s.id} value={s.id} className="text-gray-900 hover:bg-blue-50 font-medium">
                     {s.nama} {s.nisn ? `(NISN: ${s.nisn})` : ''}
                   </SelectItem>
                 ))}
@@ -360,7 +362,7 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-gray-700">
+            <Label className="text-xs font-semibold text-gray-800">
               Nama Lengkap Orang Tua / Wali <span className="text-red-500">*</span>
             </Label>
             <div className="relative">
@@ -369,31 +371,31 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
                 value={namaOrtu}
                 onChange={(e) => setNamaOrtu(e.target.value)}
                 placeholder="Contoh: Budi Santoso"
-                className="pl-9 h-11 bg-gray-50/50"
+                className="pl-9 h-11 bg-white text-gray-900 border-gray-300 placeholder:text-gray-400 font-medium"
                 required
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-gray-700">
+            <Label className="text-xs font-semibold text-gray-800">
               Hubungan dengan Siswa <span className="text-red-500">*</span>
             </Label>
             <Select value={hubungan} onValueChange={(val) => setHubungan(val)}>
-              <SelectTrigger className="h-11 bg-gray-50/50">
+              <SelectTrigger className="h-11 bg-white border-gray-300 text-gray-900 font-medium shadow-xs">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Ayah Kandung">Ayah Kandung</SelectItem>
-                <SelectItem value="Ibu Kandung">Ibu Kandung</SelectItem>
-                <SelectItem value="Wali Murid">Wali Murid</SelectItem>
-                <SelectItem value="Keluarga / Kerabat">Keluarga / Kerabat</SelectItem>
+              <SelectContent className="bg-white text-gray-900 border-gray-200 shadow-lg">
+                <SelectItem value="Ayah Kandung" className="text-gray-900 hover:bg-blue-50 font-medium">Ayah Kandung</SelectItem>
+                <SelectItem value="Ibu Kandung" className="text-gray-900 hover:bg-blue-50 font-medium">Ibu Kandung</SelectItem>
+                <SelectItem value="Wali Murid" className="text-gray-900 hover:bg-blue-50 font-medium">Wali Murid</SelectItem>
+                <SelectItem value="Keluarga / Kerabat" className="text-gray-900 hover:bg-blue-50 font-medium">Keluarga / Kerabat</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-gray-700">
+            <Label className="text-xs font-semibold text-gray-800">
               Nomor WhatsApp / HP Aktif <span className="text-red-500">*</span>
             </Label>
             <div className="relative">
@@ -403,34 +405,34 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
                 onChange={(e) => setNoHpOrtu(e.target.value)}
                 placeholder="081234567890"
                 type="tel"
-                className="pl-9 h-11 bg-gray-50/50 font-mono"
+                className="pl-9 h-11 bg-white text-gray-900 border-gray-300 placeholder:text-gray-400 font-mono font-medium"
                 required
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-gray-700">Pekerjaan Orang Tua / Wali</Label>
+            <Label className="text-xs font-semibold text-gray-800">Pekerjaan Orang Tua / Wali</Label>
             <div className="relative">
               <Briefcase className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
               <Input
                 value={pekerjaanOrtu}
                 onChange={(e) => setPekerjaanOrtu(e.target.value)}
                 placeholder="Contoh: Wiraswasta / PNS / Karyawan"
-                className="pl-9 h-11 bg-gray-50/50"
+                className="pl-9 h-11 bg-white text-gray-900 border-gray-300 placeholder:text-gray-400 font-medium"
               />
             </div>
           </div>
 
           <div className="sm:col-span-2 space-y-1.5">
-            <Label className="text-xs font-semibold text-gray-700">Alamat Domisili</Label>
+            <Label className="text-xs font-semibold text-gray-800">Alamat Domisili</Label>
             <div className="relative">
               <MapPin className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
               <Textarea
                 value={alamatOrtu}
                 onChange={(e) => setAlamatOrtu(e.target.value)}
                 placeholder="Alamat lengkap tempat tinggal"
-                className="pl-9 bg-gray-50/50 min-h-[70px]"
+                className="pl-9 bg-white text-gray-900 border-gray-300 placeholder:text-gray-400 font-medium min-h-[70px]"
               />
             </div>
           </div>
@@ -528,7 +530,7 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
               value={alasanPenolakan}
               onChange={(e) => setAlasanPenolakan(e.target.value)}
               placeholder="Tuliskan kendala atau alasan Anda (misal: jarak transportasi, kegiatan keagamaan sore hari, dsb.)"
-              className="bg-white border-red-300 min-h-[80px] text-xs"
+              className="bg-white text-gray-900 border-red-300 placeholder:text-gray-400 font-medium min-h-[80px] text-xs"
               required
             />
           </div>
@@ -548,7 +550,7 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
                   onChange={(e) => setBekalMakan(e.target.checked)}
                   className="mt-0.5 rounded text-blue-600"
                 />
-                <span>
+                <span className="text-gray-800 font-medium">
                   Siap memfasilitasi bekal makan siang dan perlengkapan ibadah harian anak di sekolah.
                 </span>
               </label>
@@ -560,7 +562,7 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
                   onChange={(e) => setTransportasi(e.target.checked)}
                   className="mt-0.5 rounded text-blue-600"
                 />
-                <span>
+                <span className="text-gray-800 font-medium">
                   Siap mengkondisikan sarana transportasi dan antar-jemput anak tepat waktu saat jam kepulangan sekolah.
                 </span>
               </label>
@@ -572,7 +574,7 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
                   onChange={(e) => setPendampinganBelajar(e.target.checked)}
                   className="mt-0.5 rounded text-blue-600"
                 />
-                <span>
+                <span className="text-gray-800 font-medium">
                   Siap mendampingi dan memantau kegiatan belajar anak secara mandiri di rumah pada hari Sabtu dan Minggu.
                 </span>
               </label>

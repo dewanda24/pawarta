@@ -20,7 +20,7 @@ export function SignaturePad({ value, onChange, height = 180 }: SignaturePadProp
   const initCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
@@ -76,7 +76,7 @@ export function SignaturePad({ value, onChange, height = 180 }: SignaturePadProp
     }
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     const { x, y } = getCoordinates(e);
@@ -93,7 +93,7 @@ export function SignaturePad({ value, onChange, height = 180 }: SignaturePadProp
     }
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     const { x, y } = getCoordinates(e);
@@ -107,7 +107,7 @@ export function SignaturePad({ value, onChange, height = 180 }: SignaturePadProp
 
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     // Simpan history snapshot untuk undo
@@ -122,7 +122,7 @@ export function SignaturePad({ value, onChange, height = 180 }: SignaturePadProp
   const clear = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     const ratio = Math.max(window.devicePixelRatio || 1, 1);
@@ -139,7 +139,7 @@ export function SignaturePad({ value, onChange, height = 180 }: SignaturePadProp
     }
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
     const newHistory = [...history];
