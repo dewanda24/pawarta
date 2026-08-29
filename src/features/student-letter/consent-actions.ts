@@ -303,8 +303,18 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
  */
 export async function getConsentDetailById(id: string) {
   try {
+    if (!id || typeof id !== 'string') {
+      return { success: false, error: 'ID dokumen tidak valid' };
+    }
+
+    const cleanId = id.trim();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+    if (!isUuid) {
+      return { success: false, error: 'Format ID dokumen tidak valid' };
+    }
+
     const consent = await db.query.parentConsents.findFirst({
-      where: and(eq(parentConsents.id, id), isNull(parentConsents.deletedAt)),
+      where: and(eq(parentConsents.id, cleanId), isNull(parentConsents.deletedAt)),
       with: {
         siswa: {
           with: {
@@ -339,6 +349,7 @@ export async function getConsentDetailById(id: string) {
       kopSurat,
     };
   } catch (error: unknown) {
+    console.error('Error in getConsentDetailById:', error);
     const msg = error instanceof Error ? error.message : 'Gagal memuat dokumen persetujuan';
     return { success: false, error: msg };
   }

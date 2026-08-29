@@ -108,9 +108,15 @@ export default async function PersetujuanSuksesPage({ params }: PageProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               <div>
                 <span className="text-gray-500 block text-[11px]">Nama Siswa:</span>
-                <span className="font-bold text-slate-900 text-sm">{consent.siswa?.nama}</span>
+                <span className="font-bold text-slate-900 text-sm">
+                  {consent.siswa?.nama || (consent.documentSnapshot as any)?.siswa?.nama || '-'}
+                </span>
                 <span className="block text-[11px] text-gray-500">
-                  NISN: {consent.siswa?.nisn || '-'} • Kelas: {consent.siswa?.kelas?.namaKelas || consent.siswa?.kelas?.kodeKelas}
+                  NISN: {consent.siswa?.nisn || (consent.documentSnapshot as any)?.siswa?.nisn || '-'} • Kelas:{' '}
+                  {consent.siswa?.kelas?.namaKelas ||
+                    consent.kelas?.namaKelas ||
+                    (consent.documentSnapshot as any)?.siswa?.kelas ||
+                    '-'}
                 </span>
               </div>
 

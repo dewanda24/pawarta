@@ -158,20 +158,26 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
           <div className="grid grid-cols-12 gap-1">
             <span className="col-span-4 sm:col-span-3 font-semibold">Nama Siswa</span>
             <span className="col-span-1">:</span>
-            <span className="col-span-7 sm:col-span-8 font-bold uppercase">{consent.siswa?.nama}</span>
+            <span className="col-span-7 sm:col-span-8 font-bold uppercase">
+              {consent.siswa?.nama || (consent.documentSnapshot as any)?.siswa?.nama || '-'}
+            </span>
           </div>
           <div className="grid grid-cols-12 gap-1">
             <span className="col-span-4 sm:col-span-3 font-semibold">NIS / NISN</span>
             <span className="col-span-1">:</span>
             <span className="col-span-7 sm:col-span-8 font-mono">
-              {consent.siswa?.nis || '-'} / {consent.siswa?.nisn}
+              {consent.siswa?.nis || (consent.documentSnapshot as any)?.siswa?.nis || '-'} /{' '}
+              {consent.siswa?.nisn || (consent.documentSnapshot as any)?.siswa?.nisn || '-'}
             </span>
           </div>
           <div className="grid grid-cols-12 gap-1">
             <span className="col-span-4 sm:col-span-3 font-semibold">Kelas / Tingkat</span>
             <span className="col-span-1">:</span>
             <span className="col-span-7 sm:col-span-8">
-              {consent.siswa?.kelas?.namaKelas || consent.siswa?.kelas?.kodeKelas || '-'}
+              {consent.siswa?.kelas?.namaKelas ||
+                consent.kelas?.namaKelas ||
+                (consent.documentSnapshot as any)?.siswa?.kelas ||
+                '-'}
             </span>
           </div>
         </div>
