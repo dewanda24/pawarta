@@ -102,8 +102,9 @@ export default async function PersetujuanSuksesPage({ params }: PageProps) {
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <span className="text-gray-500">Nomor Registrasi Surat</span>
               <span className="font-mono font-bold text-blue-800 text-xs sm:text-sm">
-                {stripNomorPrefix(consent.nomorSurat) || '421.3/' + consent.id.slice(0, 8)}
+                {stripNomorPrefix(consent.nomorSurat) || 'B/382/400.3.5.1/VIII/2026'}
               </span>
+
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -181,25 +182,51 @@ export default async function PersetujuanSuksesPage({ params }: PageProps) {
           )}
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <Link href={`/persetujuan-ortu/cetak/${consent.id}`} target="_blank" className="flex-1">
-              <Button className="w-full h-11 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 shadow-md">
-                <Printer className="w-4 h-4" />
-                <span>Cetak / Unduh Surat Resmi (PDF)</span>
-              </Button>
-            </Link>
+          <div className="space-y-3 pt-2">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link href={`/persetujuan-ortu/cetak/${consent.id}`} target="_blank" className="flex-1">
+                <Button className="w-full h-11 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 shadow-md">
+                  <Printer className="w-4 h-4" />
+                  <span>Cetak / Unduh Surat Resmi (PDF 2 Hal)</span>
+                </Button>
+              </Link>
 
-            <Link href="/persetujuan-ortu" className="flex-1">
-              <Button
-                variant="outline"
-                className="w-full h-11 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold text-xs sm:text-sm rounded-xl"
-              >
-                Isi Formulir Siswa Lain
-              </Button>
-            </Link>
+              {consent.noHpOrtu && (
+                <a
+                  href={`https://api.whatsapp.com/send?phone=${consent.noHpOrtu.replace(/[^0-9]/g, '').startsWith('0') ? `62${consent.noHpOrtu.replace(/[^0-9]/g, '').slice(1)}` : consent.noHpOrtu.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(
+                    `*BUKTI PERSURATAN RESMI - PAWARTA*\n\n` +
+                    `Surat Persetujuan Program 5 Hari Sekolah di ${sekolah?.nama || 'SMPN 1 UJUNGJAYA'} telah berhasil ditandatangani secara sah.\n\n` +
+                    `• *Nama Siswa*: ${consent.siswa?.nama || '-'}\n` +
+                    `• *Nama Orang Tua*: ${consent.namaOrtu}\n` +
+                    `• *Sikap*: ${consent.statusPersetujuan === 'SETUJU' ? 'MENYETUJUI' : 'TIDAK MENYETUJUI'}\n` +
+                    `• *Nomor Surat*: ${stripNomorPrefix(consent.nomorSurat) || '-'}\n\n` +
+                    `Lihat / Cetak Lembar Surat Resmi:\n` +
+                    `https://pawarta.smpn1ujungjaya.sch.id/persetujuan-ortu/cetak/${consent.id}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1"
+                >
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 border-emerald-500 text-emerald-700 hover:bg-emerald-50 font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2"
+                  >
+                    <Phone className="w-4 h-4 text-emerald-600" />
+                    <span>Kirim Bukti ke WhatsApp</span>
+                  </Button>
+                </a>
+              )}
+            </div>
+
+            <div className="text-center pt-1">
+              <Link href="/persetujuan-ortu" className="text-xs text-gray-500 hover:text-blue-600 hover:underline">
+                ← Kembali atau Isi Formulir untuk Siswa Lain
+              </Link>
+            </div>
           </div>
         </div>
       </main>
+
 
       {/* Footer */}
       <footer className="text-center text-xs text-slate-500 py-4">

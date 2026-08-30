@@ -4,110 +4,111 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  LayoutDashboard,
   Home,
   Inbox,
   Send,
-  BookOpen,
-  Users,
-  FileText,
-  Building2,
-  Shield,
-  FolderOpen,
   GraduationCap,
-  School,
   ClipboardList,
+  Archive,
+  Database,
+  Users,
+  Settings,
+  HelpCircle,
+  List,
+  Plus,
+  BookOpen,
+  PenLine,
+  FileText,
+  FileCheck,
+  UserCheck,
+  CalendarCheck,
+  School,
+  Briefcase,
+  Building2,
+  Building,
+  DoorOpen,
+  UserSquare,
+  FileType,
+  FolderTree,
+  PenTool,
+  Heading,
+  LayoutTemplate,
+  Flag,
+  ShieldCheck,
+  Shield,
+  User,
+  ShieldHalf,
+  Activity,
+  SlidersHorizontal,
+  Sliders,
+  Bell,
+  Plug,
+  HardDrive,
+  ScrollText,
   Layers,
   Landmark,
   Radio,
   Menu,
   X,
-  HelpCircle,
-  ShieldCheck,
-  PenTool,
-  Sliders,
   type LucideIcon,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
+import type { MenuItem } from '@/lib/auth/menu';
 
 const IconMap: Record<string, LucideIcon> = {
+  LayoutDashboard,
   Home,
   Inbox,
   Send,
-  BookOpen,
-  Users,
-  FileText,
-  Building2,
-  Shield,
-  FolderOpen,
   GraduationCap,
-  School,
   ClipboardList,
+  Archive,
+  Database,
+  Users,
+  Settings,
+  HelpCircle,
+  List,
+  Plus,
+  BookOpen,
+  PenLine,
+  FileText,
+  FileCheck,
+  UserCheck,
+  CalendarCheck,
+  School,
+  Briefcase,
+  Building2,
+  Building,
+  DoorOpen,
+  UserSquare,
+  FileType,
+  FolderTree,
+  PenTool,
+  Heading,
+  LayoutTemplate,
+  Flag,
+  ShieldCheck,
+  Shield,
+  User,
+  ShieldHalf,
+  Activity,
+  SlidersHorizontal,
+  Sliders,
+  Bell,
+  Plug,
+  HardDrive,
+  ScrollText,
   Layers,
   Landmark,
   Radio,
-  HelpCircle,
-  ShieldCheck,
-  PenTool,
-  Sliders,
 };
 
-const menuGroups = [
-  {
-    title: 'Menu Utama',
-    items: [
-      { id: '1', nama: 'Dashboard', icon: 'Home', route: '/dashboard' },
-      { id: '2', nama: 'Disposisi Saya', icon: 'ClipboardList', route: '/disposisi-saya' },
-      { id: '3', nama: 'Buku Agenda & Rekap', icon: 'BookOpen', route: '/agenda-digital' },
-    ],
-  },
-  {
-    title: 'Persuratan Sekolah',
-    items: [
-      { id: '4', nama: 'Surat Masuk', icon: 'Inbox', route: '/surat-masuk' },
-      { id: '5', nama: 'Surat Keluar (Dinas)', icon: 'Send', route: '/surat-keluar' },
-      { id: '6', nama: 'Surat Kesiswaan', icon: 'GraduationCap', route: '/surat-siswa' },
-    ],
-  },
-  {
-    title: 'Master Data Sekolah',
-    items: [
-      { id: '7', nama: 'Profil & Kepala Sekolah', icon: 'School', route: '/master/sekolah' },
-      { id: '8', nama: 'Desain KOP Surat', icon: 'Landmark', route: '/master/kop-surat' },
-      {
-        id: '8b',
-        nama: 'Template & Margin Surat',
-        icon: 'Sliders',
-        route: '/master/template-surat',
-      },
-      { id: '9', nama: 'Penandatangan & TTE', icon: 'PenTool', route: '/master/penandatangan' },
-      { id: '10', nama: 'Guru & Staf Pegawai', icon: 'Users', route: '/master/pegawai' },
-      { id: '11', nama: 'Data Siswa', icon: 'GraduationCap', route: '/master/siswa' },
-      { id: '12', nama: 'Rombel / Kelas', icon: 'FolderOpen', route: '/master/kelas' },
-      { id: '13', nama: 'Kode Klasifikasi Surat', icon: 'Layers', route: '/master/klasifikasi' },
-      { id: '14', nama: 'Jenis Surat', icon: 'FileText', route: '/master/jenis-surat' },
-      { id: '15', nama: 'Daftar Instansi Relasi', icon: 'Building2', route: '/master/instansi' },
-    ],
-  },
-  {
-    title: 'Pengaturan Sistem',
-    items: [
-      { id: '16', nama: 'Pengguna & Hak Akses', icon: 'Shield', route: '/iam/users' },
-      { id: '16b', nama: 'Matriks Hak Akses (RBAC)', icon: 'ShieldCheck', route: '/iam/role-matrix' },
-      {
-        id: '17',
-        nama: 'Gateway Notifikasi WA/Email',
-        icon: 'Radio',
-        route: '/settings/notifikasi',
-      },
-      { id: '18', nama: 'Verifikasi Dokumen Publik', icon: 'ShieldCheck', route: '/verifikasi' },
-    ],
-  },
-  {
-    title: 'Bantuan & SOP',
-    items: [{ id: '19', nama: 'Panduan Penggunaan', icon: 'HelpCircle', route: '/bantuan' }],
-  },
-];
+function getIcon(iconName?: string | null): LucideIcon {
+  if (!iconName) return FileText;
+  return IconMap[iconName] || FileText;
+}
 
 const bottomNavItems = [
   { label: 'Beranda', icon: Home, route: '/dashboard' },
@@ -119,8 +120,10 @@ const bottomNavItems = [
 
 export function MobileNav({
   user,
+  menus = [],
 }: {
   user?: { name?: string | null; email?: string | null; role?: string | null };
+  menus?: MenuItem[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
@@ -146,7 +149,7 @@ export function MobileNav({
                 </div>
                 <div>
                   <h2 className="font-bold text-base tracking-tight leading-tight">PAWARTA</h2>
-                  <p className="text-[10px] text-blue-100">Persuratan Digital Sekolah</p>
+                  <p className="text-[10px] text-blue-100">Tata Naskah Digital</p>
                 </div>
               </div>
               <button
@@ -164,7 +167,7 @@ export function MobileNav({
                   <p className="font-bold text-xs text-gray-900 truncate">
                     {user.name || 'Pengguna'}
                   </p>
-                  <p className="text-[10px] text-blue-700 font-medium">{user.role || 'Staf'}</p>
+                  <p className="text-[10px] text-blue-700 font-medium">{user.role || 'Pengguna Sistem'}</p>
                 </div>
                 <Button
                   variant="ghost"
@@ -177,45 +180,73 @@ export function MobileNav({
               </div>
             )}
 
-            {/* Nav Items List */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-5">
-              {menuGroups.map((group, idx) => (
-                <div key={idx}>
-                  <p className="px-2 mb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                    {group.title}
-                  </p>
-                  <div className="space-y-0.5">
-                    {group.items.map((item) => {
-                      const Icon =
-                        item.icon && IconMap[item.icon] ? IconMap[item.icon] : FolderOpen;
-                      const isActive =
-                        pathname === item.route || pathname?.startsWith(`${item.route}/`);
-                      return (
-                        <Link
-                          key={item.id}
-                          href={item.route || '#'}
-                          onClick={() => setIsOpen(false)}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                            isActive
-                              ? 'bg-blue-600 text-white shadow-xs'
-                              : 'text-gray-700 hover:bg-gray-100'
-                          }`}
-                        >
-                          <Icon
-                            className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-gray-500'}`}
-                          />
-                          <span className="truncate">{item.nama}</span>
-                        </Link>
-                      );
-                    })}
+            {/* Nav Items List from Database */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-4">
+              {menus.map((item) => {
+                const Icon = getIcon(item.icon);
+                const hasChildren = item.children && item.children.length > 0;
+
+                if (hasChildren) {
+                  return (
+                    <div key={item.id} className="space-y-1">
+                      <div className="px-2 pt-2 text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Icon className="w-3.5 h-3.5" />
+                        <span>{item.nama}</span>
+                      </div>
+                      <div className="space-y-0.5 pl-2">
+                        {item.children.map((child) => {
+                          const ChildIcon = getIcon(child.icon);
+                          const isActive =
+                            child.route &&
+                            (pathname === child.route || (child.route !== '/dashboard' && pathname.startsWith(`${child.route}/`)));
+
+                          return (
+                            <Link
+                              key={child.id}
+                              href={child.route || '#'}
+                              onClick={() => setIsOpen(false)}
+                              className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                                isActive
+                                  ? 'bg-blue-600 text-white shadow-xs'
+                                  : 'text-gray-700 hover:bg-gray-100'
+                              }`}
+                            >
+                              <ChildIcon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                              <span className="truncate">{child.nama}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
+
+                const isActive =
+                  item.route &&
+                  (pathname === item.route || (item.route !== '/dashboard' && pathname.startsWith(`${item.route}/`)));
+
+                return (
+                  <div key={item.id}>
+                    <Link
+                      href={item.route || '#'}
+                      onClick={() => setIsOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        isActive
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                      <span className="truncate">{item.nama}</span>
+                    </Link>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Drawer Footer */}
             <div className="p-3 border-t border-gray-100 text-center text-[10px] text-gray-400 bg-gray-50">
-              PAWARTA Mobile Web App • v1.0
+              PAWARTA Tata Naskah Digital • v1.0
             </div>
           </div>
         </div>
@@ -254,9 +285,10 @@ export function MobileNav({
           <div className="p-1 rounded-full">
             <Menu className="w-4 h-4" />
           </div>
-          <span className="text-[10px] mt-0.5 leading-none">Semua</span>
+          <span className="text-[10px] mt-0.5 leading-none">Menu</span>
         </button>
       </nav>
     </>
   );
 }
+

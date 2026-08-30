@@ -22,7 +22,15 @@ import {
   Check,
   Eye,
   Filter,
+  MessageSquare,
+  Share2,
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { deleteConsentAdmin } from '@/features/student-letter/consent-actions';
@@ -78,6 +86,38 @@ export function ConsentMonitoringTable({ initialData, classes }: ConsentMonitori
   const [copiedLink, setCopiedLink] = useState(false);
   const [previewTtd, setPreviewTtd] = useState<{ url: string; name: string } | null>(null);
 
+  // Broadcast Modal State
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [broadcastKelasId, setBroadcastKelasId] = useState<string>(classes[0]?.kelasId || '');
+  const [copiedBroadcast, setCopiedBroadcast] = useState(false);
+
+  const selectedBroadcastClass = classes.find((c) => c.kelasId === broadcastKelasId) || classes[0];
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const classUrl = `${origin}/persetujuan-ortu?kelas=${selectedBroadcastClass?.kodeKelas || ''}`;
+
+  const broadcastMessageText =
+`*PEMBERITAHUAN RESMI SMP NEGERI 1 UJUNGJAYA*
+*SURAT PERSETUJUAN PROGRAM 5 HARI SEKOLAH (FDK)*
+
+Kepada Yth.
+Bapak/Ibu Orang Tua / Wali Murid Kelas *${selectedBroadcastClass?.namaKelas || 'Siswa'}*
+
+Sehubungan dengan rencana penerapan sistem Pembelajaran 5 Hari Sekolah (Senin s.d. Jumat) Tahun Ajaran 2026/2027 di SMPN 1 Ujungjaya, kami memohon kesediaan Bapak/Ibu untuk mengisi dan menandatangani lembar persetujuan digital resmi melalui tautan khusus kelas di bawah ini:
+
+🔗 *Tautan Pengisian*:
+${classUrl}
+
+📌 *Petunjuk Cepat*:
+1. Buka tautan di atas dari HP Bapak/Ibu
+2. Pilih/ketik nama anak (data orang tua akan otomatis terisi)
+3. Pilih sikap persetujuan & goreskan tanda tangan digital di layar HP
+4. Klik tombol simpan (hanya memakan waktu 1 menit)
+
+Atas perhatian, pengertian, dan kerja sama Bapak/Ibu sekalian, kami ucapkan terima kasih.
+
+_Hormat kami,_
+*Kepala SMPN 1 Ujungjaya & Tim Kesiswaan*`;
+
   // Filter list
   const filteredData = data.filter((item) => {
     if (selectedClass !== 'ALL' && item.kelasId !== selectedClass) return false;
@@ -93,12 +133,18 @@ export function ConsentMonitoringTable({ initialData, classes }: ConsentMonitori
   });
 
   const handleCopyPublicLink = () => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const publicUrl = `${origin}/persetujuan-ortu`;
     navigator.clipboard.writeText(publicUrl);
     setCopiedLink(true);
     toast.success('Tautan formulir publik berhasil disalin!');
     setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const handleCopyBroadcastText = () => {
+    navigator.clipboard.writeText(broadcastMessageText);
+    setCopiedBroadcast(true);
+    toast.success('Pesan broadcast WhatsApp berhasil disalin!');
+    setTimeout(() => setCopiedBroadcast(false), 2500);
   };
 
   const handleExportCsv = () => {
@@ -139,11 +185,14 @@ export function ConsentMonitoringTable({ initialData, classes }: ConsentMonitori
       `"${item.signedAt ? new Date(item.signedAt).toLocaleString('id-ID') : ''}"`,
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const csvContent =
+      'data:text/csv;charset=utf-8,\uFEFF' +
+      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Rekap_Persetujuan_5_Hari_Kerja_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `rekap_persetujuan_5_hari_kerja_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -174,12 +223,20 @@ export function ConsentMonitoringTable({ initialData, classes }: ConsentMonitori
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
         <div className="flex flex-wrap items-center gap-2">
           <Button
+            onClick={() => setBroadcastOpen(true)}
+            className="text-xs h-9 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-1.5"
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>📲 Pesan Broadcast WhatsApp per Kelas</span>
+          </Button>
+
+          <Button
             onClick={handleCopyPublicLink}
             variant="outline"
             className="text-xs h-9 font-semibold text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100"
           >
             {copiedLink ? <Check className="w-3.5 h-3.5 mr-1.5" /> : <Copy className="w-3.5 h-3.5 mr-1.5" />}
-            {copiedLink ? 'Tautan Tersalin!' : 'Salin Link Formulir Publik (Ortu)'}
+            {copiedLink ? 'Tautan Tersalin!' : 'Salin Link Umum'}
           </Button>
 
           <Link href="/persetujuan-ortu" target="_blank">
@@ -362,7 +419,7 @@ export function ConsentMonitoringTable({ initialData, classes }: ConsentMonitori
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-gray-400">
                     Tidak ada data persetujuan orang tua yang sesuai dengan filter.
-                  </td>
+          </td>
                 </tr>
               )}
             </tbody>
@@ -374,6 +431,84 @@ export function ConsentMonitoringTable({ initialData, classes }: ConsentMonitori
           <span>Menampilkan {filteredData.length} dari total {data.length} surat masuk</span>
         </div>
       </div>
+
+      {/* Modal Broadcast WhatsApp per Kelas */}
+      <Dialog open={broadcastOpen} onOpenChange={setBroadcastOpen}>
+        <DialogContent className="sm:max-w-lg rounded-2xl">
+          <DialogHeader className="gap-1.5">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-base font-bold text-gray-900">
+                  Pesan Broadcast WhatsApp per Kelas
+                </DialogTitle>
+                <p className="text-xs text-gray-500">
+                  Bagikan tautan langsung kelas ke grup WhatsApp orang tua / wali murid
+                </p>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-2 text-xs">
+            <div className="space-y-1.5">
+              <label className="font-semibold text-gray-700">Pilih Kelas Tujuan:</label>
+              <Select value={broadcastKelasId} onValueChange={setBroadcastKelasId}>
+                <SelectTrigger className="h-10 text-xs font-medium">
+                  <SelectValue placeholder="Pilih Kelas" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((c) => (
+                    <SelectItem key={c.kelasId} value={c.kelasId} className="text-xs font-medium">
+                      {c.namaKelas} ({c.totalSubmitted}/{c.totalSiswa} sudah mengisi)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="font-semibold text-gray-700">Pratinjau Teks Pesan WhatsApp:</label>
+                <span className="text-[10px] text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  Siap Dibagikan
+                </span>
+              </div>
+              <textarea
+                readOnly
+                value={broadcastMessageText}
+                rows={10}
+                className="w-full text-[11px] font-mono p-3 bg-gray-50 border border-gray-200 rounded-xl leading-relaxed focus:outline-hidden"
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <Button
+                type="button"
+                onClick={handleCopyBroadcastText}
+                variant="outline"
+                className="flex-1 h-10 text-xs font-semibold border-gray-300 text-gray-700 hover:bg-gray-50 flex items-center justify-center gap-1.5"
+              >
+                {copiedBroadcast ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                <span>{copiedBroadcast ? 'Teks Tersalin!' : 'Salin Teks Pesan'}</span>
+              </Button>
+
+              <a
+                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(broadcastMessageText)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1"
+              >
+                <Button className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md">
+                  <Share2 className="w-4 h-4" />
+                  <span>Kirim ke WhatsApp Web / App</span>
+                </Button>
+              </a>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal Preview Tanda Tangan */}
       {previewTtd && (

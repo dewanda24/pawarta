@@ -1,10 +1,12 @@
 import { auth } from '@/lib/auth';
 import { db } from '@/db';
 import { activityLogs } from '@/db/schema';
+import { isSuperAdmin, getUserPermissions } from '@/lib/auth/rbac';
 
 /**
  * Utilitas untuk mendapatkan User Session aktif.
- * Melempar error jika tidak terautentikasi.
+ * Melempar error jika tidak terautentikasi atau tidak punya permission.
+ * Super Admin bypass semua pengecekan permission.
  */
 export async function requireAuth(requiredPermission?: string) {
   const session = await auth();
@@ -16,31 +18,12 @@ export async function requireAuth(requiredPermission?: string) {
   const userId = session.user.id;
 
   if (requiredPermission) {
-    // Cek permission dari userRoles -> roles -> rolePermissions -> permissions
-    const hasAccess = await db.query.userRoles.findFirst({
-      where: (ur, { eq }) => eq(ur.userId, userId),
-      with: {
-        role: {
-          with: {
-            rolePermissions: {
-              with: {
-                permission: true
-              }
-            }
-          }
-        }
-      }
-    });
-
-    if (!hasAccess) {
-      throw new Error(`Forbidden: Anda tidak memiliki role.`);
-    }
-
-    const roleName = hasAccess.role.namaRole;
-    if (roleName !== 'Super Admin') {
-      const permissions = hasAccess.role.rolePermissions.map((rp: any) => rp.permission?.nama);
-      if (!permissions.includes(requiredPermission)) {
-         throw new Error(`Forbidden: Anda tidak memiliki akses untuk ${requiredPermission}.`);
+    // Super Admin bypass semua permission
+    const isAdmin = await isSuperAdmin(userId);
+    if (!isAdmin) {
+      const userPerms = await getUserPermissions(userId);
+      if (!userPerms.includes(requiredPermission)) {
+        throw new Error(`Forbidden: Anda tidak memiliki akses untuk ${requiredPermission}.`);
       }
     }
   }

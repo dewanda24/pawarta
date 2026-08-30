@@ -3,15 +3,20 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { auth } from '@/lib/auth';
+import { getAuthorizedMenus } from '@/lib/auth/menu';
 
 export const dynamic = 'force-dynamic';
+
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
+  const [session, authorizedMenus] = await Promise.all([
+    auth(),
+    getAuthorizedMenus(),
+  ]);
 
   return (
     <div className="flex min-h-screen bg-gray-50 flex-col md:flex-row print:bg-white print:block print:min-h-0">
       <div className="print:hidden">
-        <Sidebar />
+        <Sidebar menus={authorizedMenus} />
       </div>
 
       <div className="flex flex-1 flex-col overflow-hidden min-w-0 print:overflow-visible print:block">
@@ -32,8 +37,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
       {/* Mobile Navigation Drawer & Bottom Bar */}
       <div className="print:hidden">
-        <MobileNav user={session?.user} />
+        <MobileNav user={session?.user} menus={authorizedMenus} />
       </div>
     </div>
   );
 }
+

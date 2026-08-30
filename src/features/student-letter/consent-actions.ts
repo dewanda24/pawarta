@@ -189,13 +189,18 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
 
     const totalCount = Number(countResult[0]?.count || 0) + 1;
 
-    const nomorSurat = generateNomorNaskahDinas({
-      kodeJenisSurat: 'SPERT', // Surat Pernyataan / Persetujuan
-      nomorUrut: totalCount,
-      kodeKlasifikasi: '421.3', // Kesiswaan & Kurikulum
-      kodePerangkatDaerah: 'SMPN-1-UJJ',
-      tanggal: now,
-    });
+    // Nomor Surat Resmi Persetujuan 5 Hari Kerja sesuai Naskah Dinas Sekolah
+    const nomorSurat =
+      kategori === '5_HARI_KERJA'
+        ? 'B/382/400.3.5.1/VIII/2026'
+        : generateNomorNaskahDinas({
+            kodeJenisSurat: 'SPERT', // Surat Pernyataan / Persetujuan
+            nomorUrut: totalCount,
+            kodeKlasifikasi: '400.3.5.1',
+            kodePerangkatDaerah: 'SMPN-1-UJJ',
+            tanggal: now,
+          });
+
 
     const documentSnapshot = {
       kopSurat: kopSurat

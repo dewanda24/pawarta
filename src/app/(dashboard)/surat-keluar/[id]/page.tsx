@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ApproveLetterButton } from '@/components/features/outgoing-letter/ApproveLetterButton';
+import { LetterWorkflowStepper } from '@/components/features/outgoing-letter/LetterWorkflowStepper';
 import { AttachmentSection } from '@/components/shared/AttachmentSection';
 import { LetterheadView } from '@/components/shared/LetterheadView';
 import { OfficialSignatureBlock } from '@/components/shared/OfficialSignatureBlock';
@@ -101,6 +102,16 @@ export default async function SuratKeluarDetailPage({
           <ApproveLetterButton suratId={letter.id} status={letter.status} />
         </div>
       </div>
+
+      {/* Visual Workflow Stepper Tracker */}
+      <LetterWorkflowStepper
+        status={letter.status}
+        statusDetail={letter.statusDetail}
+        nomorSurat={letter.nomorSurat}
+        pembuatNama={letter.pembuat?.nama}
+        penandatanganNama={ttdNama}
+      />
+
 
       {/* Official School Letterhead Format (Visible & Print-Ready) */}
       <div className="bg-white p-8 sm:p-12 rounded-xl border border-gray-200 shadow-sm print:border-none print:shadow-none print:p-0">

@@ -71,6 +71,14 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string>('');
   const [selectedStudent, setSelectedStudent] = useState<StudentItem | null>(null);
+  const [studentSearchQuery, setStudentSearchQuery] = useState('');
+
+  // Sinkronkan jika defaultKelasId dari URL berubah
+  useEffect(() => {
+    if (defaultKelasId && defaultKelasId !== selectedKelasId) {
+      setSelectedKelasId(defaultKelasId);
+    }
+  }, [defaultKelasId]);
 
   // Existing status
   const [checkingStatus, setCheckingStatus] = useState(false);
@@ -110,6 +118,7 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
       setSelectedStudentId('');
       setSelectedStudent(null);
       setExistingConsent(null);
+      setStudentSearchQuery('');
       return;
     }
 
@@ -153,6 +162,12 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
       setExistingConsent(null);
     }
   };
+
+  const filteredStudents = students.filter((s) => {
+    if (!studentSearchQuery.trim()) return true;
+    const q = studentSearchQuery.toLowerCase();
+    return s.nama.toLowerCase().includes(q) || (s.nisn && s.nisn.includes(q)) || (s.nis && s.nis.includes(q));
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -277,7 +292,7 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
                   }
                 />
               </SelectTrigger>
-              <SelectContent className="bg-white text-gray-900 border-gray-200 shadow-lg">
+              <SelectContent className="bg-white text-gray-900 border-gray-200 shadow-lg max-h-64">
                 {students.map((s) => (
                   <SelectItem key={s.id} value={s.id} className="text-gray-900 hover:bg-blue-50 font-medium">
                     {s.nama} {s.nisn ? `(NISN: ${s.nisn})` : ''}
@@ -287,6 +302,61 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
             </Select>
           </div>
         </div>
+
+        {/* Live Search Box for Instant Student Filter */}
+        {selectedKelasId && students.length > 0 && (
+          <div className="space-y-2 pt-1 border-t border-gray-100">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-semibold text-gray-600">
+                🔍 Pencarian Cepat Nama / NISN di Kelas Ini
+              </Label>
+              {studentSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setStudentSearchQuery('')}
+                  className="text-[11px] text-blue-600 hover:underline"
+                >
+                  Reset Cari
+                </button>
+              )}
+            </div>
+            <Input
+              type="text"
+              value={studentSearchQuery}
+              onChange={(e) => setStudentSearchQuery(e.target.value)}
+              placeholder="Ketik 2-3 huruf nama anak atau NISN..."
+              className="h-10 text-xs bg-gray-50 border-gray-200"
+            />
+            {studentSearchQuery.trim() && (
+              <div className="max-h-40 overflow-y-auto border border-blue-200 rounded-xl p-1.5 bg-blue-50/50 space-y-1">
+                {filteredStudents.length === 0 ? (
+                  <p className="text-xs text-gray-500 text-center py-2">
+                    Tidak ditemukan siswa dengan kata kunci &ldquo;{studentSearchQuery}&rdquo;
+                  </p>
+                ) : (
+                  filteredStudents.map((s) => (
+                    <div
+                      key={s.id}
+                      onClick={() => {
+                        handleSelectStudent(s.id);
+                        setStudentSearchQuery('');
+                      }}
+                      className={`p-2 rounded-lg text-xs cursor-pointer flex items-center justify-between transition-colors ${
+                        selectedStudentId === s.id
+                          ? 'bg-blue-600 text-white font-bold'
+                          : 'bg-white text-gray-900 hover:bg-blue-100/70 border border-gray-200'
+                      }`}
+                    >
+                      <span className="font-semibold">{s.nama}</span>
+                      <span className="font-mono text-[11px] opacity-80">NISN: {s.nisn || '-'}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
 
         {/* Informasi Siswa Terpilih (Autofilled Card) */}
         {selectedStudent && (

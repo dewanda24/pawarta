@@ -172,7 +172,7 @@ export async function submitSuratKeluarForReview(id: string) {
     const user = await requireAuth('SURAT_KELUAR_UPDATE');
     await db
       .update(outgoingLetters)
-      .set({ status: 'DIAJUKAN', updatedAt: new Date() })
+      .set({ status: 'DIAJUKAN', statusDetail: 'Diajukan untuk verifikasi redaksi KTU', updatedAt: new Date() })
       .where(eq(outgoingLetters.id, id));
 
     await logActivity({
@@ -190,6 +190,70 @@ export async function submitSuratKeluarForReview(id: string) {
     return { success: false, error: msg };
   }
 }
+
+/**
+ * Verifikasi Redaksi oleh KTU (Menyetujui redaksi & meneruskan ke Kepala Sekolah untuk TTE)
+ */
+export async function verifySuratKeluar(id: string) {
+  try {
+    const user = await requireAuth('SURAT_KELUAR_APPROVE');
+    await db
+      .update(outgoingLetters)
+      .set({
+        status: 'DIPERIKSA',
+        statusDetail: 'Redaksi disetujui KTU, menunggu TTE Kepala Sekolah',
+        updatedAt: new Date(),
+      })
+      .where(eq(outgoingLetters.id, id));
+
+    await logActivity({
+      userId: user.id!,
+      action: 'VERIFY_REVIEW',
+      entityType: 'SURAT_KELUAR',
+      entityId: id,
+    });
+
+    revalidatePath(`/surat-keluar/${id}`);
+    revalidatePath('/surat-keluar');
+    return { success: true };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Gagal memverifikasi redaksi surat';
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Pengembalian Surat untuk Revisi oleh KTU / Kepala Sekolah
+ */
+export async function requestRevisionSuratKeluar(id: string, catatanRevisi?: string) {
+  try {
+    const user = await requireAuth('SURAT_KELUAR_APPROVE');
+    await db
+      .update(outgoingLetters)
+      .set({
+        status: 'REVISI',
+        statusDetail: catatanRevisi || 'Perlu perbaikan redaksi atau format naskah',
+        updatedAt: new Date(),
+      })
+      .where(eq(outgoingLetters.id, id));
+
+    await logActivity({
+      userId: user.id!,
+      action: 'REQUEST_REVISION',
+      entityType: 'SURAT_KELUAR',
+      entityId: id,
+      details: { catatan: catatanRevisi },
+    });
+
+    revalidatePath(`/surat-keluar/${id}`);
+    revalidatePath('/surat-keluar');
+    return { success: true };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Gagal meminta revisi surat';
+    return { success: false, error: msg };
+  }
+}
+
 
 /**
  * Persetujuan & Penandatanganan Surat Keluar (Menghasilkan Nomor Resmi & Document Snapshot Immutable)

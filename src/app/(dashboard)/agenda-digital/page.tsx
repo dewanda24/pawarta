@@ -1,8 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Printer,
   Inbox,
@@ -12,6 +19,10 @@ import {
   Calendar,
   FileSpreadsheet,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import { getIncomingLetters } from '@/features/incoming-letter/actions';
 import { getSuratKeluarList } from '@/features/surat-keluar/actions/surat';
@@ -27,6 +38,10 @@ export default function AgendaDigitalPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(25);
 
   const loadData = async () => {
     setLoading(true);
@@ -57,6 +72,11 @@ export default function AgendaDigitalPage() {
     loadData();
   }, []);
 
+  // Reset page when tab or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, search, startDate, endDate, pageSize]);
+
   const isDateInRange = (dateStr?: string | Date | null) => {
     if (!dateStr) return true;
     const d = new Date(dateStr);
@@ -73,134 +93,60 @@ export default function AgendaDigitalPage() {
     return true;
   };
 
-  const filteredIncoming = incomingData.filter((item) => {
-    if (!isDateInRange(item.tanggalDiterima || item.tanggalSurat)) return false;
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (
-      item.nomorSurat?.toLowerCase().includes(q) ||
-      item.nomorAgenda?.toLowerCase().includes(q) ||
-      item.pengirim?.toLowerCase().includes(q) ||
-      item.perihal?.toLowerCase().includes(q)
-    );
-  });
+  const filteredIncoming = useMemo(() => {
+    return incomingData.filter((item) => {
+      if (!isDateInRange(item.tanggalDiterima || item.tanggalSurat)) return false;
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return (
+        item.nomorSurat?.toLowerCase().includes(q) ||
+        item.nomorAgenda?.toLowerCase().includes(q) ||
+        item.pengirim?.toLowerCase().includes(q) ||
+        item.perihal?.toLowerCase().includes(q)
+      );
+    });
+  }, [incomingData, startDate, endDate, search]);
 
-  const filteredOutgoing = outgoingData.filter((item) => {
-    if (!isDateInRange(item.tanggalSurat || item.createdAt)) return false;
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (
-      item.nomorSurat?.toLowerCase().includes(q) ||
-      item.nomorAgenda?.toLowerCase().includes(q) ||
-      item.tujuanSurat?.toLowerCase().includes(q) ||
-      item.perihal?.toLowerCase().includes(q)
-    );
-  });
+  const filteredOutgoing = useMemo(() => {
+    return outgoingData.filter((item) => {
+      if (!isDateInRange(item.tanggalSurat || item.createdAt)) return false;
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return (
+        item.nomorSurat?.toLowerCase().includes(q) ||
+        item.nomorAgenda?.toLowerCase().includes(q) ||
+        item.tujuanSurat?.toLowerCase().includes(q) ||
+        item.perihal?.toLowerCase().includes(q)
+      );
+    });
+  }, [outgoingData, startDate, endDate, search]);
 
-  const filteredStudent = studentData.filter((item) => {
-    if (!isDateInRange(item.createdAt)) return false;
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (
-      item.nomorSurat?.toLowerCase().includes(q) ||
-      item.namaKegiatan?.toLowerCase().includes(q) ||
-      item.siswa?.nama?.toLowerCase().includes(q) ||
-      item.keperluan?.toLowerCase().includes(q)
-    );
-  });
+  const filteredStudent = useMemo(() => {
+    return studentData.filter((item) => {
+      if (!isDateInRange(item.createdAt)) return false;
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return (
+        item.nomorSurat?.toLowerCase().includes(q) ||
+        item.siswa?.nama?.toLowerCase().includes(q) ||
+        item.namaKegiatan?.toLowerCase().includes(q) ||
+        item.keperluan?.toLowerCase().includes(q)
+      );
+    });
+  }, [studentData, startDate, endDate, search]);
 
-  const exportToCSV = () => {
-    let headers: string[] = [];
-    let rows: string[][] = [];
-    const filename = `buku-agenda-${activeTab}-${new Date().toISOString().slice(0, 10)}.csv`;
+  const activeDataset =
+    activeTab === 'masuk'
+      ? filteredIncoming
+      : activeTab === 'keluar'
+      ? filteredOutgoing
+      : filteredStudent;
 
-    if (activeTab === 'masuk') {
-      headers = [
-        'No',
-        'No. Agenda',
-        'No. Surat',
-        'Tgl Surat',
-        'Tgl Diterima',
-        'Pengirim / Instansi',
-        'Perihal',
-        'Ringkasan',
-        'Status',
-      ];
-      rows = filteredIncoming.map((item, idx) => [
-        String(idx + 1),
-        `"${item.nomorAgenda || '-'}"`,
-        `"${item.nomorSurat || '-'}"`,
-        item.tanggalSurat ? new Date(item.tanggalSurat).toLocaleDateString('id-ID') : '-',
-        item.tanggalDiterima ? new Date(item.tanggalDiterima).toLocaleDateString('id-ID') : '-',
-        `"${item.pengirim || '-'}"`,
-        `"${item.perihal || '-'}"`,
-        `"${item.ringkasanIsi || '-'}"`,
-        item.status || '-',
-      ]);
-    } else if (activeTab === 'keluar') {
-      headers = [
-        'No',
-        'No. Agenda',
-        'No. Surat',
-        'Tgl Surat',
-        'Tujuan Surat',
-        'Perihal',
-        'Jenis Surat',
-        'Pembuat',
-        'Status',
-      ];
-      rows = filteredOutgoing.map((item, idx) => [
-        String(idx + 1),
-        `"${item.nomorAgenda || '-'}"`,
-        `"${item.nomorSurat || 'DRAFT'}"`,
-        item.tanggalSurat ? new Date(item.tanggalSurat).toLocaleDateString('id-ID') : '-',
-        `"${item.tujuanSurat || '-'}"`,
-        `"${item.perihal || '-'}"`,
-        `"${item.jenisSurat?.nama || '-'}"`,
-        `"${item.pembuat?.nama || '-'}"`,
-        item.status || '-',
-      ]);
-    } else {
-      headers = [
-        'No',
-        'Tipe Surat',
-        'No. Surat',
-        'Tgl Terbit',
-        'Nama Siswa / Kegiatan',
-        'Kelas',
-        'Keperluan / Perihal',
-        'Status',
-      ];
-      rows = filteredStudent.map((item, idx) => [
-        String(idx + 1),
-        item.tipeSurat || '-',
-        `"${item.nomorSurat || '-'}"`,
-        item.createdAt ? new Date(item.createdAt).toLocaleDateString('id-ID') : '-',
-        `"${item.namaKegiatan || item.siswa?.nama || '-'}"`,
-        `"${item.siswa?.kelas?.kodeKelas || item.kelas?.kodeKelas || '-'}"`,
-        `"${item.keperluan || item.catatanKhusus || '-'}"`,
-        item.status || '-',
-      ]);
-    }
-
-    const csvContent =
-      '\uFEFF' +
-      [headers.join(';'), ...rows.map((e) => e.join(';'))].join('\r\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(`Data ${filename} berhasil diexport!`);
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
+  const totalRecords = activeDataset.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalRecords);
+  const paginatedData = activeDataset.slice(startIndex, endIndex);
 
   const resetFilters = () => {
     setSearch('');
@@ -208,31 +154,108 @@ export default function AgendaDigitalPage() {
     setEndDate('');
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const exportCSV = () => {
+    let csvContent = 'data:text/csv;charset=utf-8,';
+    if (activeTab === 'masuk') {
+      csvContent += 'No,No Agenda,Tgl Terima,Nomor Surat,Tgl Surat,Asal Surat,Perihal,Status\n';
+      filteredIncoming.forEach((item, index) => {
+        const row = [
+          index + 1,
+          `"${item.nomorAgenda || '-'}"`,
+          `"${item.tanggalDiterima ? new Date(item.tanggalDiterima).toLocaleDateString('id-ID') : '-'}"`,
+          `"${item.nomorSurat || '-'}"`,
+          `"${item.tanggalSurat ? new Date(item.tanggalSurat).toLocaleDateString('id-ID') : '-'}"`,
+          `"${(item.pengirim || '').replace(/"/g, '""')}"`,
+          `"${(item.perihal || '').replace(/"/g, '""')}"`,
+          `"${item.status || '-'}"`,
+        ].join(',');
+        csvContent += row + '\n';
+      });
+    } else if (activeTab === 'keluar') {
+      csvContent += 'No,No Agenda,Tgl Surat,Nomor Surat,Tujuan Surat,Perihal,Status\n';
+      filteredOutgoing.forEach((item, index) => {
+        const row = [
+          index + 1,
+          `"${item.nomorAgenda || '-'}"`,
+          `"${item.tanggalSurat ? new Date(item.tanggalSurat).toLocaleDateString('id-ID') : '-'}"`,
+          `"${item.nomorSurat || '-'}"`,
+          `"${(item.tujuanSurat || '').replace(/"/g, '""')}"`,
+          `"${(item.perihal || '').replace(/"/g, '""')}"`,
+          `"${item.status || '-'}"`,
+        ].join(',');
+        csvContent += row + '\n';
+      });
+    } else {
+      csvContent += 'No,Jenis Surat,Nomor Surat,Tgl Terbit,Nama Siswa/Kegiatan,Kelas,Keperluan,Status\n';
+      filteredStudent.forEach((item, index) => {
+        const row = [
+          index + 1,
+          `"${item.tipeSurat || '-'}"`,
+          `"${item.nomorSurat || '-'}"`,
+          `"${item.createdAt ? new Date(item.createdAt).toLocaleDateString('id-ID') : '-'}"`,
+          `"${(item.namaKegiatan || item.siswa?.nama || '-').replace(/"/g, '""')}"`,
+          `"${item.siswa?.kelas?.namaKelas || item.kelas?.namaKelas || '-'}"`,
+          `"${(item.keperluan || item.catatanKhusus || '-').replace(/"/g, '""')}"`,
+          `"${item.status || '-'}"`,
+        ].join(',');
+        csvContent += row + '\n';
+      });
+    }
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `buku_agenda_${activeTab}_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Buku agenda berhasil diekspor ke format CSV');
+  };
+
   return (
     <div className='space-y-6'>
-      {/* Header (Hidden on Print) */}
-      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden'>
+      {/* Action Header (Hidden on Print) */}
+      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-xs print:hidden'>
         <div>
-          <h1 className='text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-2'>
-            <Calendar className='w-6 h-6 text-blue-600' /> Buku Agenda & Rekapitulasi Digital
-          </h1>
-          <p className='text-sm text-gray-500'>
-            Rekapitulasi resmi surat masuk, surat keluar, dan surat kesiswaan untuk arsip dinas & akreditasi sekolah.
+          <h1 className='text-2xl font-bold tracking-tight text-gray-900'>Agenda Digital Persuratan</h1>
+          <p className='text-xs text-gray-500 mt-1'>
+            Buku register dan agenda otomatis seluruh naskah dinas masuk, naskah dinas keluar, dan surat kesiswaan.
           </p>
         </div>
-        <div className='flex items-center gap-2'>
+
+        <div className='flex items-center gap-2 w-full sm:w-auto'>
           <Button
             variant='outline'
-            onClick={exportToCSV}
-            className='flex items-center gap-1.5 text-xs text-emerald-700 border-emerald-300 hover:bg-emerald-50'
+            size='sm'
+            onClick={loadData}
+            disabled={loading}
+            className='text-xs h-9 font-semibold'
           >
-            <FileSpreadsheet className='w-4 h-4' /> Export Excel / CSV
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
+            Segarkan
           </Button>
+
           <Button
-            onClick={handlePrint}
-            className='flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-xs'
+            variant='outline'
+            size='sm'
+            onClick={exportCSV}
+            className='text-xs h-9 font-semibold text-emerald-700 hover:bg-emerald-50 border-emerald-200'
           >
-            <Printer className='w-4 h-4' /> Cetak Lembar Agenda
+            <FileSpreadsheet className='w-3.5 h-3.5 mr-1.5 text-emerald-600' />
+            Ekspor Excel / CSV
+          </Button>
+
+          <Button
+            size='sm'
+            onClick={handlePrint}
+            className='bg-blue-600 hover:bg-blue-700 text-white text-xs h-9 font-semibold shadow-xs'
+          >
+            <Printer className='w-3.5 h-3.5 mr-1.5' />
+            Cetak Buku Agenda
           </Button>
         </div>
       </div>
@@ -345,39 +368,35 @@ export default function AgendaDigitalPage() {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              <GraduationCap className='w-3.5 h-3.5' /> Kesiswaan ({filteredStudent.length})
+              <GraduationCap className='w-3.5 h-3.5' /> Surat Siswa ({filteredStudent.length})
             </button>
           </div>
-
-          {/* Quick Refresh */}
-          <Button variant='ghost' size='sm' onClick={loadData} className='text-xs text-gray-500'>
-            <RefreshCw className='w-3.5 h-3.5 mr-1' /> Muat Ulang
-          </Button>
         </div>
 
-        {/* Search & Date Filter */}
-        <div className='grid grid-cols-1 sm:grid-cols-4 gap-3 pt-1 border-t border-gray-100'>
-          <div className='sm:col-span-2 relative'>
-            <Search className='w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400' />
+        {/* Filters */}
+        <div className='grid grid-cols-1 sm:grid-cols-12 gap-3 pt-2 border-t border-gray-100'>
+          <div className='sm:col-span-6 relative'>
+            <Search className='w-4 h-4 text-gray-400 absolute left-3 top-2.5' />
             <Input
-              placeholder='Cari nomor agenda, nomor surat, perihal, nama...'
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              placeholder='Cari nomor agenda, nomor surat, perihal, atau tujuan...'
               className='pl-9 text-xs h-9'
             />
           </div>
 
-          <div>
+          <div className='sm:col-span-3 flex items-center gap-1.5'>
+            <Calendar className='w-4 h-4 text-gray-400 shrink-0' />
             <Input
               type='date'
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               className='text-xs h-9'
-              title='Tanggal Mulai'
+              title='Tanggal Awal'
             />
           </div>
 
-          <div className='flex items-center gap-2'>
+          <div className='sm:col-span-3 flex items-center gap-2'>
             <Input
               type='date'
               value={endDate}
@@ -395,6 +414,28 @@ export default function AgendaDigitalPage() {
                 Reset
               </Button>
             )}
+          </div>
+        </div>
+
+        {/* Page Size & Counter info */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-2 border-t border-gray-100 text-xs text-gray-500 gap-2">
+          <div className="flex items-center gap-2">
+            <span>Baris per halaman:</span>
+            <Select value={String(pageSize)} onValueChange={(val) => setPageSize(Number(val))}>
+              <SelectTrigger className="h-7 w-[70px] text-xs font-medium">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="text-gray-300">|</span>
+            <span>
+              Menampilkan <strong>{totalRecords === 0 ? 0 : startIndex + 1}-{endIndex}</strong> dari total <strong>{totalRecords}</strong> data
+            </span>
           </div>
         </div>
       </div>
@@ -430,10 +471,13 @@ export default function AgendaDigitalPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredIncoming.map((item, idx) => (
+                  (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('print').matches
+                    ? filteredIncoming
+                    : paginatedData
+                  ).map((item, idx) => (
                     <tr key={item.id || idx} className='hover:bg-gray-50/80'>
                       <td className='p-2.5 text-center border font-medium text-gray-500'>
-                        {idx + 1}
+                        {startIndex + idx + 1}
                       </td>
                       <td className='p-2.5 border font-bold text-blue-700 whitespace-nowrap'>
                         {item.nomorAgenda || '-'}
@@ -451,7 +495,9 @@ export default function AgendaDigitalPage() {
                           ? new Date(item.tanggalSurat).toLocaleDateString('id-ID')
                           : '-'}
                       </td>
-                      <td className='p-2.5 border font-medium text-gray-800'>{item.pengirim}</td>
+                      <td className='p-2.5 border font-medium text-gray-900'>
+                        {item.pengirim}
+                      </td>
                       <td className='p-2.5 border text-gray-700'>{item.perihal}</td>
                       <td className='p-2.5 border text-center whitespace-nowrap'>
                         <span className='inline-block px-2 py-0.5 text-[10px] font-semibold rounded bg-blue-50 text-blue-700 border border-blue-200'>
@@ -471,57 +517,52 @@ export default function AgendaDigitalPage() {
                 <tr>
                   <th className='p-3 text-center w-10 border'>No</th>
                   <th className='p-3 border'>No. Agenda</th>
-                  <th className='p-3 border'>Nomor Surat</th>
                   <th className='p-3 border'>Tgl Surat</th>
-                  <th className='p-3 border'>Tujuan Surat</th>
-                  <th className='p-3 border'>Perihal</th>
-                  <th className='p-3 border'>Jenis</th>
+                  <th className='p-3 border'>Nomor Surat</th>
+                  <th className='p-3 border'>Tujuan Surat / Penerima</th>
+                  <th className='p-3 border'>Perihal / Isi Ringkas</th>
                   <th className='p-3 border text-center'>Status</th>
                 </tr>
               </thead>
               <tbody className='divide-y divide-gray-200'>
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className='p-8 text-center text-gray-500'>
+                    <td colSpan={7} className='p-8 text-center text-gray-500'>
                       Memuat data agenda surat keluar...
                     </td>
                   </tr>
                 ) : filteredOutgoing.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className='p-8 text-center text-gray-500'>
+                    <td colSpan={7} className='p-8 text-center text-gray-500'>
                       Tidak ada data surat keluar yang sesuai filter.
                     </td>
                   </tr>
                 ) : (
-                  filteredOutgoing.map((item, idx) => (
+                  (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('print').matches
+                    ? filteredOutgoing
+                    : paginatedData
+                  ).map((item, idx) => (
                     <tr key={item.id || idx} className='hover:bg-gray-50/80'>
                       <td className='p-2.5 text-center border font-medium text-gray-500'>
-                        {idx + 1}
+                        {startIndex + idx + 1}
                       </td>
                       <td className='p-2.5 border font-bold text-emerald-700 whitespace-nowrap'>
                         {item.nomorAgenda || '-'}
-                      </td>
-                      <td className='p-2.5 border font-semibold text-gray-900 whitespace-nowrap'>
-                        {item.nomorSurat || <span className='text-gray-400 italic'>Draft</span>}
                       </td>
                       <td className='p-2.5 border whitespace-nowrap'>
                         {item.tanggalSurat
                           ? new Date(item.tanggalSurat).toLocaleDateString('id-ID')
                           : '-'}
                       </td>
-                      <td className='p-2.5 border font-medium text-gray-800'>{item.tujuanSurat}</td>
-                      <td className='p-2.5 border text-gray-700'>{item.perihal}</td>
-                      <td className='p-2.5 border text-gray-600 whitespace-nowrap'>
-                        {item.jenisSurat?.nama || '-'}
+                      <td className='p-2.5 border font-semibold text-gray-900 whitespace-nowrap'>
+                        {item.nomorSurat || 'Belum Terbit'}
                       </td>
+                      <td className='p-2.5 border font-medium text-gray-900'>
+                        {item.tujuanSurat || '-'}
+                      </td>
+                      <td className='p-2.5 border text-gray-700'>{item.perihal}</td>
                       <td className='p-2.5 border text-center whitespace-nowrap'>
-                        <span
-                          className={`inline-block px-2 py-0.5 text-[10px] font-semibold rounded border ${
-                            item.status === 'APPROVED' || item.status === 'PUBLISHED'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}
-                        >
+                        <span className='inline-block px-2 py-0.5 text-[10px] font-semibold rounded bg-emerald-50 text-emerald-700 border border-emerald-200'>
                           {item.status}
                         </span>
                       </td>
@@ -542,7 +583,7 @@ export default function AgendaDigitalPage() {
                   <th className='p-3 border'>Tgl Terbit</th>
                   <th className='p-3 border'>Nama Siswa / Kegiatan</th>
                   <th className='p-3 border'>Kelas</th>
-                  <th className='p-3 border'>Keperluan / Catatan</th>
+                  <th className='p-3 border'>Keperluan</th>
                   <th className='p-3 border text-center'>Status</th>
                 </tr>
               </thead>
@@ -560,10 +601,13 @@ export default function AgendaDigitalPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredStudent.map((item, idx) => (
+                  (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('print').matches
+                    ? filteredStudent
+                    : paginatedData
+                  ).map((item, idx) => (
                     <tr key={item.id || idx} className='hover:bg-gray-50/80'>
                       <td className='p-2.5 text-center border font-medium text-gray-500'>
-                        {idx + 1}
+                        {startIndex + idx + 1}
                       </td>
                       <td className='p-2.5 border font-semibold text-purple-700 whitespace-nowrap'>
                         {item.tipeSurat === 'DISPENSASI'
@@ -600,6 +644,61 @@ export default function AgendaDigitalPage() {
               </tbody>
             </table>
           )}
+        </div>
+
+        {/* Screen Pagination Footer (Hidden on Print) */}
+        <div className="p-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs print:hidden">
+          <div className="text-gray-500 font-medium">
+            Halaman <strong>{currentPage}</strong> dari <strong>{totalPages}</strong> (Total {totalRecords} Data)
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              className="h-8 px-2 text-xs"
+              title="Halaman Pertama"
+            >
+              <ChevronsLeft className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="h-8 px-2.5 text-xs flex items-center gap-1 font-semibold"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>Sebelumnya</span>
+            </Button>
+
+            <span className="font-semibold text-gray-700 px-2.5 py-1 bg-white border border-gray-200 rounded-md">
+              {currentPage}
+            </span>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+              className="h-8 px-2.5 text-xs flex items-center gap-1 font-semibold"
+            >
+              <span>Selanjutnya</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage >= totalPages}
+              className="h-8 px-2 text-xs"
+              title="Halaman Terakhir"
+            >
+              <ChevronsRight className="w-3.5 h-3.5" />
+            </Button>
+          </div>
         </div>
       </div>
 

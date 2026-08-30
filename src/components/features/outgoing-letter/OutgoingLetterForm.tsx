@@ -53,10 +53,12 @@ export function OutgoingLetterForm({
 }: OutgoingLetterFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [autoSuggestedHint, setAutoSuggestedHint] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<OutgoingLetterFormValues>({
     resolver: zodResolver(outgoingLetterSchema),
@@ -73,6 +75,64 @@ export function OutgoingLetterForm({
       catatanTambahan: '',
     },
   });
+
+  const handleJenisSuratChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedJenisId = e.target.value;
+    setValue('jenisSuratId', selectedJenisId);
+
+    const selectedJenis = jenisSuratOpts.find((j) => j.id === selectedJenisId);
+    if (!selectedJenis) {
+      setAutoSuggestedHint(null);
+      return;
+    }
+
+    const jenisLower = (selectedJenis.nama || '').toLowerCase();
+    let matchedKlas: OptionItem | undefined;
+
+    if (
+      jenisLower.includes('siswa') ||
+      jenisLower.includes('dispensasi') ||
+      jenisLower.includes('panggilan') ||
+      jenisLower.includes('kesiswaan')
+    ) {
+      matchedKlas = klasifikasiOpts.find(
+        (k) => k.kode?.startsWith('421.3') || k.nama?.toLowerCase().includes('kesiswaan')
+      );
+    } else if (
+      jenisLower.includes('tugas') ||
+      jenisLower.includes('pegawai') ||
+      jenisLower.includes('sppd')
+    ) {
+      matchedKlas = klasifikasiOpts.find(
+        (k) => k.kode?.startsWith('800') || k.nama?.toLowerCase().includes('kepegawaian')
+      );
+    } else if (jenisLower.includes('undangan') || jenisLower.includes('rapat')) {
+      matchedKlas = klasifikasiOpts.find(
+        (k) =>
+          k.kode?.startsWith('005') ||
+          k.nama?.toLowerCase().includes('undangan') ||
+          k.kode?.startsWith('421')
+      );
+    } else if (
+      jenisLower.includes('keterangan') ||
+      jenisLower.includes('kurikulum') ||
+      jenisLower.includes('edaran')
+    ) {
+      matchedKlas = klasifikasiOpts.find(
+        (k) =>
+          k.kode?.startsWith('421.2') ||
+          k.kode?.startsWith('421') ||
+          k.nama?.toLowerCase().includes('pendidikan')
+      );
+    }
+
+    if (matchedKlas) {
+      setValue('klasifikasiId', matchedKlas.id);
+      setAutoSuggestedHint(`${matchedKlas.kode} - ${matchedKlas.nama}`);
+    } else {
+      setAutoSuggestedHint(null);
+    }
+  };
 
   const onSubmit = async (data: OutgoingLetterFormValues) => {
     setLoading(true);
@@ -139,11 +199,12 @@ export function OutgoingLetterForm({
         {/* Jenis Surat Dropdown */}
         <div className="space-y-2">
           <Label htmlFor="jenisSuratId">
-            Jenis Surat <span className="text-red-500">*</span>
+            Jenis Naskah Dinas <span className="text-red-500">*</span>
           </Label>
           <select
             id="jenisSuratId"
             {...register('jenisSuratId')}
+            onChange={handleJenisSuratChange}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <option value="">-- Pilih Jenis Surat --</option>
@@ -160,9 +221,16 @@ export function OutgoingLetterForm({
 
         {/* Klasifikasi Surat Dropdown */}
         <div className="space-y-2">
-          <Label htmlFor="klasifikasiId">
-            Kode Klasifikasi Surat <span className="text-red-500">*</span>
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="klasifikasiId">
+              Kode Klasifikasi Kearsipan <span className="text-red-500">*</span>
+            </Label>
+            {autoSuggestedHint && (
+              <span className="text-[10px] text-blue-700 bg-blue-50 px-2 py-0.5 rounded font-medium border border-blue-200">
+                ✨ Otomatis: {autoSuggestedHint}
+              </span>
+            )}
+          </div>
           <select
             id="klasifikasiId"
             {...register('klasifikasiId')}
@@ -179,6 +247,7 @@ export function OutgoingLetterForm({
             <p className="text-xs text-red-500">{errors.klasifikasiId.message}</p>
           )}
         </div>
+
 
         {/* Penandatangan (Kepala Sekolah / Guru) Dropdown */}
         <div className="space-y-2">

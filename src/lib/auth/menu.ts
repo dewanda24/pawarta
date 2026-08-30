@@ -2,22 +2,34 @@
 
 import { db } from '@/db';
 import { menus, permissions } from '@/db/schema';
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { eq, isNull, and, asc } from 'drizzle-orm';
-import { getUserPermissions } from '@/lib/auth/rbac';
+import { eq, asc } from 'drizzle-orm';
+import { getUserPermissions, isSuperAdmin } from '@/lib/auth/rbac';
 import { auth } from '@/lib/auth';
+
+export interface MenuItem {
+  id: string;
+  nama: string;
+  icon?: string | null;
+  route?: string | null;
+  parentId?: string | null;
+  permissionName?: string | null;
+  children: MenuItem[];
+}
 
 /**
  * Mengambil menu dari database yang sesuai dengan hak akses (permission) user saat ini.
+ * Super Admin mendapat akses ke semua menu.
+ * Menu grup hanya tampil jika memiliki minimal 1 sub-menu yang diizinkan (atau memiliki route sendiri).
  */
-export async function getAuthorizedMenus() {
+export async function getAuthorizedMenus(): Promise<MenuItem[]> {
   const session = await auth();
   if (!session?.user?.id) return [];
 
-  const userPerms = await getUserPermissions(session.user.id);
+  const userId = session.user.id;
+  const isAdmin = await isSuperAdmin(userId);
+  const userPerms = isAdmin ? [] : await getUserPermissions(userId);
 
-  // Ambil semua menu yang aktif
+  // Ambil semua menu yang aktif diurutkan berdasarkan urutan
   const allMenus = await db
     .select({
       id: menus.id,
@@ -32,34 +44,63 @@ export async function getAuthorizedMenus() {
     .where(eq(menus.isAktif, true))
     .orderBy(asc(menus.urutan));
 
-  // Filter berdasarkan permission
-  const authorizedMenus = allMenus.filter((menu) => {
-    // Jika tidak butuh permission, semua boleh akses
+  // Cek apakah suatu menu memiliki izin
+  const isMenuAllowed = (menu: { permissionName?: string | null }) => {
+    if (isAdmin) return true;
     if (!menu.permissionName) return true;
-    // Jika butuh, cek apakah user punya
     return userPerms.includes(menu.permissionName);
+  };
+
+
+  // Buat map semua menu dengan array children kosong
+  const menuMap = new Map<string, MenuItem>();
+  allMenus.forEach((menu) => {
+    menuMap.set(menu.id, {
+      ...menu,
+      children: [],
+    });
   });
 
-  // Susun menjadi hirarki (Tree)
-  const menuMap = new Map();
-  const rootMenus: unknown[] = [];
+  // Susun struktur tree
+  const rootMenus: MenuItem[] = [];
 
-  // Inisialisasi map
-  authorizedMenus.forEach((menu) => {
-    menuMap.set(menu.id, { ...menu, children: [] });
-  });
-
-  // Build tree
-  authorizedMenus.forEach((menu) => {
+  allMenus.forEach((menu) => {
+    const currentItem = menuMap.get(menu.id)!;
     if (menu.parentId) {
       const parent = menuMap.get(menu.parentId);
       if (parent) {
-        parent.children.push(menuMap.get(menu.id));
+        parent.children.push(currentItem);
       }
     } else {
-      rootMenus.push(menuMap.get(menu.id));
+      rootMenus.push(currentItem);
     }
   });
 
-  return rootMenus;
+  // Filter root menu dan children berdasarkan permission
+  const filterAuthorized = (items: MenuItem[]): MenuItem[] => {
+    return items
+      .map((item) => {
+        const filteredChildren = filterAuthorized(item.children);
+        const itemAllowed = isMenuAllowed(item);
+
+        // Jika menu punya anak: tampilkan jika anak-anaknya ada yang diizinkan ATAU menu induknya diizinkan
+        if (item.children.length > 0) {
+          if (filteredChildren.length > 0) {
+            return { ...item, children: filteredChildren };
+          }
+          // Jika tidak ada anak yang lolos tapi induk punya route dan lolos permission
+          if (itemAllowed && item.route) {
+            return { ...item, children: [] };
+          }
+          return null;
+        }
+
+        // Jika menu tunggal (tidak punya anak)
+        return itemAllowed ? item : null;
+      })
+      .filter((item): item is MenuItem => item !== null);
+  };
+
+  return filterAuthorized(rootMenus);
 }
+

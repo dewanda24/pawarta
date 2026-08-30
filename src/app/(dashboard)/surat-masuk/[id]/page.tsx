@@ -25,6 +25,8 @@ import { LetterActions } from '@/components/features/incoming-letter/LetterActio
 import { AttachmentSection } from '@/components/shared/AttachmentSection';
 import { Printer, ArrowLeft } from 'lucide-react';
 import { requireAuth } from '@/lib/server-action';
+import { hasPermission } from '@/lib/auth/rbac';
+import { PERM } from '@/lib/auth/permissions';
 
 export const metadata = {
   title: 'Detail Surat Masuk | PAWARTA',
@@ -43,6 +45,12 @@ export default async function DetailSuratMasukPage({
   if (!id) {
     notFound();
   }
+
+  const [canDisposisi, canDistribusi, canEdit] = await Promise.all([
+    hasPermission(PERM.SURAT_MASUK_DISPOSISI),
+    hasPermission(PERM.SURAT_MASUK_DISTRIBUSI),
+    hasPermission(PERM.SURAT_MASUK_UPDATE),
+  ]);
 
   const [letter] = await db
     .select({
@@ -101,20 +109,29 @@ export default async function DetailSuratMasukPage({
       .from(users)
       .where(eq(users.status, 'Aktif')),
     db
-      .select()
+      .select({
+        id: incomingLetterAttachments.id,
+        namaFile: incomingLetterAttachments.namaFile,
+        tipeMime: incomingLetterAttachments.tipeMime,
+        ukuranBytes: incomingLetterAttachments.ukuranBytes,
+        fileUrl: incomingLetterAttachments.fileUrl,
+      })
       .from(incomingLetterAttachments)
-      .where(eq(incomingLetterAttachments.suratId, letter.id))
-      .orderBy(desc(incomingLetterAttachments.createdAt)),
+      .where(eq(incomingLetterAttachments.suratId, letter.id)),
   ]);
+
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Detail Surat Masuk</h1>
-          <p className="text-muted-foreground text-xs sm:text-sm">
-            No: <span className="font-semibold text-gray-900">{letter.nomorSurat}</span> • Agenda:{' '}
-            <span className="font-mono font-bold text-blue-700">{letter.nomorAgenda || '-'}</span>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900">
+            {letter.perihal}
+          </h1>
+          <p className="text-xs text-gray-500 mt-1">
+            Dari: <span className="font-semibold text-gray-700">{letter.pengirim}</span>{' '}
+            {letter.instansi ? `(${letter.instansi})` : ''} • No. Surat:{' '}
+            <span className="font-semibold text-blue-700">{letter.nomorSurat}</span>
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
@@ -138,6 +155,9 @@ export default async function DetailSuratMasukPage({
             pegawaiOpts={pegawaiOpts}
             unitKerjaOpts={unitKerjaOpts}
             userOpts={userOpts}
+            canDisposisi={canDisposisi}
+            canDistribusi={canDistribusi}
+            canEdit={canEdit}
           />
         </div>
       </div>
