@@ -42,3 +42,12 @@ next-env.d.ts
 
 # archive
 ._archive_modules/
+
+# spreadsheet & data files (protect sensitive school data)
+*.xlsx
+*.xls
+*.csv
+*.ods
+*.tsv
+data/
+uploads/
