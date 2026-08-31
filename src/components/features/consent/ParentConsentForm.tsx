@@ -301,31 +301,9 @@ export function ParentConsentForm({
           </div>
         </div>
 
-        {/* Ringkasan Fleksibel Saat Ditutup (Mobile-friendly, tidak memakan tempat) */}
-        {!showSchoolLetter && (
-          <div className="p-3.5 sm:p-4 bg-blue-50/40 border-t border-blue-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-            <div className="flex flex-wrap items-center gap-2 text-gray-700">
-              <span className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-blue-200 font-semibold text-blue-950">
-                <Clock className="w-3.5 h-3.5 text-blue-600" /> Senin s.d. Jumat (07.00 - 15.00 WIB)
-              </span>
-              <span className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 font-semibold text-emerald-900">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Libur: Sabtu & Minggu
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowSchoolLetter(true)}
-              className="text-blue-700 hover:text-blue-900 font-bold text-xs flex items-center gap-1 hover:underline"
-            >
-              <span>Buka Naskah Surat Lengkap</span>
-              <ChevronDown className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-
         {showSchoolLetter && (
           <div
-            className="p-6 sm:p-8 md:p-10 bg-white text-[13px] text-gray-900 space-y-4 border-t border-gray-100"
+            className="p-6 sm:p-8 md:p-10 bg-white text-[13px] text-gray-900 space-y-4 border-t border-gray-100 animate-in fade-in-50"
             style={{
               fontFamily:
                 config.fontSurat === 'Times New Roman'
