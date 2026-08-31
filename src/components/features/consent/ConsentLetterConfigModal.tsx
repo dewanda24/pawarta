@@ -815,7 +815,7 @@ export function ConsentLetterConfigModal({
                         <div className="h-10" />
                       )}
                     </div>
-                    <p className="font-bold underline">{config.penandatangan.nama}</p>
+                    <p className="font-bold">{config.penandatangan.nama}</p>
                     <p className="text-gray-600 font-mono text-[10px]">
                       NIP. {config.penandatangan.nip || '-'}
                     </p>

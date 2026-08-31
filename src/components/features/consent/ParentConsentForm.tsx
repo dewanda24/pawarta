@@ -486,7 +486,7 @@ export function ParentConsentForm({
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Tervalidasi Resmi Dinas
                   </span>
                 </div>
-                <p className="font-bold underline text-gray-950">
+                <p className="font-bold text-gray-950">
                   {config.penandatangan?.nama || 'Drs. H. Dedi Kusnadi, M.Pd.'}
                 </p>
                 <p className="text-gray-700 font-mono text-[10px]">

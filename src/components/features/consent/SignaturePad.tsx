@@ -13,17 +13,18 @@ interface SignaturePadProps {
   height?: number;
 }
 
-type SignatureMode = 'AUTO' | 'DRAW';
+type SignatureMode = 'DRAW' | 'AUTO';
 
 const SIGNATURE_STYLES = [
-  { id: 'style_1', name: 'Gaya 1 (Formal Script)', font: 'italic 34px "Brush Script MT", "Great Vibes", cursive', slant: 0.05, underline: true },
-  { id: 'style_2', name: 'Gaya 2 (Eksekutif)', font: 'italic bold 30px "Dancing Script", "Segoe Script", cursive', slant: 0.02, underline: true },
+  { id: 'style_1', name: 'Gaya 1 (Formal Script)', font: 'italic 34px "Brush Script MT", "Great Vibes", cursive', slant: 0.05, underline: false },
+  { id: 'style_2', name: 'Gaya 2 (Eksekutif)', font: 'italic bold 30px "Dancing Script", "Segoe Script", cursive', slant: 0.02, underline: false },
   { id: 'style_3', name: 'Gaya 3 (Elegan Modern)', font: 'italic 32px "Caveat", "Lucida Handwriting", cursive', slant: 0.08, underline: false },
-  { id: 'style_4', name: 'Gaya 4 (Klasik Resmi)', font: 'italic bold 28px "Georgia", serif', slant: 0.04, underline: true },
+  { id: 'style_4', name: 'Gaya 4 (Klasik Resmi)', font: 'italic bold 28px "Georgia", serif', slant: 0.04, underline: false },
 ];
 
 export function SignaturePad({ value, onChange, parentName = '', height = 180 }: SignaturePadProps) {
-  const [mode, setMode] = useState<SignatureMode>('AUTO');
+  // Prioritas utama: DRAW (Tanda tangan gambar / gores langsung)
+  const [mode, setMode] = useState<SignatureMode>('DRAW');
   const [selectedStyleIndex, setSelectedStyleIndex] = useState(0);
   const [customSignText, setCustomSignText] = useState(parentName || '');
 
@@ -66,19 +67,7 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
     setHistory([blankSnapshot]);
   }, []);
 
-  useEffect(() => {
-    if (mode === 'DRAW') {
-      initDrawCanvas();
-    }
-    const handleResize = () => {
-      if (mode === 'DRAW') initDrawCanvas();
-      else generateAutoSignature();
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [mode, initDrawCanvas]);
-
-  // Generate Auto Signature from Name
+  // Generate Auto Signature from Name (Tanpa Garis Bawah)
   const generateAutoSignature = useCallback(() => {
     const canvas = autoCanvasRef.current;
     if (!canvas) return;
@@ -99,41 +88,19 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
     ctx.scale(ratio, ratio);
     ctx.clearRect(0, 0, w, h);
 
-    // Tinta Tanda Tangan (Biru Tua / Hitam Elegan Formal)
-    ctx.fillStyle = '#0f2452';
-    ctx.strokeStyle = '#0f2452';
+    // Styling Tanda Tangan
+    ctx.fillStyle = '#0f172a';
+    ctx.strokeStyle = '#0f172a';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Apply Slant / Rotasi Tanda Tangan
     ctx.save();
-    ctx.translate(w / 2, h / 2 - 5);
+    ctx.translate(w / 2, h / 2);
     ctx.rotate(style.slant);
 
     // Font Tanda Tangan
     ctx.font = style.font;
     ctx.fillText(textToDraw, 0, 0);
-
-    // Goresan Garis Bawah / Underline Artistik Khas Tanda Tangan
-    if (style.underline) {
-      const textMetrics = ctx.measureText(textToDraw);
-      const textWidth = Math.min(textMetrics.width, w * 0.85);
-      const startX = -textWidth / 2 - 10;
-      const endX = textWidth / 2 + 15;
-      const underlineY = 18;
-
-      ctx.beginPath();
-      ctx.lineWidth = 2.2;
-      ctx.moveTo(startX, underlineY);
-      // Lengkungan kurva tanda tangan natural
-      ctx.quadraticCurveTo(0, underlineY + 6, endX, underlineY - 2);
-      ctx.stroke();
-
-      // Titik dekoratif di ujung tanda tangan
-      ctx.beginPath();
-      ctx.arc(endX + 6, underlineY - 1, 2, 0, Math.PI * 2);
-      ctx.fill();
-    }
 
     ctx.restore();
 
@@ -142,20 +109,37 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
     onChange(dataUrl);
   }, [customSignText, parentName, selectedStyleIndex, height, onChange]);
 
+  useEffect(() => {
+    if (mode === 'DRAW') {
+      initDrawCanvas();
+    } else {
+      generateAutoSignature();
+    }
+    const handleResize = () => {
+      if (mode === 'DRAW') initDrawCanvas();
+      else generateAutoSignature();
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [mode, initDrawCanvas, generateAutoSignature]);
+
   // Trigger auto generate when relevant state changes
   useEffect(() => {
     if (mode === 'AUTO') {
       generateAutoSignature();
     }
-  }, [mode, customSignText, parentName, selectedStyleIndex, generateAutoSignature]);
+  }, [mode, selectedStyleIndex, customSignText, parentName, generateAutoSignature]);
 
-  const getCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  // Handle Manual Drawing Coordinates
+  const getCoordinates = (
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+  ) => {
     const canvas = drawCanvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
 
     if ('touches' in e) {
-      const touch = e.touches[0] || e.changedTouches[0];
+      const touch = e.touches[0];
       return {
         x: touch.clientX - rect.left,
         y: touch.clientY - rect.top,
@@ -168,10 +152,9 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
     }
   };
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if ('touches' in e) {
-      e.preventDefault();
-    }
+  const startDrawing = (
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+  ) => {
     const canvas = drawCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -184,15 +167,18 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
     setHasDrawn(true);
   };
 
-  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  const draw = (
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+  ) => {
     if (!isDrawing) return;
-    if ('touches' in e) {
-      e.preventDefault();
-    }
     const canvas = drawCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
+
+    if ('touches' in e) {
+      e.preventDefault(); // Prevent page scroll on touch
+    }
 
     const { x, y } = getCoordinates(e);
     ctx.lineTo(x, y);
@@ -208,9 +194,11 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
-    const currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    setHistory((prev) => [...prev, currentData]);
+    // Save snapshot to history
+    const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    setHistory((prev) => [...prev, snapshot]);
 
+    // Export base64
     const dataUrl = canvas.toDataURL('image/png');
     onChange(dataUrl);
   };
@@ -221,10 +209,10 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
-    const ratio = Math.max(window.devicePixelRatio || 1, 1);
-    ctx.clearRect(0, 0, canvas.width / ratio, canvas.height / ratio);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasDrawn(false);
-    setHistory([]);
+    const blankSnapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    setHistory([blankSnapshot]);
     onChange(null);
   };
 
@@ -259,24 +247,6 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
         <button
           type="button"
           onClick={() => {
-            setMode('AUTO');
-          }}
-          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-            mode === 'AUTO'
-              ? 'bg-white text-blue-900 shadow-xs border border-gray-200/80'
-              : 'text-gray-600 hover:text-gray-900'
-          }`}
-        >
-          <Wand2 className="w-3.5 h-3.5 text-blue-600" />
-          <span>Buat Otomatis Sistem</span>
-          <span className="hidden sm:inline text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.2 rounded font-medium">
-            Praktis
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
             setMode('DRAW');
             setTimeout(initDrawCanvas, 50);
           }}
@@ -286,15 +256,87 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
-          <Edit3 className="w-3.5 h-3.5 text-indigo-600" />
-          <span>Tanda Tangan Sendiri</span>
+          <Edit3 className="w-3.5 h-3.5 text-blue-600" />
+          <span>Tanda Tangan Gambar (Gores Sendiri)</span>
+          <span className="hidden sm:inline text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.2 rounded font-medium">
+            Utama
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setMode('AUTO');
+          }}
+          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+            mode === 'AUTO'
+              ? 'bg-white text-blue-900 shadow-xs border border-gray-200/80'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <Wand2 className="w-3.5 h-3.5 text-indigo-600" />
+          <span>Otomatis Sistem</span>
           <span className="hidden sm:inline text-[10px] bg-gray-200 text-gray-700 px-1.5 py-0.2 rounded font-medium">
-            Layar Sentuh / Mouse
+            Alternatif
           </span>
         </button>
       </div>
 
-      {/* MODE 1: OTOMATIS OLEH SISTEM */}
+      {/* MODE 1: GORES SENDIRI (UTAMA) */}
+      {mode === 'DRAW' && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <span>Goreskan tanda tangan menggunakan jari / mouse:</span>
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={undo}
+                disabled={history.length <= 1}
+                className="h-7 px-2 text-[11px] text-gray-600"
+              >
+                <RotateCcw className="w-3 h-3 mr-1" />
+                Urungkan
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={clear}
+                disabled={!hasDrawn}
+                className="h-7 px-2 text-[11px] text-red-600 hover:bg-red-50"
+              >
+                Bersihkan
+              </Button>
+            </div>
+          </div>
+
+          <div className="relative border-2 border-dashed border-gray-300 rounded-2xl bg-white overflow-hidden shadow-inner touch-none">
+            <canvas
+              ref={drawCanvasRef}
+              style={{ width: '100%', height: `${height}px`, display: 'block' }}
+              onMouseDown={startDrawing}
+              onMouseMove={draw}
+              onMouseUp={stopDrawing}
+              onMouseLeave={stopDrawing}
+              onTouchStart={startDrawing}
+              onTouchMove={draw}
+              onTouchEnd={stopDrawing}
+              className="cursor-crosshair"
+            />
+            {!hasDrawn && (
+              <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center text-gray-400 gap-1 select-none">
+                <PenTool className="w-6 h-6 stroke-[1.5] text-gray-300" />
+                <span className="text-xs font-medium">Area Goresan Tanda Tangan Orang Tua / Wali</span>
+                <span className="text-[10px] text-gray-400">Gunakan layar sentuh HP atau kursor mouse</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MODE 2: OTOMATIS OLEH SISTEM (ALTERNATIF) */}
       {mode === 'AUTO' && (
         <div className="space-y-3">
           {/* Pilihan Gaya Tanda Tangan Kaligrafi */}
@@ -311,118 +353,52 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-gray-900">Gaya {idx + 1}</span>
+                  <span className="text-[11px] font-bold text-gray-800">{style.name}</span>
                   {selectedStyleIndex === idx && <Check className="w-3.5 h-3.5 text-blue-600" />}
                 </div>
-                <p className="text-[10px] text-gray-500 mt-0.5 truncate">{style.name}</p>
+                <p className="text-[10px] text-gray-500 mt-0.5 truncate">
+                  {customSignText || parentName || 'Ttd'}
+                </p>
               </button>
             ))}
           </div>
 
-          {/* Kotak Tanda Tangan Otomatis */}
-          <div className="relative border-2 border-solid border-blue-200 rounded-xl bg-linear-to-b from-blue-50/20 to-white shadow-xs overflow-hidden">
-            <canvas
-              ref={autoCanvasRef}
-              style={{ height: `${height}px` }}
-              className="w-full block"
-            />
-
-            <div className="absolute bottom-3 left-4 right-4 border-t border-gray-200/80 pointer-events-none flex justify-between items-center pt-1">
-              <span className="text-[9px] text-gray-400 font-mono tracking-wider">
-                E-SIGNATURE DIGITAL RESMI
-              </span>
-              <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                <Check className="w-3 h-3" /> Otomatis Terverifikasi
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-gray-500 bg-gray-50 p-2.5 rounded-xl border border-gray-200">
-            <div className="flex items-center gap-1.5 w-full sm:w-auto">
-              <Label htmlFor="customSign" className="text-[11px] font-semibold shrink-0 text-gray-700">
-                Nama di Tanda Tangan:
-              </Label>
+          {/* Kotak Edit Nama/Inisial Ttd */}
+          <div className="space-y-1">
+            <Label className="text-[11px] font-semibold text-gray-700">
+              Teks / Nama Tanda Tangan:
+            </Label>
+            <div className="flex gap-2">
               <Input
-                id="customSign"
+                type="text"
                 value={customSignText}
                 onChange={(e) => setCustomSignText(e.target.value)}
-                placeholder="Ketik nama untuk tanda tangan"
-                className="h-7 text-xs bg-white flex-1 sm:w-48"
+                placeholder="Nama pada tanda tangan..."
+                className="h-9 text-xs bg-white"
               />
-            </div>
-
-            <div className="flex items-center gap-1 text-[11px] text-blue-700 font-medium">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Dibuat Otomatis Sesuai Nama</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODE 2: GORES TANDA TANGAN SENDIRI */}
-      {mode === 'DRAW' && (
-        <div className="space-y-2">
-          <div className="relative border-2 border-dashed border-gray-300 hover:border-blue-500 transition-colors rounded-xl bg-white shadow-xs overflow-hidden">
-            {!hasDrawn && !value && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-gray-400 select-none">
-                <PenTool className="w-6 h-6 mb-1 text-gray-300 animate-bounce" />
-                <span className="text-xs font-medium">Goreskan Tanda Tangan Orang Tua / Wali di sini</span>
-                <span className="text-[10px] text-gray-400 mt-0.5">
-                  Dapat menggunakan jari di layar sentuh HP atau mouse di PC
-                </span>
-              </div>
-            )}
-
-            <canvas
-              ref={drawCanvasRef}
-              style={{ height: `${height}px`, touchAction: 'none' }}
-              className="w-full cursor-crosshair block"
-              onMouseDown={startDrawing}
-              onMouseMove={draw}
-              onMouseUp={stopDrawing}
-              onMouseLeave={stopDrawing}
-              onTouchStart={startDrawing}
-              onTouchMove={draw}
-              onTouchEnd={stopDrawing}
-            />
-
-            <div className="absolute bottom-4 left-6 right-6 border-b border-gray-200 pointer-events-none flex justify-between items-end pb-1">
-              <span className="text-[10px] text-gray-400 font-mono tracking-wider">TANDA TANGAN RESMI</span>
-              {hasDrawn && (
-                <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                  <Check className="w-3 h-3" /> Terekam
-                </span>
+              {parentName && customSignText !== parentName && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCustomSignText(parentName)}
+                  className="h-9 text-xs px-2.5 text-blue-600"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                  Sesuai Nama
+                </Button>
               )}
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <div className="flex items-center gap-1.5">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={clear}
-                className="h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                disabled={!hasDrawn && !value}
-              >
-                <RotateCcw className="w-3.5 h-3.5 mr-1" /> Bersihkan
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={undo}
-                className="h-8 text-xs text-gray-600 hover:bg-gray-100"
-                disabled={history.length <= 1}
-              >
-                Urungkan (Undo)
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-1 text-[11px] text-blue-700 font-medium">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Canvas Touch Signature</span>
+          {/* Kanvas Pratinjau Tanda Tangan Otomatis */}
+          <div className="relative border-2 border-blue-200 rounded-2xl bg-gradient-to-b from-blue-50/20 to-white overflow-hidden shadow-2xs">
+            <canvas
+              ref={autoCanvasRef}
+              style={{ width: '100%', height: `${height}px`, display: 'block' }}
+            />
+            <div className="absolute bottom-2 right-3 pointer-events-none text-[10px] text-blue-600/70 font-semibold bg-white/80 px-2 py-0.5 rounded-full border border-blue-100">
+              ✓ Dihasilkan Otomatis Oleh Sistem (Tanpa Garis Bawah)
             </div>
           </div>
         </div>

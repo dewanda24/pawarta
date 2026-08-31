@@ -318,7 +318,7 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
                 <div className="h-13" />
               )}
             </div>
-            <p className="font-bold underline text-gray-950">{consent.namaOrtu}</p>
+            <p className="font-bold text-gray-950">{consent.namaOrtu}</p>
             <p className="text-gray-700 text-[11px] print:text-[10pt]">
               Orang Tua / Wali
             </p>
