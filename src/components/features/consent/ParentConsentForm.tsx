@@ -48,7 +48,7 @@ import {
 } from '@/features/student-letter/consent-config';
 import { LetterheadView } from '@/components/shared/LetterheadView';
 import { stripNomorPrefix } from '@/lib/nomor-surat-generator';
-import { toRomanGrade, formatNamaKelasRomawi } from '@/lib/format-kelas';
+import { toRomanGrade, formatNamaKelasRomawi, extractTingkat } from '@/lib/format-kelas';
 
 interface ClassItem {
   id: string;
@@ -90,7 +90,7 @@ export function ParentConsentForm({
   // Daftar Jenjang / Tingkat Kelas (7, 8, 9, dst.)
   const availableGrades = React.useMemo(() => {
     const grades = Array.from(
-      new Set(classList.map((c) => c.tingkat || parseInt(String(c.kodeKelas).replace(/[^0-9]/g, ''), 10) || 7)),
+      new Set(classList.map((c) => extractTingkat(c))),
     ).sort((a, b) => a - b);
     return grades.length > 0 ? grades : [7, 8, 9];
   }, [classList]);
@@ -98,9 +98,10 @@ export function ParentConsentForm({
   const [selectedTingkat, setSelectedTingkat] = useState<number>(() => {
     if (defaultKelasId) {
       const found = classList.find((c) => c.id === defaultKelasId);
-      if (found?.tingkat) return found.tingkat;
+      if (found) return extractTingkat(found);
     }
-    return availableGrades[0] || 7;
+    const firstGrade = classList.length > 0 ? extractTingkat(classList[0]) : 7;
+    return availableGrades.includes(firstGrade) ? firstGrade : (availableGrades[0] || 7);
   });
 
   // State Step & Form
@@ -111,21 +112,58 @@ export function ParentConsentForm({
   const [selectedStudent, setSelectedStudent] = useState<StudentItem | null>(null);
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
 
+  // Handler memilih kelas / rombel
+  const handleSelectKelas = (kelasId: string) => {
+    setSelectedKelasId(kelasId);
+    // Reset seleksi siswa saat berganti rombel agar tidak tertukar
+    setSelectedStudentId('');
+    setSelectedStudent(null);
+    setExistingConsent(null);
+    setStudentSearchQuery('');
+
+    if (kelasId) {
+      const found = classList.find((c) => c.id === kelasId);
+      if (found) {
+        const grade = extractTingkat(found);
+        if (grade !== selectedTingkat) {
+          setSelectedTingkat(grade);
+        }
+      }
+    }
+  };
+
+  // Handler memilih jenjang tingkat kelas
+  const handleSelectTingkat = (grade: number) => {
+    setSelectedTingkat(grade);
+    const classesInGrade = classList.filter((c) => extractTingkat(c) === grade);
+    if (classesInGrade.length > 0) {
+      // Jika kelas terpilih saat ini bukan di tingkat ini, auto-pilih rombel pertama di tingkat ini
+      if (!classesInGrade.some((c) => c.id === selectedKelasId)) {
+        handleSelectKelas(classesInGrade[0].id);
+      }
+    } else {
+      handleSelectKelas('');
+    }
+  };
+
   // Sinkronkan jika defaultKelasId dari URL berubah
   useEffect(() => {
     if (defaultKelasId && defaultKelasId !== selectedKelasId) {
-      setSelectedKelasId(defaultKelasId);
+      handleSelectKelas(defaultKelasId);
       const found = classList.find((c) => c.id === defaultKelasId);
-      if (found?.tingkat) setSelectedTingkat(found.tingkat);
+      if (found) setSelectedTingkat(extractTingkat(found));
     }
-  }, [defaultKelasId, classList, selectedKelasId]);
+  }, [defaultKelasId, classList]);
 
   // Sinkronkan selectedTingkat jika selectedKelasId berganti
   useEffect(() => {
     if (selectedKelasId) {
       const found = classList.find((c) => c.id === selectedKelasId);
-      if (found?.tingkat && found.tingkat !== selectedTingkat) {
-        setSelectedTingkat(found.tingkat);
+      if (found) {
+        const grade = extractTingkat(found);
+        if (grade !== selectedTingkat) {
+          setSelectedTingkat(grade);
+        }
       }
     }
   }, [selectedKelasId, classList, selectedTingkat]);
@@ -335,7 +373,7 @@ export function ParentConsentForm({
 
         {showSchoolLetter && (
           <div
-            className="p-6 sm:p-8 md:p-10 bg-white text-[13px] text-gray-900 space-y-4 border-t border-gray-100 animate-in fade-in-50"
+            className="p-6 sm:p-10 md:p-12 bg-white text-[13px] text-gray-950 space-y-4 border-t border-gray-100 animate-in fade-in-50"
             style={{
               fontFamily:
                 config.fontSurat === 'Times New Roman'
@@ -361,38 +399,38 @@ export function ParentConsentForm({
             <LetterheadView header={kopSurat} fallbackSekolah={sekolah} />
 
             {/* Header Naskah Dinas */}
-            <div className="mt-3 mb-2 text-xs font-sans space-y-1.5 pt-1">
+            <div className="mt-4 mb-3 space-y-2 pt-1 text-[13px]">
               <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
-                <table className="text-xs">
+                <table className="text-[13px]">
                   <tbody>
                     <tr>
-                      <td className="w-20 font-semibold py-0.5">Nomor</td>
-                      <td className="w-3">:</td>
-                      <td className="font-mono font-bold py-0.5 text-blue-950">
+                      <td className="w-24 font-semibold py-0.5 align-top">Nomor</td>
+                      <td className="w-3 align-top">:</td>
+                      <td className="font-semibold py-0.5 align-top">
                         {stripNomorPrefix(config.nomorSurat) || 'B/382/400.3.5.1/VIII/2026'}
                       </td>
                     </tr>
                     <tr>
-                      <td className="font-semibold py-0.5">Sifat</td>
-                      <td>:</td>
-                      <td className="py-0.5">{config.sifatSurat || 'Penting'}</td>
+                      <td className="font-semibold py-0.5 align-top">Sifat</td>
+                      <td className="align-top">:</td>
+                      <td className="py-0.5 align-top">{config.sifatSurat || 'Penting'}</td>
                     </tr>
                     <tr>
-                      <td className="font-semibold py-0.5">Lampiran</td>
-                      <td>:</td>
-                      <td className="py-0.5">{config.lampiranSurat || '1 Lembar (Lembar Persetujuan)'}</td>
+                      <td className="font-semibold py-0.5 align-top">Lampiran</td>
+                      <td className="align-top">:</td>
+                      <td className="py-0.5 align-top">{config.lampiranSurat || '1 Lembar (Lembar Persetujuan)'}</td>
                     </tr>
                     <tr>
                       <td className="font-semibold py-0.5 align-top">Perihal</td>
                       <td className="align-top">:</td>
-                      <td className="font-bold py-0.5 text-gray-950">
+                      <td className="font-bold py-0.5 align-top">
                         {config.perihalSurat || 'Pemberitahuan & Persetujuan Pembelajaran 5 (Lima) Hari'}
                       </td>
                     </tr>
                   </tbody>
                 </table>
 
-                <div className="text-right sm:text-right font-sans text-xs shrink-0">
+                <div className="text-left sm:text-right text-[13px] shrink-0">
                   <p>
                     {config.tempatSurat || sekolah?.kabupaten || 'Sumedang'},{' '}
                     {config.tanggalSurat && config.tanggalSurat !== 'OTOMATIS'
@@ -406,53 +444,54 @@ export function ParentConsentForm({
                 </div>
               </div>
 
-              <div className="pt-2">
-                <p className="font-semibold">Kepada Yth.,</p>
+              <div className="pt-3">
+                <p>Kepada Yth.,</p>
                 <p className="font-bold">{config.penerimaSurat || 'Bapak/Ibu Orang Tua / Wali Murid'}</p>
-                <p className="italic text-gray-700">di Tempat</p>
+                <p>di Tempat</p>
               </div>
             </div>
 
             {/* Isi Surat Pemberitahuan */}
-            <div className="space-y-2.5 text-justify leading-[1.5]">
+            <div className="space-y-3 text-justify leading-[1.6]">
               <p>Dengan hormat,</p>
-              <p className="indent-8 leading-[1.5]">
+              <p className="indent-8">
                 {config.teksPembuka ||
                   `Sehubungan dengan upaya peningkatan mutu pendidikan, penguatan karakter peserta didik, serta regulasi pemerintah terkait efisiensi hari belajar efektif, dengan ini kami beritahukan bahwa ${sekolah?.nama || 'SMPN 1 UJUNGJAYA'} akan menerapkan sistem Pembelajaran 5 (Lima) Hari Sekolah.`}
               </p>
 
-              <div className="pl-4 sm:pl-8 my-2 font-sans bg-gray-50/70 p-3.5 rounded-xl border border-gray-200">
-                <p className="font-semibold text-xs text-gray-900 mb-1.5">
-                  Adapun ketentuan pelaksanaan sistem tersebut:
+              {/* Ketentuan Formal Tanpa Card & Tanpa Bullet */}
+              <div className="pl-6 sm:pl-10 my-2.5">
+                <p className="mb-1.5 font-medium">
+                  Adapun ketentuan pelaksanaan sistem tersebut sebagai berikut:
                 </p>
-                <table className="w-full text-xs">
+                <table className="w-full text-[13px]">
                   <tbody>
                     <tr>
-                      <td className="w-32 py-1 font-medium text-gray-700">• Mulai Berlaku</td>
+                      <td className="w-36 py-1 font-medium">Mulai Berlaku</td>
                       <td className="w-3">:</td>
-                      <td className="font-semibold py-1 text-gray-950">
+                      <td className="font-semibold py-1">
                         {config.ketentuan?.mulaiBerlaku || 'Tahun Pelajaran 2026/2027'}
                       </td>
                     </tr>
                     <tr>
-                      <td className="py-1 font-medium text-gray-700">• Hari Belajar</td>
+                      <td className="py-1 font-medium">Hari Belajar</td>
                       <td>:</td>
-                      <td className="font-semibold py-1 text-blue-900">
+                      <td className="font-semibold py-1">
                         {config.ketentuan?.hariBelajar || 'Senin s.d. Jumat'}
                       </td>
                     </tr>
                     <tr>
-                      <td className="py-1 font-medium text-gray-700">• Jam Belajar</td>
+                      <td className="py-1 font-medium">Jam Belajar</td>
                       <td>:</td>
-                      <td className="font-semibold py-1 text-blue-900">
+                      <td className="font-semibold py-1">
                         {config.ketentuan?.jamBelajar ||
                           '07.00 s.d. 15.00 WIB (disesuaikan alokasi kurikulum & jadwal KBM)'}
                       </td>
                     </tr>
                     <tr>
-                      <td className="py-1 font-medium text-gray-700">• Hari Libur</td>
+                      <td className="py-1 font-medium">Hari Libur</td>
                       <td>:</td>
-                      <td className="font-semibold py-1 text-gray-950">
+                      <td className="font-semibold py-1">
                         {config.ketentuan?.hariLibur || 'Sabtu dan Minggu'}
                       </td>
                     </tr>
@@ -476,20 +515,24 @@ export function ParentConsentForm({
               </p>
             </div>
 
-            {/* Pengesahan Pejabat Sekolah */}
-            <div className="flex justify-end pt-3 font-sans text-xs">
-              <div className="text-center w-64 space-y-0.5">
+            {/* Pengesahan Pejabat Sekolah Formal */}
+            <div className="flex justify-end pt-4 text-[13px]">
+              <div className="text-center w-64 space-y-1">
                 <p>Hormat kami,</p>
                 <p className="font-bold">{config.penandatangan?.jabatan || `Kepala ${sekolah?.nama || 'SMPN 1 UJUNGJAYA'}`}</p>
-                <div className="h-12 flex items-center justify-center my-1">
-                  <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 inline-flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Tervalidasi Resmi Dinas
-                  </span>
+                <div className="h-16 flex items-center justify-center my-1">
+                  {config.penandatangan?.tampilkanQr !== false ? (
+                    <div className="w-14 h-14 border border-gray-300 rounded flex items-center justify-center bg-gray-50 text-[10px] font-mono text-gray-500">
+                      [QR TTE]
+                    </div>
+                  ) : (
+                    <div className="h-14" />
+                  )}
                 </div>
-                <p className="font-bold text-gray-950">
+                <p className="font-bold underline">
                   {config.penandatangan?.nama || 'Drs. H. Dedi Kusnadi, M.Pd.'}
                 </p>
-                <p className="text-gray-700 font-mono text-[10px]">
+                <p className="font-mono text-[11px] text-gray-800">
                   {config.penandatangan?.nip ? `NIP. ${config.penandatangan.nip}` : '-'}
                 </p>
               </div>
@@ -527,20 +570,13 @@ export function ParentConsentForm({
               {availableGrades.map((grade) => {
                 const roman = toRomanGrade(grade);
                 const isSelected = selectedTingkat === grade;
-                const countClassInGrade = classList.filter((c) => (c.tingkat || 7) === grade).length;
+                const countClassInGrade = classList.filter((c) => extractTingkat(c) === grade).length;
 
                 return (
                   <button
                     key={grade}
                     type="button"
-                    onClick={() => {
-                      setSelectedTingkat(grade);
-                      // Auto-select first class in this grade if current selection is not in this grade
-                      const classesInGrade = classList.filter((c) => (c.tingkat || 7) === grade);
-                      if (classesInGrade.length > 0 && !classesInGrade.some((c) => c.id === selectedKelasId)) {
-                        setSelectedKelasId(classesInGrade[0].id);
-                      }
-                    }}
+                    onClick={() => handleSelectTingkat(grade)}
                     className={`py-2.5 px-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-0.5 ${
                       isSelected
                         ? 'bg-blue-800 text-white border-blue-900 shadow-md ring-2 ring-blue-600/30 font-bold'
@@ -569,18 +605,18 @@ export function ParentConsentForm({
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
               {classList
-                .filter((c) => (c.tingkat || 7) === selectedTingkat)
+                .filter((c) => extractTingkat(c) === selectedTingkat)
                 .map((c) => {
                   const isSelected = selectedKelasId === c.id;
-                  const displayLabel = c.kodeKelas.startsWith('Kelas')
-                    ? c.kodeKelas
-                    : formatNamaKelasRomawi(c.kodeKelas);
+                  const rawLabel = c.kodeKelas || c.namaKelas || '';
+                  const cleanLabel = rawLabel.replace(/^Kelas\s+/i, '');
+                  const displayLabel = formatNamaKelasRomawi(cleanLabel);
 
                   return (
                     <button
                       key={c.id}
                       type="button"
-                      onClick={() => setSelectedKelasId(c.id)}
+                      onClick={() => handleSelectKelas(c.id)}
                       className={`p-2.5 rounded-xl border text-center transition-all flex items-center justify-center gap-1.5 ${
                         isSelected
                           ? 'bg-blue-600 text-white border-blue-700 shadow-sm ring-2 ring-blue-500/20 font-bold'

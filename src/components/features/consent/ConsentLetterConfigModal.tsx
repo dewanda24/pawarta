@@ -429,7 +429,7 @@ export function ConsentLetterConfigModal({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-gray-700">• Mulai Berlaku:</Label>
+                    <Label className="text-xs font-semibold text-gray-700">Mulai Berlaku:</Label>
                     <Input
                       value={config.ketentuan.mulaiBerlaku}
                       onChange={(e) =>
@@ -444,7 +444,7 @@ export function ConsentLetterConfigModal({
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-gray-700">• Hari Belajar:</Label>
+                    <Label className="text-xs font-semibold text-gray-700">Hari Belajar:</Label>
                     <Input
                       value={config.ketentuan.hariBelajar}
                       onChange={(e) =>
@@ -459,7 +459,7 @@ export function ConsentLetterConfigModal({
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-gray-700">• Jam Belajar Efektif:</Label>
+                    <Label className="text-xs font-semibold text-gray-700">Jam Belajar Efektif:</Label>
                     <Input
                       value={config.ketentuan.jamBelajar}
                       onChange={(e) =>
@@ -474,7 +474,7 @@ export function ConsentLetterConfigModal({
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-gray-700">• Hari Libur Siswa:</Label>
+                    <Label className="text-xs font-semibold text-gray-700">Hari Libur Siswa:</Label>
                     <Input
                       value={config.ketentuan.hariLibur}
                       onChange={(e) =>
@@ -774,22 +774,22 @@ export function ConsentLetterConfigModal({
                     <table className="w-full text-xs">
                       <tbody>
                         <tr>
-                          <td className="w-28 py-0.5 font-medium">• Mulai Berlaku</td>
+                          <td className="w-28 py-0.5 font-medium">Mulai Berlaku</td>
                           <td className="w-3">:</td>
                           <td className="font-semibold py-0.5">{config.ketentuan.mulaiBerlaku}</td>
                         </tr>
                         <tr>
-                          <td className="py-0.5 font-medium">• Hari Belajar</td>
+                          <td className="py-0.5 font-medium">Hari Belajar</td>
                           <td>:</td>
                           <td className="font-semibold py-0.5">{config.ketentuan.hariBelajar}</td>
                         </tr>
                         <tr>
-                          <td className="py-0.5 font-medium">• Jam Belajar</td>
+                          <td className="py-0.5 font-medium">Jam Belajar</td>
                           <td>:</td>
                           <td className="font-semibold py-0.5">{config.ketentuan.jamBelajar}</td>
                         </tr>
                         <tr>
-                          <td className="py-0.5 font-medium">• Hari Libur</td>
+                          <td className="py-0.5 font-medium">Hari Libur</td>
                           <td>:</td>
                           <td className="font-semibold py-0.5">{config.ketentuan.hariLibur}</td>
                         </tr>

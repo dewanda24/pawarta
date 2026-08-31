@@ -9,6 +9,7 @@ import { eq, and, desc } from 'drizzle-orm';
 import { ShieldCheck, Calendar, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { DEFAULT_CONSENT_LETTER_CONFIG } from '@/features/student-letter/consent-config';
+import { normalizeClassKey } from '@/lib/format-kelas';
 
 export const metadata = {
   title: 'Surat Persetujuan Orang Tua - Program 5 Hari Sekolah | PAWARTA',
@@ -43,14 +44,18 @@ export default async function PersetujuanOrtuPublicPage({ searchParams }: PagePr
   const classes = classesRes.success && classesRes.data ? classesRes.data : [];
   const letterConfig = configRes.success && configRes.data ? configRes.data : DEFAULT_CONSENT_LETTER_CONFIG;
 
-  // Match class by id or by kodeKelas / namaKelas if passed via URL parameter (?kelas=7A / ?kelasId=...)
+  // Match class by id or by kodeKelas / namaKelas if passed via URL parameter (?kelas=7A / ?kelas=VII-A / ?kelasId=...)
   let defaultKelasId = resolvedParams.kelasId || '';
   if (!defaultKelasId && resolvedParams.kelas) {
-    const target = resolvedParams.kelas.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const rawTarget = resolvedParams.kelas.trim();
+    const normalizedTarget = normalizeClassKey(rawTarget);
     const found = classes.find((c: any) =>
-      c.id === resolvedParams.kelas ||
-      c.kodeKelas.toLowerCase().replace(/[^a-z0-9]/g, '') === target ||
-      c.namaKelas.toLowerCase().replace(/[^a-z0-9]/g, '') === target
+      c.id === rawTarget ||
+      c.kodeKelas === rawTarget ||
+      c.namaKelas === rawTarget ||
+      normalizeClassKey(c.kodeKelas) === normalizedTarget ||
+      normalizeClassKey(c.namaKelas) === normalizedTarget ||
+      c.kodeKelas.toLowerCase().replace(/[^a-z0-9]/g, '') === rawTarget.toLowerCase().replace(/[^a-z0-9]/g, '')
     );
     if (found) {
       defaultKelasId = found.id;
