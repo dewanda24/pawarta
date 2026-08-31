@@ -39,6 +39,7 @@ import {
   CheckCircle2,
   QrCode,
   Sparkles,
+  Type,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -183,6 +184,23 @@ export function ConsentLetterConfigModal({
     }
   };
 
+  const previewFont =
+    config.fontSurat === 'Arial'
+      ? 'Arial, Helvetica, sans-serif'
+      : config.fontSurat === 'Bookman Old Style'
+        ? '"Bookman Old Style", Georgia, serif'
+        : config.fontSurat === 'Garamond'
+          ? 'Garamond, "EB Garamond", serif'
+          : config.fontSurat === 'Georgia'
+            ? 'Georgia, serif'
+            : config.fontSurat === 'Calibri'
+              ? 'Calibri, Candara, Segoe, "Segoe UI", sans-serif'
+              : config.fontSurat === 'Tahoma'
+                ? 'Tahoma, Geneva, sans-serif'
+                : config.fontSurat === 'Courier New'
+                  ? '"Courier New", Courier, monospace'
+                  : '"Times New Roman", Times, serif';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl max-h-[92vh] flex flex-col p-0 rounded-2xl overflow-hidden shadow-2xl border-gray-200">
@@ -309,6 +327,86 @@ export function ConsentLetterConfigModal({
                       placeholder="Sumedang"
                       className="h-9 text-xs"
                     />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bagian Baru: Pengaturan Tipografi & Jenis Font Naskah Surat */}
+              <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-200 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-blue-200 pb-2">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-blue-950 flex items-center gap-1.5">
+                    <Type className="w-4 h-4 text-blue-700" />
+                    Format Tipografi & Jenis Huruf Naskah Surat
+                  </h4>
+                  <span className="text-[11px] text-blue-700 font-medium">
+                    Berlaku untuk Surat Sekolah & Lembar Cetak Orang Tua
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Pilihan Font Family */}
+                  <div className="sm:col-span-2 space-y-2 bg-white p-3.5 rounded-xl border border-blue-100">
+                    <Label className="text-xs font-bold text-gray-800">
+                      Jenis Font Naskah Surat (Font Family)
+                    </Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
+                      {[
+                        { id: 'Times New Roman', label: 'Times New Roman', fontClass: "'Times New Roman', serif" },
+                        { id: 'Arial', label: 'Arial (Sans)', fontClass: 'Arial, sans-serif' },
+                        { id: 'Bookman Old Style', label: 'Bookman', fontClass: '"Bookman Old Style", serif' },
+                        { id: 'Garamond', label: 'Garamond', fontClass: 'Garamond, serif' },
+                        { id: 'Georgia', label: 'Georgia', fontClass: 'Georgia, serif' },
+                        { id: 'Calibri', label: 'Calibri', fontClass: 'Calibri, sans-serif' },
+                        { id: 'Tahoma', label: 'Tahoma', fontClass: 'Tahoma, sans-serif' },
+                        { id: 'Courier New', label: 'Courier New', fontClass: '"Courier New", monospace' },
+                      ].map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setConfig({ ...config, fontSurat: item.id })}
+                          style={{ fontFamily: item.fontClass }}
+                          className={`p-2 rounded-lg border text-xs text-left transition-all ${
+                            (config.fontSurat || 'Times New Roman') === item.id
+                              ? 'bg-blue-100/70 border-blue-600 font-bold text-blue-950 ring-1 ring-blue-500'
+                              : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          <span className="truncate block">{item.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Pilihan Ukuran & Spasi */}
+                  <div className="space-y-3 bg-white p-3.5 rounded-xl border border-blue-100">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-bold text-gray-800">Ukuran Huruf Naskah</Label>
+                      <select
+                        value={config.ukuranFontSurat || 11}
+                        onChange={(e) => setConfig({ ...config, ukuranFontSurat: parseFloat(e.target.value) })}
+                        className="w-full h-8 px-2 rounded-md border border-gray-300 text-xs bg-white font-semibold text-gray-800"
+                      >
+                        <option value="10">10 pt (Kompak)</option>
+                        <option value="10.5">10.5 pt</option>
+                        <option value="11">11 pt (Standar Resmi)</option>
+                        <option value="11.5">11.5 pt</option>
+                        <option value="12">12 pt (Besar / Klasik)</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs font-bold text-gray-800">Jarak Baris (Spasi)</Label>
+                      <select
+                        value={config.spasiSurat || '1.5'}
+                        onChange={(e) => setConfig({ ...config, spasiSurat: e.target.value })}
+                        className="w-full h-8 px-2 rounded-md border border-gray-300 text-xs bg-white font-semibold text-gray-800"
+                      >
+                        <option value="1.0">1.0 (Single Spasi)</option>
+                        <option value="1.15">1.15 (Rapat Elegan)</option>
+                        <option value="1.5">1.5 Spasi (Standar Naskah Dinas)</option>
+                        <option value="2.0">2.0 (Double Spasi)</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -614,9 +712,16 @@ export function ConsentLetterConfigModal({
                 </span>
               </div>
 
-              {/* Box Pratinjau Halaman 1 */}
-              <div className="bg-white p-6 sm:p-8 rounded-xl border border-gray-300 shadow-md font-serif text-[12px] leading-relaxed space-y-4">
-                <div className="border-b-2 border-black pb-2 text-center font-sans space-y-0.5">
+              {/* Box Pratinjau Naskah Dinas */}
+              <div
+                className="bg-white p-6 sm:p-8 rounded-xl border border-gray-300 shadow-md space-y-4 text-gray-900"
+                style={{
+                  fontFamily: previewFont,
+                  fontSize: config.ukuranFontSurat ? `${config.ukuranFontSurat}pt` : '11pt',
+                  lineHeight: config.spasiSurat || '1.5',
+                }}
+              >
+                <div className="border-b-2 border-black pb-2 text-center space-y-0.5" style={{ fontFamily: previewFont }}>
                   <h3 className="font-bold text-xs uppercase">PEMERINTAH DAERAH KABUPATEN SUMEDANG</h3>
                   <h4 className="font-bold text-xs uppercase">DINAS PENDIDIKAN</h4>
                   <h2 className="font-black text-sm uppercase text-gray-900">{sekolahNama}</h2>

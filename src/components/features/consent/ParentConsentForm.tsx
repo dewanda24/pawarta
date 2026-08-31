@@ -324,7 +324,29 @@ export function ParentConsentForm({
         )}
 
         {showSchoolLetter && (
-          <div className="p-6 sm:p-8 md:p-10 bg-white font-serif text-[13px] leading-relaxed text-gray-900 space-y-4 border-t border-gray-100">
+          <div
+            className="p-6 sm:p-8 md:p-10 bg-white text-[13px] text-gray-900 space-y-4 border-t border-gray-100"
+            style={{
+              fontFamily:
+                config.fontSurat === 'Arial'
+                  ? 'Arial, Helvetica, sans-serif'
+                  : config.fontSurat === 'Bookman Old Style'
+                    ? '"Bookman Old Style", Georgia, serif'
+                    : config.fontSurat === 'Garamond'
+                      ? 'Garamond, "EB Garamond", serif'
+                      : config.fontSurat === 'Georgia'
+                        ? 'Georgia, serif'
+                        : config.fontSurat === 'Calibri'
+                          ? 'Calibri, Candara, Segoe, "Segoe UI", sans-serif'
+                          : config.fontSurat === 'Tahoma'
+                            ? 'Tahoma, Geneva, sans-serif'
+                            : config.fontSurat === 'Courier New'
+                              ? '"Courier New", Courier, monospace'
+                              : '"Times New Roman", Times, serif',
+              lineHeight: config.spasiSurat || '1.5',
+              fontSize: config.ukuranFontSurat ? `${config.ukuranFontSurat}pt` : '11pt',
+            }}
+          >
             {/* Kop Surat Resmi */}
             <LetterheadView header={kopSurat} fallbackSekolah={sekolah} />
 

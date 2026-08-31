@@ -98,6 +98,28 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
 
   const tampilkanQr = config?.penandatangan?.tampilkanQr !== false;
 
+  // Resolusi Tipografi Surat Dinamis
+  const selectedFont = config?.fontSurat || 'Times New Roman';
+  const resolvedFontFamily =
+    selectedFont === 'Arial'
+      ? 'Arial, Helvetica, sans-serif'
+      : selectedFont === 'Bookman Old Style'
+        ? '"Bookman Old Style", Georgia, serif'
+        : selectedFont === 'Garamond'
+          ? 'Garamond, "EB Garamond", serif'
+          : selectedFont === 'Georgia'
+            ? 'Georgia, serif'
+            : selectedFont === 'Calibri'
+              ? 'Calibri, Candara, Segoe, "Segoe UI", sans-serif'
+              : selectedFont === 'Tahoma'
+                ? 'Tahoma, Geneva, sans-serif'
+                : selectedFont === 'Courier New'
+                  ? '"Courier New", Courier, monospace'
+                  : '"Times New Roman", Times, serif';
+
+  const resolvedLineHeight = config?.spasiSurat || '1.5';
+  const resolvedFontSize = config?.ukuranFontSurat ? `${config.ukuranFontSurat}pt` : '11pt';
+
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6 print:p-0 print:space-y-0 print:max-w-none">
       {/* Header Bar Navigation & Action (Hidden on Print) */}
@@ -140,8 +162,12 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
       {/* LEMBAR PERSETUJUAN / PERNYATAAN RESMI ORANG TUA / WALI (1 HALAMAN)        */}
       {/* ========================================================================= */}
       <div
-        className="print-page bg-white p-6 sm:p-10 md:p-12 rounded-2xl border border-gray-200 shadow-sm print:border-none print:shadow-none print:p-0 text-gray-950 text-[13px] print:text-[11pt] leading-[1.5] print:leading-[1.5]"
-        style={{ fontFamily: "'Times New Roman', Times, serif", lineHeight: '1.5' }}
+        className="print-page bg-white p-6 sm:p-10 md:p-12 rounded-2xl border border-gray-200 shadow-sm print:border-none print:shadow-none print:p-0 text-gray-950 text-[13px]"
+        style={{
+          fontFamily: resolvedFontFamily,
+          lineHeight: resolvedLineHeight,
+          fontSize: resolvedFontSize,
+        }}
       >
         {/* Kop Surat Resmi di Lembar Pernyataan */}
         <LetterheadView header={kopSurat} fallbackSekolah={sekolah} />

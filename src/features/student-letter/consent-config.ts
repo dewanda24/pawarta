@@ -8,6 +8,11 @@ export interface ConsentLetterConfig {
   tanggalSurat: string; // 'OTOMATIS' atau teks tanggal khusus seperti '18 Juli 2026'
   penerimaSurat: string;
 
+  // Format Tipografi Surat
+  fontSurat?: string; // 'Times New Roman' | 'Arial' | 'Bookman Old Style' | 'Garamond' | 'Georgia' | 'Calibri' | 'Tahoma'
+  ukuranFontSurat?: number; // 10.5 | 11 | 12
+  spasiSurat?: string; // '1.5' | '1.15' | '1.0'
+
   // Redaksi Halaman 1 (Pemberitahuan dari Sekolah)
   teksPembuka: string;
   ketentuan: {
@@ -44,6 +49,10 @@ export const DEFAULT_CONSENT_LETTER_CONFIG: ConsentLetterConfig = {
   tempatSurat: 'Sumedang',
   tanggalSurat: 'OTOMATIS',
   penerimaSurat: 'Bapak/Ibu Orang Tua / Wali Murid',
+
+  fontSurat: 'Times New Roman',
+  ukuranFontSurat: 11,
+  spasiSurat: '1.5',
 
   teksPembuka:
     'Sehubungan dengan upaya peningkatan mutu pendidikan, penguatan karakter peserta didik, serta regulasi pemerintah terkait efisiensi hari belajar efektif, dengan ini kami beritahukan bahwa sekolah akan menerapkan sistem Pembelajaran 5 (Lima) Hari Sekolah.',
