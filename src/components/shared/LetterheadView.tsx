@@ -16,6 +16,7 @@ interface LetterheadProps {
     logoKiriUrl?: string | null;
     logoKananUrl?: string | null;
     tipeKop?: string | null;
+    fontFamily?: string | null;
     fontSizeInstansiUtama?: number | string | null;
     fontSizeInstansiInduk?: number | string | null;
     fontSizeNamaSekolah?: number | string | null;
@@ -42,6 +43,25 @@ export function LetterheadView({
 }: LetterheadProps) {
   const tipeKop = (tipeKopOverride || header?.tipeKop || 'PERANGKAT_DAERAH') as TipeKopNaskahDinas;
 
+  // Resolusi Font Family KOP
+  const selectedFontFamily = header?.fontFamily || 'Times New Roman';
+  const resolvedFontFamily =
+    selectedFontFamily === 'Arial'
+      ? 'Arial, Helvetica, sans-serif'
+      : selectedFontFamily === 'Bookman Old Style'
+        ? '"Bookman Old Style", Georgia, serif'
+        : selectedFontFamily === 'Garamond'
+          ? 'Garamond, "EB Garamond", serif'
+          : selectedFontFamily === 'Georgia'
+            ? 'Georgia, serif'
+            : selectedFontFamily === 'Calibri'
+              ? 'Calibri, Candara, Segoe, "Segoe UI", sans-serif'
+              : selectedFontFamily === 'Tahoma'
+                ? 'Tahoma, Geneva, sans-serif'
+                : selectedFontFamily === 'Courier New'
+                  ? '"Courier New", Courier, monospace'
+                  : '"Times New Roman", Times, serif';
+
   // 1. KOP JABATAN BUPATI / ATAS NAMA BUPATI (Lampiran IV.A)
   if (tipeKop === 'JABATAN_BUPATI' || tipeKop === 'ATAS_NAMA_BUPATI') {
     const judulKop =
@@ -52,7 +72,7 @@ export function LetterheadView({
     const logoGaruda = header?.logoUrl || header?.logoKiriUrl || '/garuda-emas.png';
 
     return (
-      <div className={`relative w-full text-center ${className}`}>
+      <div className={`relative w-full text-center ${className}`} style={{ fontFamily: resolvedFontFamily }}>
         {/* Lambang Garuda 2.5 cm Simetris Tengah Atas */}
         <div className="flex justify-center mb-1.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -62,23 +82,20 @@ export function LetterheadView({
             className="w-16 h-16 object-contain"
           />
         </div>
-        <h2 className="text-base sm:text-lg font-bold tracking-wider text-black font-sans uppercase">
+        <h2 className="text-base sm:text-lg font-bold tracking-wider text-black uppercase">
           {judulKop}
         </h2>
         {header?.alamat && (
-          <p className="text-[10px] sm:text-xs text-black font-sans mt-1">{header.alamat}</p>
+          <p className="text-[10px] sm:text-xs text-black mt-1">{header.alamat}</p>
         )}
         {header?.kontak && (
-          <p className="text-[9px] sm:text-[11px] text-black font-sans">{header.kontak}</p>
+          <p className="text-[9px] sm:text-[11px] text-black">{header.kontak}</p>
         )}
       </div>
     );
   }
 
   // 2. KOP PERANGKAT DAERAH / DINAS / SEKOLAH (Lampiran IV.B)
-  // Aturan Perbup No. 9/2026:
-  // - Rasio huruf Pemerintah Daerah : Perangkat Daerah = 3 : 4
-  // - Font Arial, Nama Perangkat Daerah ditebalkan (bold)
   const instansiUtama = header?.instansiUtama || 'PEMERINTAH KABUPATEN SUMEDANG';
   const instansiInduk = header?.instansiInduk || (header?.namaSekolah ? 'DINAS PENDIDIKAN' : null);
   const namaInstansi = header?.namaSekolah || fallbackSekolah?.nama || 'DINAS PENDIDIKAN';
@@ -107,7 +124,7 @@ export function LetterheadView({
   const hasAnyLogo = hasLeft || hasRight;
 
   return (
-    <div className={`relative w-full ${className}`}>
+    <div className={`relative w-full ${className}`} style={{ fontFamily: resolvedFontFamily }}>
       <div className="flex items-center justify-between gap-3 sm:gap-4">
         {/* Kolom Kiri: Logo Daerah */}
         {hasAnyLogo && (
@@ -139,7 +156,7 @@ export function LetterheadView({
                   }
                 : undefined
             }
-            className="text-[12px] sm:text-[14px] md:text-[15px] font-semibold tracking-wide uppercase text-black font-sans leading-tight"
+            className="text-[12px] sm:text-[14px] md:text-[15px] font-semibold tracking-wide uppercase text-black leading-tight"
           >
             {instansiUtama}
           </h3>
@@ -156,7 +173,7 @@ export function LetterheadView({
                     }
                   : undefined
               }
-              className="text-[12px] sm:text-[14px] font-semibold tracking-wide uppercase text-black font-sans leading-tight mt-0.5"
+              className="text-[12px] sm:text-[14px] font-semibold tracking-wide uppercase text-black leading-tight mt-0.5"
             >
               {instansiInduk}
             </h4>
@@ -174,7 +191,7 @@ export function LetterheadView({
                   }
                 : undefined
             }
-            className="text-[16px] sm:text-[19px] md:text-[20px] font-bold tracking-tight text-black uppercase mt-0.5 font-sans leading-tight"
+            className="text-[16px] sm:text-[19px] md:text-[20px] font-bold tracking-tight text-black uppercase mt-0.5 leading-tight"
           >
             {namaInstansi}
           </h2>
@@ -191,7 +208,7 @@ export function LetterheadView({
                     }
                   : undefined
               }
-              className="text-[10px] sm:text-[11px] font-normal text-black mt-1 font-sans leading-tight"
+              className="text-[10px] sm:text-[11px] font-normal text-black mt-1 leading-tight"
             >
               {alamat}
             </p>
@@ -208,7 +225,7 @@ export function LetterheadView({
                     }
                   : undefined
               }
-              className="text-[9px] sm:text-[10px] font-normal text-black font-sans leading-tight mt-0.5"
+              className="text-[9px] sm:text-[10px] font-normal text-black leading-tight mt-0.5"
             >
               {kontakText}
             </p>

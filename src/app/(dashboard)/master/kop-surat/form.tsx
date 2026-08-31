@@ -36,6 +36,7 @@ const formSchema = z.object({
   logoKiriUrl: z.string().optional(),
   logoKananUrl: z.string().optional(),
   tipeGaris: z.string(),
+  fontFamily: z.string().optional(),
   fontSizeInstansiUtama: z.coerce.number().min(6).max(36).optional(),
   fontSizeInstansiInduk: z.coerce.number().min(6).max(36).optional(),
   fontSizeNamaSekolah: z.coerce.number().min(6).max(48).optional(),
@@ -86,6 +87,7 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
       logoKiriUrl: '/Lambang_Kabupaten_Sumedang.png',
       logoKananUrl: '/LOGO SMPN 1 UJUNGJAYA a (1).png',
       tipeGaris: 'double_thick',
+      fontFamily: 'Times New Roman',
       fontSizeInstansiUtama: 14,
       fontSizeInstansiInduk: 14,
       fontSizeNamaSekolah: 18,
@@ -113,6 +115,7 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
         logoKiriUrl: logoKiri,
         logoKananUrl: initialData.logoKananUrl || '',
         tipeGaris: initialData.tipeGaris || 'double_thick',
+        fontFamily: initialData.fontFamily || 'Times New Roman',
         fontSizeInstansiUtama: initialData.fontSizeInstansiUtama ?? 14,
         fontSizeInstansiInduk: initialData.fontSizeInstansiInduk ?? 14,
         fontSizeNamaSekolah: initialData.fontSizeNamaSekolah ?? 18,
@@ -134,6 +137,7 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
         logoKiriUrl: '/Lambang_Kabupaten_Sumedang.png',
         logoKananUrl: '/LOGO SMPN 1 UJUNGJAYA a (1).png',
         tipeGaris: 'double_thick',
+        fontFamily: 'Times New Roman',
         fontSizeInstansiUtama: 14,
         fontSizeInstansiInduk: 14,
         fontSizeNamaSekolah: 18,
@@ -281,6 +285,7 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
                   kontak: watchAll.kontak,
                   website: watchAll.website,
                   tipeGaris: watchAll.tipeGaris,
+                  fontFamily: watchAll.fontFamily,
                   logoKiriUrl: watchAll.logoKiriUrl,
                   logoKananUrl: watchAll.logoKananUrl,
                   fontSizeInstansiUtama: watchAll.fontSizeInstansiUtama,
@@ -614,18 +619,78 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
             </div>
           </div>
 
-          {/* Pengaturan Ukuran Font KOP (pt) */}
-          <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 space-y-3">
+          {/* Pengaturan Tipografi & Font KOP Surat */}
+          <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 space-y-4">
             <div className="flex items-center justify-between border-b border-blue-100 pb-2">
               <Label className="text-xs font-bold text-blue-950 flex items-center gap-1.5">
                 <Type className="w-4 h-4 text-blue-700" />
-                Pengaturan Ukuran Font KOP Surat (dalam satuan Point / pt)
+                Pengaturan Jenis Font & Ukuran KOP Surat
               </Label>
               <span className="text-[10px] text-blue-700 font-medium">
                 Dapat disesuaikan & langsung terlihat di pratinjau atas
               </span>
             </div>
 
+            {/* Pilihan Font Family (Jenis Huruf) */}
+            <div className="space-y-2 bg-white p-3.5 rounded-lg border border-blue-100 shadow-2xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <Label htmlFor="fontFamily" className="text-xs font-bold text-gray-900">
+                  Jenis Font KOP Surat (Font Family)
+                </Label>
+                <span className="text-[10px] text-gray-500">
+                  Pilih standar font resmi atau klik preset di bawah
+                </span>
+              </div>
+
+              {/* Preset Tombol Font Cepat */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                {[
+                  { id: 'Times New Roman', label: 'Times New Roman', desc: 'Standar Naskah Dinas', fontClass: "'Times New Roman', Times, serif" },
+                  { id: 'Arial', label: 'Arial', desc: 'Modern Sans / Perbup', fontClass: 'Arial, sans-serif' },
+                  { id: 'Bookman Old Style', label: 'Bookman Old Style', desc: 'Klasik Formal', fontClass: '"Bookman Old Style", Georgia, serif' },
+                  { id: 'Garamond', label: 'Garamond', desc: 'Elegan Naskah Resmi', fontClass: 'Garamond, serif' },
+                  { id: 'Georgia', label: 'Georgia', desc: 'Serif Elegan', fontClass: 'Georgia, serif' },
+                  { id: 'Calibri', label: 'Calibri', desc: 'Sans Bersih', fontClass: 'Calibri, sans-serif' },
+                  { id: 'Tahoma', label: 'Tahoma', desc: 'Sans Jelas & Rapi', fontClass: 'Tahoma, sans-serif' },
+                  { id: 'Courier New', label: 'Courier New', desc: 'Monospace Resmi', fontClass: '"Courier New", monospace' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setValue('fontFamily', item.id)}
+                    style={{ fontFamily: item.fontClass }}
+                    className={`flex flex-col p-2 rounded-lg border text-left transition-all ${
+                      (watchAll.fontFamily || 'Times New Roman') === item.id
+                        ? 'bg-blue-50 border-blue-600 ring-2 ring-blue-500/20 text-blue-950 font-bold'
+                        : 'bg-gray-50/70 border-gray-200 hover:bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    <span className="text-xs">{item.label}</span>
+                    <span className="text-[9px] font-sans font-normal text-gray-500 mt-0.5">{item.desc}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="pt-2 flex items-center gap-2">
+                <span className="text-xs text-gray-500 whitespace-nowrap">Atau pilih manual:</span>
+                <select
+                  id="fontFamily"
+                  {...register('fontFamily')}
+                  className="flex h-8 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs ring-offset-background"
+                >
+                  <option value="Times New Roman">Times New Roman (Standar Huruf Berkait Resmi)</option>
+                  <option value="Arial">Arial (Standar Huruf Tanpa Kait / Modern)</option>
+                  <option value="Bookman Old Style">Bookman Old Style (Klasik Formal)</option>
+                  <option value="Garamond">Garamond (Elegan Naskah Dinas)</option>
+                  <option value="Georgia">Georgia (Serif Elegan)</option>
+                  <option value="Calibri">Calibri (Sans Modern)</option>
+                  <option value="Tahoma">Tahoma (Sans Jelas)</option>
+                  <option value="Courier New">Courier New (Monospace)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Pilihan Ukuran Font (pt) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
               <div className="space-y-1 bg-white p-3 rounded-lg border border-blue-100 shadow-2xs">
                 <Label htmlFor="fontSizeInstansiUtama" className="text-[11px] font-semibold text-gray-800">
