@@ -138,7 +138,7 @@ export function KelasForm({
             <Input
               value={kodeKelas}
               onChange={(e) => setKodeKelas(e.target.value)}
-              placeholder="Contoh: 7A, 8B, 9C"
+              placeholder="Contoh: VII-A, VIII-B, IX-C"
               className="h-9 text-xs font-mono uppercase"
             />
           </div>
@@ -148,7 +148,7 @@ export function KelasForm({
             <Input
               value={namaKelas}
               onChange={(e) => setNamaKelas(e.target.value)}
-              placeholder="Contoh: Kelas 7A"
+              placeholder="Contoh: Kelas VII-A"
               className="h-9 text-xs"
             />
           </div>
@@ -161,9 +161,12 @@ export function KelasForm({
                   <SelectValue placeholder="Pilih Tingkat" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7">Kelas 7 (SMP)</SelectItem>
-                  <SelectItem value="8">Kelas 8 (SMP)</SelectItem>
-                  <SelectItem value="9">Kelas 9 (SMP)</SelectItem>
+                  <SelectItem value="7">Kelas VII (SMP)</SelectItem>
+                  <SelectItem value="8">Kelas VIII (SMP)</SelectItem>
+                  <SelectItem value="9">Kelas IX (SMP)</SelectItem>
+                  <SelectItem value="10">Kelas X (SMA/SMK)</SelectItem>
+                  <SelectItem value="11">Kelas XI (SMA/SMK)</SelectItem>
+                  <SelectItem value="12">Kelas XII (SMA/SMK)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

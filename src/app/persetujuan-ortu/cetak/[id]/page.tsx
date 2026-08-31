@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { stripNomorPrefix } from '@/lib/nomor-surat-generator';
+import { formatNamaKelasRomawi } from '@/lib/format-kelas';
 
 export const metadata = {
   title: 'Cetak Surat Persetujuan Orang Tua | SMPN 1 UJUNGJAYA',
@@ -73,11 +74,12 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
     consent.siswa?.nis || (consent.documentSnapshot as any)?.siswa?.nis || '-';
   const nisnSiswa =
     consent.siswa?.nisn || (consent.documentSnapshot as any)?.siswa?.nisn || '-';
-  const kelasSiswa =
+  const kelasSiswa = formatNamaKelasRomawi(
     consent.siswa?.kelas?.namaKelas ||
     consent.kelas?.namaKelas ||
     (consent.documentSnapshot as any)?.siswa?.kelas ||
-    '-';
+    '-'
+  );
 
   const namaPenandatangan =
     config?.penandatangan?.nama ||

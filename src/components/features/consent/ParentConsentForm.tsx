@@ -36,6 +36,9 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
+  Search,
+  Users,
+  Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -45,6 +48,7 @@ import {
 } from '@/features/student-letter/consent-config';
 import { LetterheadView } from '@/components/shared/LetterheadView';
 import { stripNomorPrefix } from '@/lib/nomor-surat-generator';
+import { toRomanGrade, formatNamaKelasRomawi } from '@/lib/format-kelas';
 
 interface ClassItem {
   id: string;
@@ -83,6 +87,22 @@ export function ParentConsentForm({
 }: ParentConsentFormProps) {
   const router = useRouter();
 
+  // Daftar Jenjang / Tingkat Kelas (7, 8, 9, dst.)
+  const availableGrades = React.useMemo(() => {
+    const grades = Array.from(
+      new Set(classList.map((c) => c.tingkat || parseInt(String(c.kodeKelas).replace(/[^0-9]/g, ''), 10) || 7)),
+    ).sort((a, b) => a - b);
+    return grades.length > 0 ? grades : [7, 8, 9];
+  }, [classList]);
+
+  const [selectedTingkat, setSelectedTingkat] = useState<number>(() => {
+    if (defaultKelasId) {
+      const found = classList.find((c) => c.id === defaultKelasId);
+      if (found?.tingkat) return found.tingkat;
+    }
+    return availableGrades[0] || 7;
+  });
+
   // State Step & Form
   const [selectedKelasId, setSelectedKelasId] = useState<string>(defaultKelasId || '');
   const [students, setStudents] = useState<StudentItem[]>([]);
@@ -95,8 +115,20 @@ export function ParentConsentForm({
   useEffect(() => {
     if (defaultKelasId && defaultKelasId !== selectedKelasId) {
       setSelectedKelasId(defaultKelasId);
+      const found = classList.find((c) => c.id === defaultKelasId);
+      if (found?.tingkat) setSelectedTingkat(found.tingkat);
     }
-  }, [defaultKelasId]);
+  }, [defaultKelasId, classList, selectedKelasId]);
+
+  // Sinkronkan selectedTingkat jika selectedKelasId berganti
+  useEffect(() => {
+    if (selectedKelasId) {
+      const found = classList.find((c) => c.id === selectedKelasId);
+      if (found?.tingkat && found.tingkat !== selectedTingkat) {
+        setSelectedTingkat(found.tingkat);
+      }
+    }
+  }, [selectedKelasId, classList, selectedTingkat]);
 
   // Existing status
   const [checkingStatus, setCheckingStatus] = useState(false);
@@ -479,109 +511,182 @@ export function ParentConsentForm({
             </div>
           </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-gray-800">
-              Kelas Siswa <span className="text-red-500">*</span>
-            </Label>
-            <Select value={selectedKelasId} onValueChange={(val) => setSelectedKelasId(val)}>
-              <SelectTrigger className="h-11 bg-white border-gray-300 text-gray-900 font-medium shadow-xs">
-                <SelectValue placeholder="-- Pilih Kelas --" />
-              </SelectTrigger>
-              <SelectContent className="bg-white text-gray-900 border-gray-200 shadow-lg">
-                {classList.map((c) => (
-                  <SelectItem key={c.id} value={c.id} className="text-gray-900 hover:bg-blue-50 font-medium">
-                    {c.namaKelas} ({c.kodeKelas})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-gray-800">
-              Nama Lengkap Siswa <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={selectedStudentId}
-              onValueChange={handleSelectStudent}
-              disabled={!selectedKelasId || loadingStudents}
-            >
-              <SelectTrigger className="h-11 bg-white border-gray-300 text-gray-900 font-medium shadow-xs">
-                <SelectValue
-                  placeholder={
-                    !selectedKelasId
-                      ? 'Pilih kelas terlebih dahulu'
-                      : loadingStudents
-                        ? 'Memuat siswa...'
-                        : '-- Pilih Nama Siswa --'
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent className="bg-white text-gray-900 border-gray-200 shadow-lg max-h-64">
-                {students.map((s) => (
-                  <SelectItem key={s.id} value={s.id} className="text-gray-900 hover:bg-blue-50 font-medium">
-                    {s.nama} {s.nisn ? `(NISN: ${s.nisn})` : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Live Search Box for Instant Student Filter */}
-        {selectedKelasId && students.length > 0 && (
-          <div className="space-y-2 pt-1 border-t border-gray-100">
+        {/* 1. SELEKSI KELAS & ROMBEL SECARA VISUAL (2-TIER SEGMENTED PILLS) */}
+        <div className="space-y-4">
+          {/* Langkah 1.A: Pilih Jenjang / Tingkat Kelas */}
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-semibold text-gray-600">
-                🔍 Pencarian Cepat Nama / NISN di Kelas Ini
+              <Label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                <GraduationCap className="w-4 h-4 text-blue-600" />
+                1. Pilih Tingkat / Jenjang Kelas <span className="text-red-500">*</span>
               </Label>
+              <span className="text-[10px] text-gray-500">Ketuk jenjang kelas</span>
+            </div>
+
+            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-2">
+              {availableGrades.map((grade) => {
+                const roman = toRomanGrade(grade);
+                const isSelected = selectedTingkat === grade;
+                const countClassInGrade = classList.filter((c) => (c.tingkat || 7) === grade).length;
+
+                return (
+                  <button
+                    key={grade}
+                    type="button"
+                    onClick={() => {
+                      setSelectedTingkat(grade);
+                      // Auto-select first class in this grade if current selection is not in this grade
+                      const classesInGrade = classList.filter((c) => (c.tingkat || 7) === grade);
+                      if (classesInGrade.length > 0 && !classesInGrade.some((c) => c.id === selectedKelasId)) {
+                        setSelectedKelasId(classesInGrade[0].id);
+                      }
+                    }}
+                    className={`py-2.5 px-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-0.5 ${
+                      isSelected
+                        ? 'bg-blue-800 text-white border-blue-900 shadow-md ring-2 ring-blue-600/30 font-bold'
+                        : 'bg-gray-50/80 text-gray-700 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                    }`}
+                  >
+                    <span className="text-xs font-black tracking-wide">Kelas {roman}</span>
+                    <span className={`text-[10px] font-normal ${isSelected ? 'text-blue-200' : 'text-gray-400'}`}>
+                      {countClassInGrade} Rombel
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Langkah 1.B: Pilih Rombel Kelas (1-Tap Fast Selection) */}
+          <div className="space-y-2 pt-1">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-indigo-600" />
+                2. Pilih Rombel Kelas {toRomanGrade(selectedTingkat)} <span className="text-red-500">*</span>
+              </Label>
+              <span className="text-[10px] text-gray-500">Pilih salah satu rombel di bawah</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+              {classList
+                .filter((c) => (c.tingkat || 7) === selectedTingkat)
+                .map((c) => {
+                  const isSelected = selectedKelasId === c.id;
+                  const displayLabel = c.kodeKelas.startsWith('Kelas')
+                    ? c.kodeKelas
+                    : formatNamaKelasRomawi(c.kodeKelas);
+
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setSelectedKelasId(c.id)}
+                      className={`p-2.5 rounded-xl border text-center transition-all flex items-center justify-center gap-1.5 ${
+                        isSelected
+                          ? 'bg-blue-600 text-white border-blue-700 shadow-sm ring-2 ring-blue-500/20 font-bold'
+                          : 'bg-white text-gray-800 border-gray-200 hover:bg-blue-50/60 hover:border-blue-300 font-semibold'
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                      <span className="text-xs tracking-tight">{displayLabel}</span>
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+
+          {/* Langkah 1.C: Pilih / Cari Nama Siswa */}
+          <div className="space-y-2 pt-3 border-t border-gray-100">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                <User className="w-4 h-4 text-blue-700" />
+                3. Pilih Nama Lengkap Siswa <span className="text-red-500">*</span>
+              </Label>
+              {students.length > 0 && (
+                <span className="text-[11px] text-gray-500 font-medium">
+                  {students.length} Siswa Terdaftar
+                </span>
+              )}
+            </div>
+
+            {/* Live Fast Search Bar */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Input
+                type="text"
+                value={studentSearchQuery}
+                onChange={(e) => setStudentSearchQuery(e.target.value)}
+                placeholder={
+                  !selectedKelasId
+                    ? 'Pilih rombel di atas terlebih dahulu...'
+                    : 'Ketik nama anak atau NISN untuk mencari cepat...'
+                }
+                disabled={!selectedKelasId || loadingStudents}
+                className="pl-9 pr-20 h-11 text-xs bg-gray-50/70 border-gray-300 font-medium focus:bg-white"
+              />
               {studentSearchQuery && (
                 <button
                   type="button"
                   onClick={() => setStudentSearchQuery('')}
-                  className="text-[11px] text-blue-600 hover:underline"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-blue-700 hover:underline font-semibold"
                 >
-                  Reset Cari
+                  Reset
                 </button>
               )}
             </div>
-            <Input
-              type="text"
-              value={studentSearchQuery}
-              onChange={(e) => setStudentSearchQuery(e.target.value)}
-              placeholder="Ketik 2-3 huruf nama anak atau NISN..."
-              className="h-10 text-xs bg-gray-50 border-gray-200"
-            />
-            {studentSearchQuery.trim() && (
-              <div className="max-h-40 overflow-y-auto border border-blue-200 rounded-xl p-1.5 bg-blue-50/50 space-y-1">
-                {filteredStudents.length === 0 ? (
-                  <p className="text-xs text-gray-500 text-center py-2">
-                    Tidak ditemukan siswa dengan kata kunci &ldquo;{studentSearchQuery}&rdquo;
-                  </p>
-                ) : (
-                  filteredStudents.map((s) => (
+
+            {/* List / Grid Siswa Interaktif */}
+            {loadingStudents ? (
+              <div className="flex items-center justify-center py-6 gap-2 text-xs text-gray-500">
+                <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                <span>Memuat daftar siswa kelas...</span>
+              </div>
+            ) : !selectedKelasId ? (
+              <div className="text-center py-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-xs text-gray-500">
+                👆 Silakan pilih rombel kelas di atas untuk menampilkan daftar siswa.
+              </div>
+            ) : filteredStudents.length === 0 ? (
+              <div className="text-center py-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-xs text-gray-500">
+                Tidak ditemukan siswa dengan kata kunci &ldquo;{studentSearchQuery}&rdquo; di kelas ini.
+              </div>
+            ) : (
+              <div className="max-h-56 overflow-y-auto border border-gray-200 rounded-xl p-2 bg-gray-50/50 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {filteredStudents.map((s) => {
+                  const isSelected = selectedStudentId === s.id;
+                  return (
                     <div
                       key={s.id}
-                      onClick={() => {
-                        handleSelectStudent(s.id);
-                        setStudentSearchQuery('');
-                      }}
-                      className={`p-2 rounded-lg text-xs cursor-pointer flex items-center justify-between transition-colors ${
-                        selectedStudentId === s.id
-                          ? 'bg-blue-600 text-white font-bold'
-                          : 'bg-white text-gray-900 hover:bg-blue-100/70 border border-gray-200'
+                      onClick={() => handleSelectStudent(s.id)}
+                      className={`p-2.5 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-2 ${
+                        isSelected
+                          ? 'bg-blue-600 text-white border-blue-700 shadow-xs ring-2 ring-blue-500/20'
+                          : 'bg-white text-gray-900 border-gray-200 hover:border-blue-300 hover:bg-blue-50/50'
                       }`}
                     >
-                      <span className="font-semibold">{s.nama}</span>
-                      <span className="font-mono text-[11px] opacity-80">NISN: {s.nisn || '-'}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-xs font-bold truncate ${isSelected ? 'text-white' : 'text-gray-900'}`}>
+                          {s.nama}
+                        </p>
+                        <p className={`text-[10px] font-mono mt-0.5 ${isSelected ? 'text-blue-100' : 'text-gray-500'}`}>
+                          NISN: {s.nisn || '-'} • NIS: {s.nis || '-'}
+                        </p>
+                      </div>
+                      {isSelected ? (
+                        <span className="w-5 h-5 rounded-full bg-white text-blue-600 flex items-center justify-center text-xs font-bold shrink-0">
+                          ✓
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-semibold border border-blue-200 shrink-0">
+                          Pilih
+                        </span>
+                      )}
                     </div>
-                  ))
-                )}
+                  );
+                })}
               </div>
             )}
           </div>
-        )}
+        </div>
 
 
         {/* Informasi Siswa Terpilih (Autofilled Card) */}
