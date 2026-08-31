@@ -185,8 +185,8 @@ export function ConsentLetterConfigModal({
   };
 
   const previewFont =
-    config.fontSurat === 'Arial'
-      ? 'Arial, Helvetica, sans-serif'
+    config.fontSurat === 'Times New Roman'
+      ? '"Times New Roman", Times, serif'
       : config.fontSurat === 'Bookman Old Style'
         ? '"Bookman Old Style", Georgia, serif'
         : config.fontSurat === 'Garamond'
@@ -199,7 +199,7 @@ export function ConsentLetterConfigModal({
                 ? 'Tahoma, Geneva, sans-serif'
                 : config.fontSurat === 'Courier New'
                   ? '"Courier New", Courier, monospace'
-                  : '"Times New Roman", Times, serif';
+                  : 'Arial, Helvetica, sans-serif';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -366,7 +366,7 @@ export function ConsentLetterConfigModal({
                           onClick={() => setConfig({ ...config, fontSurat: item.id })}
                           style={{ fontFamily: item.fontClass }}
                           className={`p-2 rounded-lg border text-xs text-left transition-all ${
-                            (config.fontSurat || 'Times New Roman') === item.id
+                            (config.fontSurat || 'Arial') === item.id
                               ? 'bg-blue-100/70 border-blue-600 font-bold text-blue-950 ring-1 ring-blue-500'
                               : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
                           }`}

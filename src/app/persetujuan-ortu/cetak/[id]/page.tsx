@@ -98,11 +98,11 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
 
   const tampilkanQr = config?.penandatangan?.tampilkanQr !== false;
 
-  // Resolusi Tipografi Surat Dinamis
-  const selectedFont = config?.fontSurat || 'Times New Roman';
+  // Resolusi Tipografi Surat Dinamis (Default: Arial)
+  const selectedFont = config?.fontSurat || 'Arial';
   const resolvedFontFamily =
-    selectedFont === 'Arial'
-      ? 'Arial, Helvetica, sans-serif'
+    selectedFont === 'Times New Roman'
+      ? '"Times New Roman", Times, serif'
       : selectedFont === 'Bookman Old Style'
         ? '"Bookman Old Style", Georgia, serif'
         : selectedFont === 'Garamond'
@@ -115,7 +115,7 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
                 ? 'Tahoma, Geneva, sans-serif'
                 : selectedFont === 'Courier New'
                   ? '"Courier New", Courier, monospace'
-                  : '"Times New Roman", Times, serif';
+                  : 'Arial, Helvetica, sans-serif';
 
   const resolvedLineHeight = config?.spasiSurat || '1.5';
   const resolvedFontSize = config?.ukuranFontSurat ? `${config.ukuranFontSurat}pt` : '11pt';

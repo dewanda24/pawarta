@@ -50,7 +50,7 @@ export const DEFAULT_CONSENT_LETTER_CONFIG: ConsentLetterConfig = {
   tanggalSurat: 'OTOMATIS',
   penerimaSurat: 'Bapak/Ibu Orang Tua / Wali Murid',
 
-  fontSurat: 'Times New Roman',
+  fontSurat: 'Arial',
   ukuranFontSurat: 11,
   spasiSurat: '1.5',
 

@@ -43,11 +43,11 @@ export function LetterheadView({
 }: LetterheadProps) {
   const tipeKop = (tipeKopOverride || header?.tipeKop || 'PERANGKAT_DAERAH') as TipeKopNaskahDinas;
 
-  // Resolusi Font Family KOP
-  const selectedFontFamily = header?.fontFamily || 'Times New Roman';
+  // Resolusi Font Family KOP (Default: Arial)
+  const selectedFontFamily = header?.fontFamily || 'Arial';
   const resolvedFontFamily =
-    selectedFontFamily === 'Arial'
-      ? 'Arial, Helvetica, sans-serif'
+    selectedFontFamily === 'Times New Roman'
+      ? '"Times New Roman", Times, serif'
       : selectedFontFamily === 'Bookman Old Style'
         ? '"Bookman Old Style", Georgia, serif'
         : selectedFontFamily === 'Garamond'
@@ -60,7 +60,7 @@ export function LetterheadView({
                 ? 'Tahoma, Geneva, sans-serif'
                 : selectedFontFamily === 'Courier New'
                   ? '"Courier New", Courier, monospace'
-                  : '"Times New Roman", Times, serif';
+                  : 'Arial, Helvetica, sans-serif';
 
   // 1. KOP JABATAN BUPATI / ATAS NAMA BUPATI (Lampiran IV.A)
   if (tipeKop === 'JABATAN_BUPATI' || tipeKop === 'ATAS_NAMA_BUPATI') {

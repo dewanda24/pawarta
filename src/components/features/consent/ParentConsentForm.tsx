@@ -328,8 +328,8 @@ export function ParentConsentForm({
             className="p-6 sm:p-8 md:p-10 bg-white text-[13px] text-gray-900 space-y-4 border-t border-gray-100"
             style={{
               fontFamily:
-                config.fontSurat === 'Arial'
-                  ? 'Arial, Helvetica, sans-serif'
+                config.fontSurat === 'Times New Roman'
+                  ? '"Times New Roman", Times, serif'
                   : config.fontSurat === 'Bookman Old Style'
                     ? '"Bookman Old Style", Georgia, serif'
                     : config.fontSurat === 'Garamond'
@@ -342,7 +342,7 @@ export function ParentConsentForm({
                             ? 'Tahoma, Geneva, sans-serif'
                             : config.fontSurat === 'Courier New'
                               ? '"Courier New", Courier, monospace'
-                              : '"Times New Roman", Times, serif',
+                              : 'Arial, Helvetica, sans-serif',
               lineHeight: config.spasiSurat || '1.5',
               fontSize: config.ukuranFontSurat ? `${config.ukuranFontSurat}pt` : '11pt',
             }}

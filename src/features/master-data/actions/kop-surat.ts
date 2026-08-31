@@ -80,7 +80,7 @@ export async function createDocumentHeader(data: DocumentHeaderInput) {
         kontak: data.kontak || null,
         website: data.website || null,
         tipeGaris: data.tipeGaris || 'double_thick',
-        fontFamily: data.fontFamily || 'Times New Roman',
+        fontFamily: data.fontFamily || 'Arial',
         fontSizeInstansiUtama: data.fontSizeInstansiUtama || 14,
         fontSizeInstansiInduk: data.fontSizeInstansiInduk || 14,
         fontSizeNamaSekolah: data.fontSizeNamaSekolah || 18,
