@@ -32,6 +32,11 @@ export const documentHeaders = pgTable('document_headers', {
   website: varchar('website', { length: 100 }),
   tipeKop: varchar('tipe_kop', { length: 50 }).default('PERANGKAT_DAERAH'), // PERANGKAT_DAERAH, JABATAN_BUPATI, ATAS_NAMA_BUPATI
   tipeGaris: varchar('tipe_garis', { length: 50 }).default('double_thick'),
+  fontSizeInstansiUtama: integer('font_size_instansi_utama'),
+  fontSizeInstansiInduk: integer('font_size_instansi_induk'),
+  fontSizeNamaSekolah: integer('font_size_nama_sekolah'),
+  fontSizeAlamat: integer('font_size_alamat'),
+  fontSizeKontak: integer('font_size_kontak'),
   isDefault: boolean('is_default').default(false).notNull(),
   isAktif: boolean('is_aktif').default(true).notNull(),
   ...auditFields,

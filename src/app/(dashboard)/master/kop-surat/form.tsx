@@ -21,7 +21,7 @@ import {
   uploadLogoFile,
 } from '@/features/master-data/actions/kop-surat';
 import { toast } from 'sonner';
-import { Upload, Image as ImageIcon, Loader2, X, Sparkles, Building2, School } from 'lucide-react';
+import { Upload, Image as ImageIcon, Loader2, X, Sparkles, Building2, School, Sliders, Type } from 'lucide-react';
 import { LetterheadView } from '@/components/shared/LetterheadView';
 
 const formSchema = z.object({
@@ -36,6 +36,11 @@ const formSchema = z.object({
   logoKiriUrl: z.string().optional(),
   logoKananUrl: z.string().optional(),
   tipeGaris: z.string(),
+  fontSizeInstansiUtama: z.coerce.number().min(6).max(36).optional(),
+  fontSizeInstansiInduk: z.coerce.number().min(6).max(36).optional(),
+  fontSizeNamaSekolah: z.coerce.number().min(6).max(48).optional(),
+  fontSizeAlamat: z.coerce.number().min(6).max(24).optional(),
+  fontSizeKontak: z.coerce.number().min(6).max(24).optional(),
   isDefault: z.boolean(),
   isAktif: z.boolean(),
 });
@@ -81,6 +86,11 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
       logoKiriUrl: '/Lambang_Kabupaten_Sumedang.png',
       logoKananUrl: '/LOGO SMPN 1 UJUNGJAYA a (1).png',
       tipeGaris: 'double_thick',
+      fontSizeInstansiUtama: 14,
+      fontSizeInstansiInduk: 14,
+      fontSizeNamaSekolah: 18,
+      fontSizeAlamat: 10,
+      fontSizeKontak: 9,
       isDefault: false,
       isAktif: true,
     },
@@ -103,6 +113,11 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
         logoKiriUrl: logoKiri,
         logoKananUrl: initialData.logoKananUrl || '',
         tipeGaris: initialData.tipeGaris || 'double_thick',
+        fontSizeInstansiUtama: initialData.fontSizeInstansiUtama ?? 14,
+        fontSizeInstansiInduk: initialData.fontSizeInstansiInduk ?? 14,
+        fontSizeNamaSekolah: initialData.fontSizeNamaSekolah ?? 18,
+        fontSizeAlamat: initialData.fontSizeAlamat ?? 10,
+        fontSizeKontak: initialData.fontSizeKontak ?? 9,
         isDefault: initialData.isDefault ?? false,
         isAktif: initialData.isAktif ?? true,
       });
@@ -119,6 +134,11 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
         logoKiriUrl: '/Lambang_Kabupaten_Sumedang.png',
         logoKananUrl: '/LOGO SMPN 1 UJUNGJAYA a (1).png',
         tipeGaris: 'double_thick',
+        fontSizeInstansiUtama: 14,
+        fontSizeInstansiInduk: 14,
+        fontSizeNamaSekolah: 18,
+        fontSizeAlamat: 10,
+        fontSizeKontak: 9,
         isDefault: false,
         isAktif: true,
       });
@@ -263,6 +283,11 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
                   tipeGaris: watchAll.tipeGaris,
                   logoKiriUrl: watchAll.logoKiriUrl,
                   logoKananUrl: watchAll.logoKananUrl,
+                  fontSizeInstansiUtama: watchAll.fontSizeInstansiUtama,
+                  fontSizeInstansiInduk: watchAll.fontSizeInstansiInduk,
+                  fontSizeNamaSekolah: watchAll.fontSizeNamaSekolah,
+                  fontSizeAlamat: watchAll.fontSizeAlamat,
+                  fontSizeKontak: watchAll.fontSizeKontak,
                 }}
               />
             </div>
@@ -586,6 +611,111 @@ export function DocumentHeaderForm({ open, onOpenChange, initialData }: Props) {
                 <option value="single_thick">Garis Tunggal Tebal (2px)</option>
                 <option value="single_thin">Garis Tunggal Tipis (1px)</option>
               </select>
+            </div>
+          </div>
+
+          {/* Pengaturan Ukuran Font KOP (pt) */}
+          <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 space-y-3">
+            <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+              <Label className="text-xs font-bold text-blue-950 flex items-center gap-1.5">
+                <Type className="w-4 h-4 text-blue-700" />
+                Pengaturan Ukuran Font KOP Surat (dalam satuan Point / pt)
+              </Label>
+              <span className="text-[10px] text-blue-700 font-medium">
+                Dapat disesuaikan & langsung terlihat di pratinjau atas
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+              <div className="space-y-1 bg-white p-3 rounded-lg border border-blue-100 shadow-2xs">
+                <Label htmlFor="fontSizeInstansiUtama" className="text-[11px] font-semibold text-gray-800">
+                  Font Instansi Utama (Pemda)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="fontSizeInstansiUtama"
+                    type="number"
+                    min={8}
+                    max={30}
+                    {...register('fontSizeInstansiUtama')}
+                    className="h-8 text-xs font-semibold"
+                  />
+                  <span className="text-xs font-mono text-gray-500 shrink-0">pt</span>
+                </div>
+                <p className="text-[10px] text-gray-400">Default: 14 pt</p>
+              </div>
+
+              <div className="space-y-1 bg-white p-3 rounded-lg border border-blue-100 shadow-2xs">
+                <Label htmlFor="fontSizeInstansiInduk" className="text-[11px] font-semibold text-gray-800">
+                  Font Instansi Induk (Dinas)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="fontSizeInstansiInduk"
+                    type="number"
+                    min={8}
+                    max={30}
+                    {...register('fontSizeInstansiInduk')}
+                    className="h-8 text-xs font-semibold"
+                  />
+                  <span className="text-xs font-mono text-gray-500 shrink-0">pt</span>
+                </div>
+                <p className="text-[10px] text-gray-400">Default: 14 pt</p>
+              </div>
+
+              <div className="space-y-1 bg-white p-3 rounded-lg border border-blue-100 shadow-2xs">
+                <Label htmlFor="fontSizeNamaSekolah" className="text-[11px] font-semibold text-gray-800">
+                  Font Nama Sekolah (Satker)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="fontSizeNamaSekolah"
+                    type="number"
+                    min={10}
+                    max={36}
+                    {...register('fontSizeNamaSekolah')}
+                    className="h-8 text-xs font-bold text-blue-900"
+                  />
+                  <span className="text-xs font-mono text-gray-500 shrink-0">pt</span>
+                </div>
+                <p className="text-[10px] text-gray-400">Default: 18 pt</p>
+              </div>
+
+              <div className="space-y-1 bg-white p-3 rounded-lg border border-blue-100 shadow-2xs">
+                <Label htmlFor="fontSizeAlamat" className="text-[11px] font-semibold text-gray-800">
+                  Font Alamat & Kode Pos
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="fontSizeAlamat"
+                    type="number"
+                    min={6}
+                    max={20}
+                    {...register('fontSizeAlamat')}
+                    className="h-8 text-xs"
+                  />
+                  <span className="text-xs font-mono text-gray-500 shrink-0">pt</span>
+                </div>
+                <p className="text-[10px] text-gray-400">Default: 10 pt</p>
+              </div>
+
+              <div className="space-y-1 bg-white p-3 rounded-lg border border-blue-100 shadow-2xs">
+                <Label htmlFor="fontSizeKontak" className="text-[11px] font-semibold text-gray-800">
+                  Font Kontak & Website
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="fontSizeKontak"
+                    type="number"
+                    min={6}
+                    max={20}
+                    {...register('fontSizeKontak')}
+                    className="h-8 text-xs"
+                  />
+                  <span className="text-xs font-mono text-gray-500 shrink-0">pt</span>
+                </div>
+                <p className="text-[10px] text-gray-400">Default: 9 pt</p>
+              </div>
             </div>
           </div>
 

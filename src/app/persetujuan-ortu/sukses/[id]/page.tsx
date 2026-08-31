@@ -187,7 +187,7 @@ export default async function PersetujuanSuksesPage({ params }: PageProps) {
               <Link href={`/persetujuan-ortu/cetak/${consent.id}`} target="_blank" className="flex-1">
                 <Button className="w-full h-11 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 shadow-md">
                   <Printer className="w-4 h-4" />
-                  <span>Cetak / Unduh Surat Resmi (PDF 2 Hal)</span>
+                  <span>Cetak / Unduh Lembar Pernyataan (PDF)</span>
                 </Button>
               </Link>
 

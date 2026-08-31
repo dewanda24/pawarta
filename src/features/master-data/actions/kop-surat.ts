@@ -18,6 +18,11 @@ export interface DocumentHeaderInput {
   kontak?: string | null;
   website?: string | null;
   tipeGaris?: string | null;
+  fontSizeInstansiUtama?: number | null;
+  fontSizeInstansiInduk?: number | null;
+  fontSizeNamaSekolah?: number | null;
+  fontSizeAlamat?: number | null;
+  fontSizeKontak?: number | null;
   isDefault?: boolean;
   isAktif?: boolean;
 }
@@ -74,6 +79,11 @@ export async function createDocumentHeader(data: DocumentHeaderInput) {
         kontak: data.kontak || null,
         website: data.website || null,
         tipeGaris: data.tipeGaris || 'double_thick',
+        fontSizeInstansiUtama: data.fontSizeInstansiUtama || 14,
+        fontSizeInstansiInduk: data.fontSizeInstansiInduk || 14,
+        fontSizeNamaSekolah: data.fontSizeNamaSekolah || 18,
+        fontSizeAlamat: data.fontSizeAlamat || 10,
+        fontSizeKontak: data.fontSizeKontak || 9,
         isDefault: data.isDefault ?? false,
         isAktif: data.isAktif ?? true,
       })

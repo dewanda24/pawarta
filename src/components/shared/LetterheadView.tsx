@@ -16,6 +16,11 @@ interface LetterheadProps {
     logoKiriUrl?: string | null;
     logoKananUrl?: string | null;
     tipeKop?: string | null;
+    fontSizeInstansiUtama?: number | string | null;
+    fontSizeInstansiInduk?: number | string | null;
+    fontSizeNamaSekolah?: number | string | null;
+    fontSizeAlamat?: number | string | null;
+    fontSizeKontak?: number | string | null;
   } | null;
   fallbackSekolah?: {
     nama?: string | null;
@@ -120,31 +125,91 @@ export function LetterheadView({
           </div>
         )}
 
-        {/* Teks KOP Tengah (Perbandingan Rasio 3 : 4) */}
+        {/* Teks KOP Tengah (Perbandingan Rasio 3 : 4 atau Sesuai Ukuran Font Kustom) */}
         <div className="flex-1 text-center px-1 sm:px-2">
-          {/* Tulisan Instansi Utama (Skala Rasio 3) */}
-          <h3 className="text-[12px] sm:text-[14px] md:text-[15px] font-semibold tracking-wide uppercase text-black font-sans leading-tight">
+          {/* Tulisan Instansi Utama (Skala Rasio 3 / Kustom) */}
+          <h3
+            style={
+              header?.fontSizeInstansiUtama
+                ? {
+                    fontSize:
+                      typeof header.fontSizeInstansiUtama === 'number'
+                        ? `${header.fontSizeInstansiUtama}pt`
+                        : header.fontSizeInstansiUtama,
+                  }
+                : undefined
+            }
+            className="text-[12px] sm:text-[14px] md:text-[15px] font-semibold tracking-wide uppercase text-black font-sans leading-tight"
+          >
             {instansiUtama}
           </h3>
 
           {instansiInduk && instansiInduk !== instansiUtama && (
-            <h4 className="text-[12px] sm:text-[14px] font-semibold tracking-wide uppercase text-black font-sans leading-tight mt-0.5">
+            <h4
+              style={
+                header?.fontSizeInstansiInduk
+                  ? {
+                      fontSize:
+                        typeof header.fontSizeInstansiInduk === 'number'
+                          ? `${header.fontSizeInstansiInduk}pt`
+                          : header.fontSizeInstansiInduk,
+                    }
+                  : undefined
+              }
+              className="text-[12px] sm:text-[14px] font-semibold tracking-wide uppercase text-black font-sans leading-tight mt-0.5"
+            >
               {instansiInduk}
             </h4>
           )}
 
-          {/* Tulisan Nama Perangkat Daerah / Satuan Pendidikan (Skala Rasio 4 - Bold) */}
-          <h2 className="text-[16px] sm:text-[19px] md:text-[20px] font-bold tracking-tight text-black uppercase mt-0.5 font-sans leading-tight">
+          {/* Tulisan Nama Perangkat Daerah / Satuan Pendidikan (Skala Rasio 4 - Bold / Kustom) */}
+          <h2
+            style={
+              header?.fontSizeNamaSekolah
+                ? {
+                    fontSize:
+                      typeof header.fontSizeNamaSekolah === 'number'
+                        ? `${header.fontSizeNamaSekolah}pt`
+                        : header.fontSizeNamaSekolah,
+                  }
+                : undefined
+            }
+            className="text-[16px] sm:text-[19px] md:text-[20px] font-bold tracking-tight text-black uppercase mt-0.5 font-sans leading-tight"
+          >
             {namaInstansi}
           </h2>
 
           {alamat && (
-            <p className="text-[10px] sm:text-[11px] font-normal text-black mt-1 font-sans leading-tight">
+            <p
+              style={
+                header?.fontSizeAlamat
+                  ? {
+                      fontSize:
+                        typeof header.fontSizeAlamat === 'number'
+                          ? `${header.fontSizeAlamat}pt`
+                          : header.fontSizeAlamat,
+                    }
+                  : undefined
+              }
+              className="text-[10px] sm:text-[11px] font-normal text-black mt-1 font-sans leading-tight"
+            >
               {alamat}
             </p>
           )}
           {kontakText && (
-            <p className="text-[9px] sm:text-[10px] font-normal text-black font-sans leading-tight mt-0.5">
+            <p
+              style={
+                header?.fontSizeKontak
+                  ? {
+                      fontSize:
+                        typeof header.fontSizeKontak === 'number'
+                          ? `${header.fontSizeKontak}pt`
+                          : header.fontSizeKontak,
+                    }
+                  : undefined
+              }
+              className="text-[9px] sm:text-[10px] font-normal text-black font-sans leading-tight mt-0.5"
+            >
               {kontakText}
             </p>
           )}

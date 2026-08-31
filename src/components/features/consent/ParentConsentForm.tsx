@@ -33,6 +33,9 @@ import {
   Briefcase,
   MapPin,
   ShieldCheck,
+  FileText,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -40,6 +43,8 @@ import {
   ConsentLetterConfig,
   DEFAULT_CONSENT_LETTER_CONFIG,
 } from '@/features/student-letter/consent-config';
+import { LetterheadView } from '@/components/shared/LetterheadView';
+import { stripNomorPrefix } from '@/lib/nomor-surat-generator';
 
 interface ClassItem {
   id: string;
@@ -65,12 +70,16 @@ interface ParentConsentFormProps {
   classList: ClassItem[];
   defaultKelasId?: string;
   config?: ConsentLetterConfig;
+  sekolah?: any;
+  kopSurat?: any;
 }
 
 export function ParentConsentForm({
   classList,
   defaultKelasId,
   config = DEFAULT_CONSENT_LETTER_CONFIG,
+  sekolah,
+  kopSurat,
 }: ParentConsentFormProps) {
   const router = useRouter();
 
@@ -248,19 +257,205 @@ export function ParentConsentForm({
     }
   };
 
+  const [showSchoolLetter, setShowSchoolLetter] = useState(true);
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 text-gray-900">
-      {/* 1. BAGIAN DATA SISWA */}
-      <div className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-xs space-y-5">
-        <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
-          <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
-            1
+    <div className="space-y-8 text-gray-900">
+      {/* 0. SURAT PEMBERITAHUAN RESMI DARI SEKOLAH (DISIMPAN DI FORM PUBLIK) */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden">
+        <div
+          onClick={() => setShowSchoolLetter(!showSchoolLetter)}
+          className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-4 sm:p-5 flex items-center justify-between cursor-pointer select-none"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center font-bold text-white shrink-0">
+              <FileText className="w-5 h-5 text-blue-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-bold text-sm sm:text-base tracking-tight text-white">
+                  Surat Pemberitahuan Resmi Sekolah
+                </h2>
+                <span className="text-[10px] bg-blue-500/30 text-blue-200 font-semibold px-2 py-0.5 rounded border border-blue-400/30">
+                  DOKUMEN RESMI
+                </span>
+              </div>
+              <p className="text-[11px] text-blue-200 mt-0.5">
+                Nomor: {stripNomorPrefix(config.nomorSurat) || 'B/382/400.3.5.1/VIII/2026'} • Program Pembelajaran 5 Hari Sekolah (FDK)
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-bold text-gray-900 text-base">Identitas Siswa</h3>
-            <p className="text-xs text-gray-500">Pilih kelas dan nama putra/putri Anda</p>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-blue-200 hidden sm:inline">
+              {showSchoolLetter ? 'Tutup Surat' : 'Baca Surat Lengkap'}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/10 h-8 w-8 p-0"
+            >
+              {showSchoolLetter ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            </Button>
           </div>
         </div>
+
+        {showSchoolLetter && (
+          <div className="p-6 sm:p-8 md:p-10 bg-white font-serif text-[13px] leading-relaxed text-gray-900 space-y-4 border-t border-gray-100">
+            {/* Kop Surat Resmi */}
+            <LetterheadView header={kopSurat} fallbackSekolah={sekolah} />
+
+            {/* Header Naskah Dinas */}
+            <div className="mt-3 mb-2 text-xs font-sans space-y-1.5 pt-1">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
+                <table className="text-xs">
+                  <tbody>
+                    <tr>
+                      <td className="w-20 font-semibold py-0.5">Nomor</td>
+                      <td className="w-3">:</td>
+                      <td className="font-mono font-bold py-0.5 text-blue-950">
+                        {stripNomorPrefix(config.nomorSurat) || 'B/382/400.3.5.1/VIII/2026'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="font-semibold py-0.5">Sifat</td>
+                      <td>:</td>
+                      <td className="py-0.5">{config.sifatSurat || 'Penting'}</td>
+                    </tr>
+                    <tr>
+                      <td className="font-semibold py-0.5">Lampiran</td>
+                      <td>:</td>
+                      <td className="py-0.5">{config.lampiranSurat || '1 Lembar (Lembar Persetujuan)'}</td>
+                    </tr>
+                    <tr>
+                      <td className="font-semibold py-0.5 align-top">Perihal</td>
+                      <td className="align-top">:</td>
+                      <td className="font-bold py-0.5 text-gray-950">
+                        {config.perihalSurat || 'Pemberitahuan & Persetujuan Pembelajaran 5 (Lima) Hari'}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div className="text-right sm:text-right font-sans text-xs shrink-0">
+                  <p>
+                    {config.tempatSurat || sekolah?.kabupaten || 'Sumedang'},{' '}
+                    {config.tanggalSurat && config.tanggalSurat !== 'OTOMATIS'
+                      ? config.tanggalSurat
+                      : new Date().toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <p className="font-semibold">Kepada Yth.,</p>
+                <p className="font-bold">{config.penerimaSurat || 'Bapak/Ibu Orang Tua / Wali Murid'}</p>
+                <p className="italic text-gray-700">di Tempat</p>
+              </div>
+            </div>
+
+            {/* Isi Surat Pemberitahuan */}
+            <div className="space-y-2.5 text-justify leading-[1.5]">
+              <p>Dengan hormat,</p>
+              <p className="indent-8 leading-[1.5]">
+                {config.teksPembuka ||
+                  `Sehubungan dengan upaya peningkatan mutu pendidikan, penguatan karakter peserta didik, serta regulasi pemerintah terkait efisiensi hari belajar efektif, dengan ini kami beritahukan bahwa ${sekolah?.nama || 'SMPN 1 UJUNGJAYA'} akan menerapkan sistem Pembelajaran 5 (Lima) Hari Sekolah.`}
+              </p>
+
+              <div className="pl-4 sm:pl-8 my-2 font-sans bg-gray-50/70 p-3.5 rounded-xl border border-gray-200">
+                <p className="font-semibold text-xs text-gray-900 mb-1.5">
+                  Adapun ketentuan pelaksanaan sistem tersebut:
+                </p>
+                <table className="w-full text-xs">
+                  <tbody>
+                    <tr>
+                      <td className="w-32 py-1 font-medium text-gray-700">• Mulai Berlaku</td>
+                      <td className="w-3">:</td>
+                      <td className="font-semibold py-1 text-gray-950">
+                        {config.ketentuan?.mulaiBerlaku || 'Tahun Pelajaran 2026/2027'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-1 font-medium text-gray-700">• Hari Belajar</td>
+                      <td>:</td>
+                      <td className="font-semibold py-1 text-blue-900">
+                        {config.ketentuan?.hariBelajar || 'Senin s.d. Jumat'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-1 font-medium text-gray-700">• Jam Belajar</td>
+                      <td>:</td>
+                      <td className="font-semibold py-1 text-blue-900">
+                        {config.ketentuan?.jamBelajar ||
+                          '07.00 s.d. 15.00 WIB (disesuaikan alokasi kurikulum & jadwal KBM)'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-1 font-medium text-gray-700">• Hari Libur</td>
+                      <td>:</td>
+                      <td className="font-semibold py-1 text-gray-950">
+                        {config.ketentuan?.hariLibur || 'Sabtu dan Minggu'}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="indent-8">
+                {config.paragrafTujuan ||
+                  'Penerapan sistem ini bertujuan agar peserta didik memiliki waktu lebih leluasa di akhir pekan untuk penguatan pendidikan karakter bersama keluarga secara mandiri dan terarah.'}
+              </p>
+
+              <p className="indent-8">
+                Demi kelancaran program ini, kami memohon kesediaan Bapak/Ibu untuk mengisi dan menandatangani lembar
+                pernyataan persetujuan pada formulir di bawah ini.
+              </p>
+
+              <p className="indent-8">
+                {config.teksPenutup ||
+                  'Demikian pemberitahuan ini disampaikan. Atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.'}
+              </p>
+            </div>
+
+            {/* Pengesahan Pejabat Sekolah */}
+            <div className="flex justify-end pt-3 font-sans text-xs">
+              <div className="text-center w-64 space-y-0.5">
+                <p>Hormat kami,</p>
+                <p className="font-bold">{config.penandatangan?.jabatan || `Kepala ${sekolah?.nama || 'SMPN 1 UJUNGJAYA'}`}</p>
+                <div className="h-12 flex items-center justify-center my-1">
+                  <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 inline-flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Tervalidasi Resmi Dinas
+                  </span>
+                </div>
+                <p className="font-bold underline text-gray-950">
+                  {config.penandatangan?.nama || 'Drs. H. Dedi Kusnadi, M.Pd.'}
+                </p>
+                <p className="text-gray-700 font-mono text-[10px]">
+                  {config.penandatangan?.nip ? `NIP. ${config.penandatangan.nip}` : '-'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* 1. BAGIAN DATA SISWA */}
+        <div className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-xs space-y-5">
+          <div className="flex items-center gap-2.5 pb-3 border-b border-gray-100">
+            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
+              1
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 text-base">Identitas Siswa</h3>
+              <p className="text-xs text-gray-500">Pilih kelas dan nama putra/putri Anda</p>
+            </div>
+          </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
@@ -712,5 +907,6 @@ export function ParentConsentForm({
         </div>
       </div>
     </form>
-  );
+  </div>
+);
 }

@@ -4,8 +4,8 @@ import {
 } from '@/features/student-letter/consent-actions';
 import { ParentConsentForm } from '@/components/features/consent/ParentConsentForm';
 import { db } from '@/db';
-import { masterSekolah } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { masterSekolah, documentHeaders } from '@/db/schema';
+import { eq, and, desc } from 'drizzle-orm';
 import { ShieldCheck, Calendar, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { DEFAULT_CONSENT_LETTER_CONFIG } from '@/features/student-letter/consent-config';
@@ -21,13 +21,24 @@ interface PageProps {
 
 export default async function PersetujuanOrtuPublicPage({ searchParams }: PageProps) {
   const resolvedParams = searchParams ? await Promise.resolve(searchParams) : {};
-  const [classesRes, sekolah, configRes] = await Promise.all([
+  const [classesRes, sekolah, configRes, defaultKop] = await Promise.all([
     getPublicClasses(),
     db.query.masterSekolah.findFirst({
       where: eq(masterSekolah.isAktif, true),
     }),
     getConsentLetterConfig(),
+    db.query.documentHeaders.findFirst({
+      where: and(eq(documentHeaders.isDefault, true), eq(documentHeaders.isAktif, true)),
+    }),
   ]);
+
+  let activeKop = defaultKop;
+  if (!activeKop) {
+    activeKop = await db.query.documentHeaders.findFirst({
+      where: eq(documentHeaders.isAktif, true),
+      orderBy: [desc(documentHeaders.createdAt)],
+    });
+  }
 
   const classes = classesRes.success && classesRes.data ? classesRes.data : [];
   const letterConfig = configRes.success && configRes.data ? configRes.data : DEFAULT_CONSENT_LETTER_CONFIG;
@@ -147,6 +158,8 @@ export default async function PersetujuanOrtuPublicPage({ searchParams }: PagePr
           classList={classes}
           defaultKelasId={defaultKelasId}
           config={letterConfig}
+          sekolah={sekolah}
+          kopSurat={activeKop}
         />
       </main>
 
