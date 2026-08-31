@@ -257,22 +257,22 @@ export function ParentConsentForm({
     }
   };
 
-  const [showSchoolLetter, setShowSchoolLetter] = useState(true);
+  const [showSchoolLetter, setShowSchoolLetter] = useState(false);
 
   return (
-    <div className="space-y-8 text-gray-900">
-      {/* 0. SURAT PEMBERITAHUAN RESMI DARI SEKOLAH (DISIMPAN DI FORM PUBLIK) */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden">
+    <div className="space-y-6 sm:space-y-8 text-gray-900">
+      {/* 0. SURAT PEMBERITAHUAN RESMI DARI SEKOLAH (DISIMPAN DI FORM PUBLIK - KOMPAK & FLEKSIBEL) */}
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden transition-all">
         <div
           onClick={() => setShowSchoolLetter(!showSchoolLetter)}
-          className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-4 sm:p-5 flex items-center justify-between cursor-pointer select-none"
+          className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-4 sm:p-5 flex items-center justify-between cursor-pointer select-none hover:opacity-95 transition-opacity"
         >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center font-bold text-white shrink-0">
               <FileText className="w-5 h-5 text-blue-300" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="font-bold text-sm sm:text-base tracking-tight text-white">
                   Surat Pemberitahuan Resmi Sekolah
                 </h2>
@@ -280,26 +280,48 @@ export function ParentConsentForm({
                   DOKUMEN RESMI
                 </span>
               </div>
-              <p className="text-[11px] text-blue-200 mt-0.5">
-                Nomor: {stripNomorPrefix(config.nomorSurat) || 'B/382/400.3.5.1/VIII/2026'} • Program Pembelajaran 5 Hari Sekolah (FDK)
+              <p className="text-[11px] text-blue-200 mt-0.5 line-clamp-1">
+                Program Pembelajaran 5 Hari Sekolah (FDK) • Nomor: {stripNomorPrefix(config.nomorSurat) || 'B/382/400.3.5.1/VIII/2026'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-blue-200 hidden sm:inline">
-              {showSchoolLetter ? 'Tutup Surat' : 'Baca Surat Lengkap'}
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs text-blue-200 hidden sm:inline font-medium">
+              {showSchoolLetter ? 'Tutup Naskah' : 'Lihat Naskah Lengkap'}
             </span>
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="text-white hover:bg-white/10 h-8 w-8 p-0"
+              className="text-white hover:bg-white/15 h-8 w-8 p-0"
             >
               {showSchoolLetter ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             </Button>
           </div>
         </div>
+
+        {/* Ringkasan Fleksibel Saat Ditutup (Mobile-friendly, tidak memakan tempat) */}
+        {!showSchoolLetter && (
+          <div className="p-3.5 sm:p-4 bg-blue-50/40 border-t border-blue-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="flex flex-wrap items-center gap-2 text-gray-700">
+              <span className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-blue-200 font-semibold text-blue-950">
+                <Clock className="w-3.5 h-3.5 text-blue-600" /> Senin s.d. Jumat (07.00 - 15.00 WIB)
+              </span>
+              <span className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 font-semibold text-emerald-900">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Libur: Sabtu & Minggu
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSchoolLetter(true)}
+              className="text-blue-700 hover:text-blue-900 font-bold text-xs flex items-center gap-1 hover:underline"
+            >
+              <span>Buka Naskah Surat Lengkap</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {showSchoolLetter && (
           <div className="p-6 sm:p-8 md:p-10 bg-white font-serif text-[13px] leading-relaxed text-gray-900 space-y-4 border-t border-gray-100">
@@ -853,7 +875,7 @@ export function ParentConsentForm({
           <div>
             <h3 className="font-bold text-gray-900 text-base">Tanda Tangan Digital Orang Tua / Wali</h3>
             <p className="text-xs text-gray-500">
-              Goreskan tanda tangan langsung pada kotak di bawah sebagai bukti persetujuan resmi
+              Pilih tanda tangan otomatis sesuai nama atau goreskan tanda tangan sendiri
             </p>
           </div>
         </div>
@@ -861,7 +883,8 @@ export function ParentConsentForm({
         <SignaturePad
           value={signatureData}
           onChange={(val) => setSignatureData(val)}
-          height={200}
+          parentName={namaOrtu}
+          height={180}
         />
 
         {/* Checkbox Legal Disclaimer */}
