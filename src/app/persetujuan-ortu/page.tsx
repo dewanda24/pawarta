@@ -1,10 +1,14 @@
-import { getPublicClasses } from '@/features/student-letter/consent-actions';
+import {
+  getPublicClasses,
+  getConsentLetterConfig,
+} from '@/features/student-letter/consent-actions';
 import { ParentConsentForm } from '@/components/features/consent/ParentConsentForm';
 import { db } from '@/db';
 import { masterSekolah } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { ShieldCheck, Calendar, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import { DEFAULT_CONSENT_LETTER_CONFIG } from '@/features/student-letter/consent-config';
 
 export const metadata = {
   title: 'Surat Persetujuan Orang Tua - Program 5 Hari Sekolah | PAWARTA',
@@ -17,14 +21,16 @@ interface PageProps {
 
 export default async function PersetujuanOrtuPublicPage({ searchParams }: PageProps) {
   const resolvedParams = searchParams ? await Promise.resolve(searchParams) : {};
-  const [classesRes, sekolah] = await Promise.all([
+  const [classesRes, sekolah, configRes] = await Promise.all([
     getPublicClasses(),
     db.query.masterSekolah.findFirst({
       where: eq(masterSekolah.isAktif, true),
     }),
+    getConsentLetterConfig(),
   ]);
 
   const classes = classesRes.success && classesRes.data ? classesRes.data : [];
+  const letterConfig = configRes.success && configRes.data ? configRes.data : DEFAULT_CONSENT_LETTER_CONFIG;
 
   // Match class by id or by kodeKelas / namaKelas if passed via URL parameter (?kelas=7A / ?kelasId=...)
   let defaultKelasId = resolvedParams.kelasId || '';
@@ -137,7 +143,11 @@ export default async function PersetujuanOrtuPublicPage({ searchParams }: PagePr
         </div>
 
         {/* Form Komponen Utama */}
-        <ParentConsentForm classList={classes} defaultKelasId={defaultKelasId} />
+        <ParentConsentForm
+          classList={classes}
+          defaultKelasId={defaultKelasId}
+          config={letterConfig}
+        />
       </main>
 
       {/* Footer */}

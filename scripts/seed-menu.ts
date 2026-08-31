@@ -1,20 +1,15 @@
 /**
- * PAWARTA - Seed Menu Dinamis
- * Mengisi tabel menus sesuai navigasi sidebar, terhubung ke permission.
- * Jalankan: npx tsx scripts/seed-menu.ts
+ * PAWARTA - Seed Menu Dinamis Lengkap
+ * Jalankan: node -r dotenv/config node_modules/tsx/dist/cli.mjs scripts/seed-menu.ts dotenv_config_path=.env.local
  */
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as schema from '../src/db/schema';
 import * as dotenv from 'dotenv';
-import crypto from 'crypto';
-import { eq, and } from 'drizzle-orm';
-
 dotenv.config({ path: '.env.local' });
+import crypto from 'crypto';
+import postgres from 'postgres';
+
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error('DATABASE_URL missing');
-const client = postgres(connectionString, { max: 1 });
-const db = drizzle(client, { schema });
+const sql = postgres(connectionString);
 
 type MenuDef = {
   nama: string;
@@ -22,7 +17,7 @@ type MenuDef = {
   route?: string;
   parentNama?: string;
   urutan: number;
-  permissionNama?: string; // null = semua user yang sudah login
+  permissionNama?: string;
 };
 
 const MENU_DEFS: MenuDef[] = [
@@ -45,7 +40,6 @@ const MENU_DEFS: MenuDef[] = [
   // === CHILD: Surat Keluar ===
   { nama: 'Semua Surat Keluar', icon: 'List', route: '/surat-keluar', parentNama: 'Surat Keluar', urutan: 1, permissionNama: 'SURAT_KELUAR_READ' },
   { nama: 'Buat Surat Baru', icon: 'PenLine', route: '/surat-keluar/create', parentNama: 'Surat Keluar', urutan: 2, permissionNama: 'SURAT_KELUAR_CREATE' },
-
 
   // === CHILD: Surat Siswa ===
   { nama: 'Semua Surat Siswa', icon: 'List', route: '/surat-siswa', parentNama: 'Surat Siswa', urutan: 1, permissionNama: 'SURAT_SISWA_READ' },
@@ -81,63 +75,60 @@ const MENU_DEFS: MenuDef[] = [
   { nama: 'API & Integrasi', icon: 'Plug', route: '/settings/api', parentNama: 'Pengaturan', urutan: 3, permissionNama: 'SISTEM_API_KEY' },
   { nama: 'Backup & Restore', icon: 'HardDrive', route: '/settings/backup', parentNama: 'Pengaturan', urutan: 4, permissionNama: 'SISTEM_BACKUP' },
   { nama: 'Activity Log', icon: 'ScrollText', route: '/settings/activity-logs', parentNama: 'Pengaturan', urutan: 5, permissionNama: 'SISTEM_LOG_READ' },
-
 ];
 
 async function main() {
-  console.log('\n PAWARTA - Seed Menu Dinamis\n');
+  console.log('\n--- PAWARTA: Seeding Seluruh Menu Navigasi ---\n');
   try {
-    // Build permission lookup
-    const allPerms = await db.select({ id: schema.permissions.id, nama: schema.permissions.nama }).from(schema.permissions);
+    const allPerms = await sql`SELECT id, nama FROM permissions;`;
     const permMap = new Map(allPerms.map((p) => [p.nama, p.id]));
-    console.log('[Info] Permission tersedia:', permMap.size);
+    console.log('[Info] Total permission di DB:', permMap.size);
 
-    // Hapus semua menu lama dulu (clean slate)
-    await db.delete(schema.menus);
-    console.log('[Info] Menu lama dihapus.');
+    // 1. Bersihkan tabel menus
+    await sql`DELETE FROM menus;`;
+    console.log('[Info] Tabel menus dibersihkan.');
 
-    // Insert root menus dulu (yang tidak punya parentNama)
+    // 2. Insert Root Menus
     const rootMenus = MENU_DEFS.filter((m) => !m.parentNama);
-    const menuIdMap = new Map();
+    const menuIdMap = new Map<string, string>();
 
-    console.log('[1/2] Insert root menus...');
+    console.log('\n[1/2] Menambahkan Root Menus...');
     for (const menu of rootMenus) {
       const permissionId = menu.permissionNama ? permMap.get(menu.permissionNama) || null : null;
-      if (menu.permissionNama && !permissionId) {
-        console.warn('  Permission tidak ditemukan:', menu.permissionNama, '(lanjut tanpa permission)');
-      }
       const id = crypto.randomUUID();
-      await db.insert(schema.menus).values({
-        id, nama: menu.nama, icon: menu.icon, route: menu.route,
-        urutan: menu.urutan, permissionId, isAktif: true,
-      });
+      await sql`
+        INSERT INTO menus (id, nama, icon, route, urutan, permission_id, is_aktif)
+        VALUES (${id}, ${menu.nama}, ${menu.icon || null}, ${menu.route || null}, ${menu.urutan}, ${permissionId}, true);
+      `;
       menuIdMap.set(menu.nama, id);
-      console.log('  +', menu.nama);
+      console.log(`  + [Root] ${menu.nama}`);
     }
 
-    console.log('\n[2/2] Insert child menus...');
+    // 3. Insert Child Menus
+    console.log('\n[2/2] Menambahkan Child Menus...');
     const childMenus = MENU_DEFS.filter((m) => m.parentNama);
     for (const menu of childMenus) {
-      const parentId = menuIdMap.get(menu.parentNama);
+      const parentId = menuIdMap.get(menu.parentNama!);
       if (!parentId) {
-        console.warn('  Parent tidak ditemukan:', menu.parentNama);
+        console.warn(`  [Warning] Parent ${menu.parentNama} tidak ditemukan untuk ${menu.nama}`);
         continue;
       }
       const permissionId = menu.permissionNama ? permMap.get(menu.permissionNama) || null : null;
       const id = crypto.randomUUID();
-      await db.insert(schema.menus).values({
-        id, nama: menu.nama, icon: menu.icon, route: menu.route,
-        parentId, urutan: menu.urutan, permissionId, isAktif: true,
-      });
-      console.log(' ', menu.parentNama, '>', menu.nama);
+      await sql`
+        INSERT INTO menus (id, nama, icon, route, parent_id, urutan, permission_id, is_aktif)
+        VALUES (${id}, ${menu.nama}, ${menu.icon || null}, ${menu.route || null}, ${parentId}, ${menu.urutan}, ${permissionId}, true);
+      `;
+      console.log(`  └─ [Sub] ${menu.parentNama} > ${menu.nama} (${menu.route})`);
     }
 
-    console.log('\n Menu Seeding selesai! Total:', MENU_DEFS.length, 'menu\n');
+    const count = await sql`SELECT count(*) FROM menus;`;
+    console.log(`\n✅ Menu Seeding Selesai 100%! Total menu aktif: ${count[0].count}\n`);
   } catch (error) {
-    console.error('\n Error saat seeding menu:', error);
+    console.error('Error saat seeding menu:', error);
     process.exit(1);
   } finally {
-    await client.end();
+    await sql.end();
     process.exit(0);
   }
 }

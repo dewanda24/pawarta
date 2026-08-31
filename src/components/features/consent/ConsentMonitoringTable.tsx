@@ -11,6 +11,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  ConsentLetterConfigModal,
+} from './ConsentLetterConfigModal';
+import {
+  ConsentLetterConfig,
+  DEFAULT_CONSENT_LETTER_CONFIG,
+} from '@/features/student-letter/consent-config';
+import {
   Search,
   Printer,
   FileSpreadsheet,
@@ -24,6 +31,7 @@ import {
   Filter,
   MessageSquare,
   Share2,
+  Settings2,
 } from 'lucide-react';
 import {
   Dialog,
@@ -76,10 +84,25 @@ interface ClassStat {
 interface ConsentMonitoringTableProps {
   initialData: ConsentRecord[];
   classes: ClassStat[];
+  initialConfig?: ConsentLetterConfig;
+  availablePegawai?: any[];
+  sekolahNama?: string;
+  sekolahKabupaten?: string;
 }
 
-export function ConsentMonitoringTable({ initialData, classes }: ConsentMonitoringTableProps) {
+export function ConsentMonitoringTable({
+  initialData,
+  classes,
+  initialConfig,
+  availablePegawai = [],
+  sekolahNama = 'SMPN 1 UJUNGJAYA',
+  sekolahKabupaten = 'Sumedang',
+}: ConsentMonitoringTableProps) {
   const [data, setData] = useState<ConsentRecord[]>(initialData);
+  const [letterConfig, setLetterConfig] = useState<ConsentLetterConfig>(
+    initialConfig || DEFAULT_CONSENT_LETTER_CONFIG
+  );
+  const [configModalOpen, setConfigModalOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<string>('ALL');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -222,6 +245,14 @@ _Hormat kami,_
       {/* Top Action Bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            onClick={() => setConfigModalOpen(true)}
+            className="text-xs h-9 font-semibold bg-indigo-700 hover:bg-indigo-800 text-white shadow-xs flex items-center gap-1.5"
+          >
+            <Settings2 className="w-3.5 h-3.5" />
+            <span>⚙️ Pengaturan Isi & Penandatangan</span>
+          </Button>
+
           <Button
             onClick={() => setBroadcastOpen(true)}
             className="text-xs h-9 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs flex items-center gap-1.5"
@@ -541,6 +572,17 @@ _Hormat kami,_
           </div>
         </div>
       )}
+
+      {/* Modal Pengaturan Isi Surat & Penandatangan */}
+      <ConsentLetterConfigModal
+        open={configModalOpen}
+        onOpenChange={setConfigModalOpen}
+        initialConfig={letterConfig}
+        availablePegawai={availablePegawai}
+        sekolahNama={sekolahNama}
+        sekolahKabupaten={sekolahKabupaten}
+        onSaved={(updated) => setLetterConfig(updated)}
+      />
     </div>
   );
 }

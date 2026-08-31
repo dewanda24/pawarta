@@ -1,6 +1,7 @@
 import {
   getConsentListAdmin,
   getConsentSummaryStats,
+  getConsentLetterConfig,
 } from '@/features/student-letter/consent-actions';
 import { ConsentMonitoringTable } from '@/components/features/consent/ConsentMonitoringTable';
 import { Button } from '@/components/ui/button';
@@ -16,18 +17,23 @@ import {
   Sparkles,
   Percent,
 } from 'lucide-react';
+import { DEFAULT_CONSENT_LETTER_CONFIG } from '@/features/student-letter/consent-config';
 
 export const metadata = {
   title: 'Monitoring Persetujuan 5 Hari Kerja | PAWARTA',
 };
 
 export default async function PersetujuanLimaHariKerjaAdminPage() {
-  const [listRes, statsRes] = await Promise.all([
+  const [listRes, statsRes, configRes] = await Promise.all([
     getConsentListAdmin({ kategori: '5_HARI_KERJA' }),
     getConsentSummaryStats('5_HARI_KERJA'),
+    getConsentLetterConfig(),
   ]);
 
   const list = listRes.success && listRes.data ? listRes.data : [];
+  const letterConfig = configRes.success && configRes.data ? configRes.data : DEFAULT_CONSENT_LETTER_CONFIG;
+  const availablePegawai = configRes.availablePegawai || [];
+  const sekolah = configRes.sekolah;
   const stats = statsRes.success && statsRes.data
     ? statsRes.data
     : {
@@ -144,7 +150,7 @@ export default async function PersetujuanLimaHariKerjaAdminPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {stats.classStats.map((c) => (
+            {stats.classStats.map((c: any) => (
               <div
                 key={c.kelasId}
                 className="p-3 rounded-xl border border-gray-100 bg-gray-50/60 hover:bg-gray-50 transition-colors space-y-2"
@@ -194,7 +200,14 @@ export default async function PersetujuanLimaHariKerjaAdminPage() {
       )}
 
       {/* Main Monitoring & Filter Table */}
-      <ConsentMonitoringTable initialData={list as any} classes={stats.classStats} />
+      <ConsentMonitoringTable
+        initialData={list as any}
+        classes={stats.classStats}
+        initialConfig={letterConfig}
+        availablePegawai={availablePegawai as any}
+        sekolahNama={sekolah?.nama || 'SMPN 1 UJUNGJAYA'}
+        sekolahKabupaten={sekolah?.kabupaten || 'Sumedang'}
+      />
     </div>
   );
 }

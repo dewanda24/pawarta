@@ -24,6 +24,7 @@ import {
   Sliders,
   FileSearch,
   UserCheck,
+  CalendarCheck,
   type LucideIcon,
 } from 'lucide-react';
 import { executeGlobalSearch, GlobalSearchResultItem } from '@/features/system/actions/global-search';
@@ -128,6 +129,14 @@ const COMMAND_ITEMS: CommandItem[] = [
     route: '/surat-siswa/panggilan-ortu',
     icon: PlusCircle,
     keywords: 'panggilan orang tua wali murid bk',
+  },
+  {
+    id: '11b',
+    title: 'Monitoring Surat Persetujuan 5 Hari Kerja',
+    category: 'Persuratan',
+    route: '/surat-siswa/persetujuan-5-hari-kerja',
+    icon: CalendarCheck,
+    keywords: 'persetujuan 5 hari kerja fdk surat orang tua wali murid kbm',
   },
 
   // Master Data

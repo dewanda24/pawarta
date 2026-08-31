@@ -7,12 +7,20 @@ import {
   masterKelas,
   masterSekolah,
   masterPegawai,
+  masterPenandatangan,
   documentHeaders,
+  documentTemplates,
+  templateVersions,
+  masterJenisSurat,
 } from '@/db/schema';
-import { eq, isNull, desc, and, sql, ilike } from 'drizzle-orm';
+import { eq, isNull, desc, and, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAuth, logActivity } from '@/lib/server-action';
 import { generateNomorNaskahDinas } from '@/lib/nomor-surat-generator';
+import {
+  ConsentLetterConfig,
+  DEFAULT_CONSENT_LETTER_CONFIG,
+} from './consent-config';
 
 // ============================================================================
 // 1. PUBLIC ACTIONS (Tanpa Login — Untuk Orang Tua / Wali)
@@ -133,6 +141,208 @@ export interface SubmitParentConsentInput {
 }
 
 /**
+ * Mendapatkan konfigurasi aktif surat 5 hari kerja beserta daftar pegawai penandatangan yang tersedia
+ */
+export async function getConsentLetterConfig() {
+  try {
+    const template = await db.query.documentTemplates.findFirst({
+      where: and(
+        eq(documentTemplates.kode, 'SURAT_5_HARI_KERJA'),
+        eq(documentTemplates.isAktif, true),
+        isNull(documentTemplates.deletedAt),
+      ),
+      with: {
+        versions: {
+          orderBy: [desc(templateVersions.createdAt)],
+        },
+      },
+    });
+
+    let config: ConsentLetterConfig = { ...DEFAULT_CONSENT_LETTER_CONFIG };
+
+    if (template && template.versions.length > 0) {
+      const activeVersion =
+        template.versions.find((v) => v.id === template.versiAktifId) || template.versions[0];
+      if (activeVersion?.kontenHtml) {
+        try {
+          const parsed = JSON.parse(activeVersion.kontenHtml);
+          config = {
+            ...DEFAULT_CONSENT_LETTER_CONFIG,
+            ...parsed,
+            ketentuan: {
+              ...DEFAULT_CONSENT_LETTER_CONFIG.ketentuan,
+              ...(parsed.ketentuan || {}),
+            },
+            penandatangan: {
+              ...DEFAULT_CONSENT_LETTER_CONFIG.penandatangan,
+              ...(parsed.penandatangan || {}),
+            },
+          };
+        } catch {
+          // Parsing fallback
+        }
+      }
+    }
+
+    const [pegawaiList, kepsek, sekolah, penandatanganList] = await Promise.all([
+      db.query.masterPegawai.findMany({
+        where: and(eq(masterPegawai.isAktif, true), isNull(masterPegawai.deletedAt)),
+        with: { jabatan: true, unitKerja: true },
+        orderBy: [masterPegawai.nama],
+      }),
+      db.query.masterPegawai.findFirst({
+        where: and(eq(masterPegawai.isAktif, true), isNull(masterPegawai.deletedAt)),
+      }),
+      db.query.masterSekolah.findFirst({
+        where: eq(masterSekolah.isAktif, true),
+      }),
+      db.query.masterPenandatangan.findMany({
+        where: and(eq(masterPenandatangan.isAktif, true), isNull(masterPenandatangan.deletedAt)),
+        with: { pegawai: true, jabatan: true },
+      }),
+    ]);
+
+    // Fallback info penandatangan jika belum diset
+    if (!config.penandatangan.nama && kepsek) {
+      config.penandatangan.pegawaiId = kepsek.id;
+      config.penandatangan.nama = kepsek.nama;
+      config.penandatangan.nip = kepsek.nip || config.penandatangan.nip;
+      config.penandatangan.pangkatGolongan =
+        kepsek.pangkatGolongan || config.penandatangan.pangkatGolongan;
+    }
+
+    return {
+      success: true,
+      data: config,
+      availablePegawai: pegawaiList,
+      penandatanganList,
+      sekolah,
+    };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Gagal memuat konfigurasi surat';
+    return {
+      success: false,
+      error: msg,
+      data: DEFAULT_CONSENT_LETTER_CONFIG,
+      availablePegawai: [],
+      penandatanganList: [],
+    };
+  }
+}
+
+/**
+ * Menyimpan konfigurasi aktif surat 5 hari kerja (Redaksi & Penandatangan)
+ */
+export async function saveConsentLetterConfig(input: ConsentLetterConfig) {
+  try {
+    const user = await requireAuth();
+
+    let template = await db.query.documentTemplates.findFirst({
+      where: eq(documentTemplates.kode, 'SURAT_5_HARI_KERJA'),
+    });
+
+    const now = new Date();
+    const configJson = JSON.stringify(input);
+
+    if (!template) {
+      let jenisSurat = await db.query.masterJenisSurat.findFirst({
+        where: eq(masterJenisSurat.isAktif, true),
+      });
+
+      if (!jenisSurat) {
+        const [createdJenis] = await db
+          .insert(masterJenisSurat)
+          .values({
+            kode: 'SPERT',
+            nama: 'Surat Pernyataan / Persetujuan',
+          })
+          .returning();
+        jenisSurat = createdJenis;
+      }
+
+      const [newTemplate] = await db
+        .insert(documentTemplates)
+        .values({
+          kode: 'SURAT_5_HARI_KERJA',
+          nama: 'Surat Pemberitahuan & Persetujuan 5 Hari Kerja',
+          jenisSuratId: jenisSurat.id,
+          deskripsi: 'Konfigurasi teks dan hak penandatangan surat 5 hari kerja',
+          createdBy: user.id || undefined,
+        })
+        .returning();
+
+      template = newTemplate as any;
+    }
+
+    if (!template) throw new Error('Gagal menyiapkan master template dokumen');
+
+    const [version] = await db
+      .insert(templateVersions)
+      .values({
+        templateId: template.id,
+        nomorVersi: `v${Date.now()}`,
+        kontenHtml: configJson,
+        pengaturanKertas: {
+          ukuran: 'F4',
+          orientasi: 'portrait',
+        },
+        status: 'Published',
+        catatanPerubahan: `Diperbarui oleh ${user.name || user.email || 'Admin'}`,
+        createdBy: user.id || undefined,
+      })
+      .returning();
+
+    await db
+      .update(documentTemplates)
+      .set({
+        versiAktifId: version.id,
+        updatedAt: now,
+        updatedBy: user.id || undefined,
+      })
+      .where(eq(documentTemplates.id, template.id));
+
+    await logActivity({
+      userId: user.id!,
+      action: 'UPDATE',
+      entityType: 'DOCUMENT_TEMPLATE',
+      entityId: template.id,
+      details: {
+        deskripsi: 'Memperbarui konfigurasi isi dan penandatangan surat 5 hari kerja',
+        nomorSurat: input.nomorSurat,
+        penandatangan: input.penandatangan.nama,
+        jabatan: input.penandatangan.jabatan,
+      },
+    });
+
+    try {
+      revalidatePath('/surat-siswa/persetujuan-5-hari-kerja');
+      revalidatePath('/persetujuan-ortu');
+    } catch {
+      // Safe
+    }
+
+    return { success: true, data: input };
+  } catch (error: unknown) {
+    console.error('Error saving consent letter config:', error);
+    const msg = error instanceof Error ? error.message : 'Gagal menyimpan konfigurasi surat';
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Mereset konfigurasi surat 5 hari kerja kembali ke standar default sekolah
+ */
+export async function resetConsentLetterConfig() {
+  try {
+    await requireAuth();
+    return await saveConsentLetterConfig(DEFAULT_CONSENT_LETTER_CONFIG);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Gagal mereset konfigurasi';
+    return { success: false, error: msg };
+  }
+}
+
+/**
  * Menyimpan Surat Persetujuan Orang Tua dari form publik
  */
 export async function submitParentConsent(input: SubmitParentConsentInput) {
@@ -144,8 +354,8 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
 
     const kategori = input.kategori || '5_HARI_KERJA';
 
-    // 1. Ambil data Siswa, Sekolah, Kop Surat, dan Kepala Sekolah untuk snapshot
-    const [siswa, sekolah, kepsek] = await Promise.all([
+    // 1. Ambil data Siswa, Sekolah, Kop Surat, Konfigurasi Surat, dan Pegawai
+    const [siswa, sekolah, kepsek, configRes] = await Promise.all([
       db.query.masterSiswa.findFirst({
         where: eq(masterSiswa.id, input.siswaId),
         with: { kelas: true },
@@ -156,7 +366,10 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
       db.query.masterPegawai.findFirst({
         where: eq(masterPegawai.isAktif, true),
       }),
+      getConsentLetterConfig(),
     ]);
+
+    const activeConfig = configRes.data || DEFAULT_CONSENT_LETTER_CONFIG;
 
     let kopSurat = await db.query.documentHeaders.findFirst({
       where: and(eq(documentHeaders.isDefault, true), eq(documentHeaders.isAktif, true)),
@@ -189,10 +402,10 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
 
     const totalCount = Number(countResult[0]?.count || 0) + 1;
 
-    // Nomor Surat Resmi Persetujuan 5 Hari Kerja sesuai Naskah Dinas Sekolah
+    // Nomor Surat Resmi Persetujuan 5 Hari Kerja sesuai konfigurasi aktif
     const nomorSurat =
       kategori === '5_HARI_KERJA'
-        ? 'B/382/400.3.5.1/VIII/2026'
+        ? activeConfig.nomorSurat || 'B/382/400.3.5.1/VIII/2026'
         : generateNomorNaskahDinas({
             kodeJenisSurat: 'SPERT', // Surat Pernyataan / Persetujuan
             nomorUrut: totalCount,
@@ -200,7 +413,6 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
             kodePerangkatDaerah: 'SMPN-1-UJJ',
             tanggal: now,
           });
-
 
     const documentSnapshot = {
       kopSurat: kopSurat
@@ -224,13 +436,14 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
             provinsi: sekolah.provinsi,
           }
         : null,
-      kepsek: kepsek
-        ? {
-            nama: kepsek.nama,
-            nip: kepsek.nip,
-            pangkatGolongan: kepsek.pangkatGolongan,
-          }
-        : null,
+      kepsek: {
+        nama: activeConfig.penandatangan.nama || kepsek?.nama || 'Drs. H. Dedi Kusnadi, M.Pd.',
+        nip: activeConfig.penandatangan.nip || kepsek?.nip || '19680512 199403 1 005',
+        jabatan: activeConfig.penandatangan.jabatan || 'Kepala SMPN 1 UJUNGJAYA',
+        pangkatGolongan:
+          activeConfig.penandatangan.pangkatGolongan || kepsek?.pangkatGolongan,
+      },
+      config: activeConfig,
       siswa: {
         nama: siswa.nama,
         nis: siswa.nis,
@@ -341,13 +554,15 @@ export async function getConsentDetailById(id: string) {
 
     if (!consent) return { success: false, error: 'Dokumen persetujuan tidak ditemukan' };
 
-    const sekolah = await db.query.masterSekolah.findFirst({
-      where: eq(masterSekolah.isAktif, true),
-    });
-
-    const kepsek = await db.query.masterPegawai.findFirst({
-      where: eq(masterPegawai.isAktif, true),
-    });
+    const [sekolah, kepsek, configRes] = await Promise.all([
+      db.query.masterSekolah.findFirst({
+        where: eq(masterSekolah.isAktif, true),
+      }),
+      db.query.masterPegawai.findFirst({
+        where: eq(masterPegawai.isAktif, true),
+      }),
+      getConsentLetterConfig(),
+    ]);
 
     let kopSurat = await db.query.documentHeaders.findFirst({
       where: and(eq(documentHeaders.isDefault, true), eq(documentHeaders.isAktif, true)),
@@ -365,6 +580,7 @@ export async function getConsentDetailById(id: string) {
       sekolah,
       kepsek,
       kopSurat,
+      config: configRes.data || DEFAULT_CONSENT_LETTER_CONFIG,
     };
   } catch (error: unknown) {
     console.error('Error in getConsentDetailById:', error);
@@ -397,7 +613,9 @@ export async function getConsentListAdmin(params?: GetConsentListParams) {
       isNull(parentConsents.deletedAt),
       eq(parentConsents.kategori, kategori),
       params?.kelasId ? eq(parentConsents.kelasId, params.kelasId) : undefined,
-      params?.statusPersetujuan ? eq(parentConsents.statusPersetujuan, params.statusPersetujuan) : undefined,
+      params?.statusPersetujuan
+        ? eq(parentConsents.statusPersetujuan, params.statusPersetujuan)
+        : undefined,
     );
 
     const list = await db.query.parentConsents.findMany({
@@ -460,7 +678,8 @@ export async function getConsentSummaryStats(kategori = '5_HARI_KERJA') {
     const totalSetuju = consents.filter((c) => c.statusPersetujuan === 'SETUJU').length;
     const totalTidakSetuju = consents.filter((c) => c.statusPersetujuan === 'TIDAK_SETUJU').length;
     const totalBelum = Math.max(0, totalStudents - totalSubmitted);
-    const overallPercentage = totalStudents > 0 ? Math.round((totalSubmitted / totalStudents) * 100) : 0;
+    const overallPercentage =
+      totalStudents > 0 ? Math.round((totalSubmitted / totalStudents) * 100) : 0;
 
     // Breakdown per kelas
     const consentByStudentId = new Map(consents.map((c) => [c.siswaId, c]));
@@ -483,7 +702,8 @@ export async function getConsentSummaryStats(kategori = '5_HARI_KERJA') {
       }
 
       const belum = Math.max(0, totalSiswaKelas - submitted);
-      const percentage = totalSiswaKelas > 0 ? Math.round((submitted / totalSiswaKelas) * 100) : 0;
+      const percentage =
+        totalSiswaKelas > 0 ? Math.round((submitted / totalSiswaKelas) * 100) : 0;
 
       return {
         kelasId: k.id,

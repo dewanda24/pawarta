@@ -45,10 +45,10 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
   const sekolah = res.sekolah;
   const kopSurat = res.kopSurat;
   const kepsek = res.kepsek;
+  const config = (consent.documentSnapshot as any)?.config || res.config;
 
   const cleanNomorSurat =
-    stripNomorPrefix(consent.nomorSurat) || 'B/382/400.3.5.1/VIII/2026';
-
+    stripNomorPrefix(consent.nomorSurat) || config?.nomorSurat || 'B/382/400.3.5.1/VIII/2026';
 
   const tanggalTtd = consent.signedAt
     ? new Date(consent.signedAt).toLocaleDateString('id-ID', {
@@ -62,6 +62,11 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
         year: 'numeric',
       });
 
+  const tanggalSuratDisplay =
+    config?.tanggalSurat && config.tanggalSurat !== 'OTOMATIS'
+      ? config.tanggalSurat
+      : tanggalTtd;
+
   const namaSiswa =
     consent.siswa?.nama || (consent.documentSnapshot as any)?.siswa?.nama || '-';
   const nisSiswa =
@@ -74,6 +79,25 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
     (consent.documentSnapshot as any)?.siswa?.kelas ||
     '-';
 
+  const namaPenandatangan =
+    config?.penandatangan?.nama ||
+    (consent.documentSnapshot as any)?.kepsek?.nama ||
+    kepsek?.nama ||
+    'Drs. H. Dedi Kusnadi, M.Pd.';
+
+  const nipPenandatangan =
+    config?.penandatangan?.nip ||
+    (consent.documentSnapshot as any)?.kepsek?.nip ||
+    kepsek?.nip ||
+    '19680512 199403 1 005';
+
+  const jabatanPenandatangan =
+    config?.penandatangan?.jabatan ||
+    (consent.documentSnapshot as any)?.kepsek?.jabatan ||
+    `Kepala ${sekolah?.nama || 'SMPN 1 UJUNGJAYA'}`;
+
+  const tampilkanQr = config?.penandatangan?.tampilkanQr !== false;
+
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6 print:p-0 print:space-y-0 print:max-w-none">
       {/* Header Bar Navigation & Action (Hidden on Print) */}
@@ -81,7 +105,7 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase">
             <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200">
-              Dokumen Resmi SMPN 1 UJUNGJAYA
+              Dokumen Resmi {sekolah?.nama || 'SMPN 1 UJUNGJAYA'}
             </span>
             <span>•</span>
             <span
@@ -132,18 +156,18 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
                 <tr>
                   <td className="font-semibold py-0.2">Sifat</td>
                   <td>:</td>
-                  <td className="py-0.2">Penting</td>
+                  <td className="py-0.2">{config?.sifatSurat || 'Penting'}</td>
                 </tr>
                 <tr>
                   <td className="font-semibold py-0.2">Lampiran</td>
                   <td>:</td>
-                  <td className="py-0.2">1 Lembar (Lembar Persetujuan)</td>
+                  <td className="py-0.2">{config?.lampiranSurat || '1 Lembar (Lembar Persetujuan)'}</td>
                 </tr>
                 <tr>
                   <td className="font-semibold py-0.2 align-top">Perihal</td>
                   <td className="align-top">:</td>
                   <td className="font-bold py-0.2 text-gray-950">
-                    Pemberitahuan & Persetujuan Pembelajaran 5 (Lima) Hari
+                    {config?.perihalSurat || 'Pemberitahuan & Persetujuan Pembelajaran 5 (Lima) Hari'}
                   </td>
                 </tr>
               </tbody>
@@ -151,14 +175,14 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
 
             <div className="text-right font-sans text-xs print:text-[10.5pt] shrink-0">
               <p>
-                {sekolah?.kabupaten || 'Sumedang'}, {tanggalTtd}
+                {config?.tempatSurat || sekolah?.kabupaten || 'Sumedang'}, {tanggalSuratDisplay}
               </p>
             </div>
           </div>
 
           <div className="pt-1">
             <p className="font-semibold">Kepada Yth.,</p>
-            <p className="font-bold">Bapak/Ibu Orang Tua / Wali Murid</p>
+            <p className="font-bold">{config?.penerimaSurat || 'Bapak/Ibu Orang Tua / Wali Murid'}</p>
             <p className="italic text-gray-700">di Tempat</p>
           </div>
         </div>
@@ -167,10 +191,8 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
         <div className="space-y-2 text-justify text-[13px] print:text-[11pt] leading-normal print:leading-[1.35]">
           <p>Dengan hormat,</p>
           <p className="indent-8">
-            Sehubungan dengan upaya peningkatan mutu pendidikan, penguatan karakter peserta didik, serta
-            regulasi pemerintah terkait efisiensi hari belajar efektif, dengan ini kami beritahukan bahwa{' '}
-            <strong>{sekolah?.nama || 'SMPN 1 UJUNGJAYA'}</strong> akan menerapkan sistem{' '}
-            <strong>Pembelajaran 5 (Lima) Hari Sekolah</strong>.
+            {config?.teksPembuka ||
+              `Sehubungan dengan upaya peningkatan mutu pendidikan, penguatan karakter peserta didik, serta regulasi pemerintah terkait efisiensi hari belajar efektif, dengan ini kami beritahukan bahwa ${sekolah?.nama || 'SMPN 1 UJUNGJAYA'} akan menerapkan sistem Pembelajaran 5 (Lima) Hari Sekolah.`}
           </p>
 
           <div className="pl-6 sm:pl-8 my-1 font-sans">
@@ -182,32 +204,39 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
                 <tr>
                   <td className="w-32 py-0.2 font-medium">• Mulai Berlaku</td>
                   <td className="w-3">:</td>
-                  <td className="font-semibold py-0.2">Tahun Pelajaran 2026/2027</td>
+                  <td className="font-semibold py-0.2">
+                    {config?.ketentuan?.mulaiBerlaku || 'Tahun Pelajaran 2026/2027'}
+                  </td>
                 </tr>
                 <tr>
                   <td className="py-0.2 font-medium">• Hari Belajar</td>
                   <td>:</td>
-                  <td className="font-semibold py-0.2">Senin s.d. Jumat</td>
+                  <td className="font-semibold py-0.2">
+                    {config?.ketentuan?.hariBelajar || 'Senin s.d. Jumat'}
+                  </td>
                 </tr>
                 <tr>
                   <td className="py-0.2 font-medium">• Jam Belajar</td>
                   <td>:</td>
                   <td className="font-semibold py-0.2">
-                    07.00 s.d. 15.00 WIB (disesuaikan dengan alokasi kurikulum dan jadwal KBM)
+                    {config?.ketentuan?.jamBelajar ||
+                      '07.00 s.d. 15.00 WIB (disesuaikan dengan alokasi kurikulum dan jadwal KBM)'}
                   </td>
                 </tr>
                 <tr>
                   <td className="py-0.2 font-medium">• Hari Libur</td>
                   <td>:</td>
-                  <td className="font-semibold py-0.2">Sabtu dan Minggu</td>
+                  <td className="font-semibold py-0.2">
+                    {config?.ketentuan?.hariLibur || 'Sabtu dan Minggu'}
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <p className="indent-8">
-            Penerapan sistem ini bertujuan agar peserta didik memiliki waktu lebih leluasa di akhir pekan untuk
-            penguatan pendidikan karakter bersama keluarga secara mandiri dan terarah.
+            {config?.paragrafTujuan ||
+              'Penerapan sistem ini bertujuan agar peserta didik memiliki waktu lebih leluasa di akhir pekan untuk penguatan pendidikan karakter bersama keluarga secara mandiri dan terarah.'}
           </p>
 
           <p className="indent-8">
@@ -216,28 +245,33 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
           </p>
 
           <p className="indent-8">
-            Demikian pemberitahuan ini disampaikan. Atas kerja sama Bapak/Ibu, kami ucapkan terima kasih.
+            {config?.teksPenutup ||
+              'Demikian pemberitahuan ini disampaikan. Atas kerja sama Bapak/Ibu, kami ucapkan terima kasih.'}
           </p>
         </div>
 
-        {/* Pengesahan Kepala Sekolah */}
+        {/* Pengesahan Kepala Sekolah / Penandatangan */}
         <div className="flex justify-end mt-4 print:mt-3 font-sans text-xs print:text-[10.5pt]">
           <div className="text-center w-64 space-y-0.5">
             <p>Hormat kami,</p>
-            <p className="font-bold">Kepala {sekolah?.nama || 'SMPN 1 UJUNGJAYA'}</p>
+            <p className="font-bold">{jabatanPenandatangan}</p>
             <div className="h-14 flex items-center justify-center my-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`/api/v1/verifikasi/qr/${consent.id}`}
-                alt="QR Code Verifikasi Dokumen Digital PAWARTA"
-                className="w-13 h-13 object-contain border border-gray-200 p-0.5 rounded shadow-xs"
-              />
+              {tampilkanQr ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={`/api/v1/verifikasi/qr/${consent.id}`}
+                  alt="QR Code Verifikasi Dokumen Digital PAWARTA"
+                  className="w-13 h-13 object-contain border border-gray-200 p-0.5 rounded shadow-xs"
+                />
+              ) : (
+                <div className="h-13" />
+              )}
             </div>
             <p className="font-bold underline text-gray-950">
-              {kepsek?.nama || 'Drs. H. Dedi Kusnadi, M.Pd.'}
+              {namaPenandatangan}
             </p>
             <p className="text-gray-700 font-mono text-[10px] print:text-[9.5pt]">
-              NIP. {kepsek?.nip || '19680512 199403 1 005'}
+              {nipPenandatangan ? `NIP. ${nipPenandatangan}` : '-'}
             </p>
           </div>
         </div>
@@ -259,10 +293,10 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
         {/* Judul Lembar Persetujuan Formal */}
         <div className="text-center space-y-0.5 my-3">
           <h2 className="font-bold text-sm sm:text-base print:text-[12pt] uppercase tracking-wider underline">
-            SURAT PERNYATAAN / PERSETUJUAN ORANG TUA / WALI MURID
+            {config?.judulHalaman2 || 'SURAT PERNYATAAN / PERSETUJUAN ORANG TUA / WALI MURID'}
           </h2>
           <p className="font-bold text-xs print:text-[10pt] uppercase tracking-wide text-gray-800">
-            PENERAPAN SISTEM PEMBELAJARAN 5 (LIMA) HARI SEKOLAH
+            {config?.subjudulHalaman2 || 'PENERAPAN SISTEM PEMBELAJARAN 5 (LIMA) HARI SEKOLAH'}
           </p>
           <p className="text-[11px] print:text-[9.5pt] font-mono text-gray-600">
             Lampiran Surat Nomor: {cleanNomorSurat}
@@ -357,18 +391,17 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
                 Ketentuan Komitmen dan Tanggung Jawab Orang Tua/Wali:
               </p>
               <ol className="list-decimal pl-8 sm:pl-10 space-y-0.5 text-xs print:text-[10pt] text-justify leading-normal">
-                <li>
-                  Mendukung dan mematuhi tata tertib serta jadwal KBM dari hari Senin sampai dengan Jumat.
-                </li>
-                <li>
-                  Aktif menjalin komunikasi dengan pihak sekolah dan menghadiri pertemuan orang tua yang diselenggarakan sekolah.
-                </li>
-                <li>
-                  Memastikan kedisiplinan kehadiran anak dan menyelesaikan kewajiban administrasi sekolah tepat waktu.
-                </li>
-                <li>
-                  Melakukan pengawasan dan penguatan karakter anak dalam lingkungan keluarga pada hari Sabtu dan Minggu.
-                </li>
+                {(config?.komitmenPoin && config.komitmenPoin.length > 0
+                  ? config.komitmenPoin
+                  : [
+                      'Mendukung dan mematuhi tata tertib serta jadwal KBM dari hari Senin sampai dengan Jumat.',
+                      'Aktif menjalin komunikasi dengan pihak sekolah dan menghadiri pertemuan orang tua yang diselenggarakan sekolah.',
+                      'Memastikan kedisiplinan kehadiran anak dan menyelesaikan kewajiban administrasi sekolah tepat waktu.',
+                      'Melakukan pengawasan dan penguatan karakter anak dalam lingkungan keluarga pada hari Sabtu dan Minggu.',
+                    ]
+                ).map((poin: string, idx: number) => (
+                  <li key={idx}>{poin}</li>
+                ))}
               </ol>
             </div>
           ) : (
@@ -391,7 +424,7 @@ export default async function CetakPersetujuanPage({ params }: PageProps) {
         <div className="flex justify-end mt-3 print:mt-2 font-sans text-xs print:text-[10.5pt]">
           <div className="text-center w-64 space-y-0.5">
             <p>
-              {sekolah?.kabupaten || 'Sumedang'}, {tanggalTtd}
+              {config?.tempatSurat || sekolah?.kabupaten || 'Sumedang'}, {tanggalTtd}
             </p>
             <p className="font-semibold text-gray-950">Yang Membuat Pernyataan,</p>
             <p className="text-[10px] print:text-[9.5pt] text-gray-500">Orang Tua / Wali Murid</p>

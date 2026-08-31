@@ -36,6 +36,10 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import {
+  ConsentLetterConfig,
+  DEFAULT_CONSENT_LETTER_CONFIG,
+} from '@/features/student-letter/consent-config';
 
 interface ClassItem {
   id: string;
@@ -60,9 +64,14 @@ interface StudentItem {
 interface ParentConsentFormProps {
   classList: ClassItem[];
   defaultKelasId?: string;
+  config?: ConsentLetterConfig;
 }
 
-export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFormProps) {
+export function ParentConsentForm({
+  classList,
+  defaultKelasId,
+  config = DEFAULT_CONSENT_LETTER_CONFIG,
+}: ParentConsentFormProps) {
   const router = useRouter();
 
   // State Step & Form
@@ -530,9 +539,18 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
             Ketentuan Program 5 Hari Sekolah (FDK):
           </div>
           <ul className="list-disc pl-5 space-y-1 text-amber-900">
-            <li>Kegiatan Belajar Mengajar (KBM) berlangsung dari hari <strong>Senin s.d. Jumat</strong>.</li>
-            <li>Hari <strong>Sabtu dan Minggu</strong> dipergunakan untuk kegiatan penguatan keluarga dan istirahat siswa di rumah.</li>
-            <li>Alokasi jam belajar disesuaikan dengan kurikulum nasional dengan penambahan waktu istirahat dan ibadah siang.</li>
+            <li>
+              Hari Belajar:{' '}
+              <strong>{config.ketentuan.hariBelajar || 'Senin s.d. Jumat'}</strong>.
+            </li>
+            <li>
+              Jam Belajar:{' '}
+              <strong>{config.ketentuan.jamBelajar || '07.00 s.d. 15.00 WIB'}</strong>.
+            </li>
+            <li>
+              Hari Libur Siswa:{' '}
+              <strong>{config.ketentuan.hariLibur || 'Sabtu dan Minggu'}</strong> (kegiatan penguatan keluarga di rumah).
+            </li>
           </ul>
         </div>
 
@@ -613,53 +631,19 @@ export function ParentConsentForm({ classList, defaultKelasId }: ParentConsentFo
               Ketentuan Komitmen dan Tanggung Jawab Orang Tua/Wali:
             </Label>
             <div className="space-y-2.5 text-xs text-gray-700 bg-gray-50 p-4 rounded-xl border border-gray-200">
-              <label className="flex items-start gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={bekalMakan}
-                  onChange={(e) => setBekalMakan(e.target.checked)}
-                  className="mt-0.5 rounded text-blue-600"
-                />
-                <span className="text-gray-800 font-medium">
-                  1. Mendukung dan mematuhi tata tertib serta jadwal Kegiatan Belajar Mengajar (KBM) dari hari Senin sampai dengan Jumat.
-                </span>
-              </label>
-
-              <label className="flex items-start gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={transportasi}
-                  onChange={(e) => setTransportasi(e.target.checked)}
-                  className="mt-0.5 rounded text-blue-600"
-                />
-                <span className="text-gray-800 font-medium">
-                  2. Aktif menjalin komunikasi dengan pihak sekolah serta menghadiri kegiatan/pertemuan orang tua yang diselenggarakan sekolah.
-                </span>
-              </label>
-
-              <label className="flex items-start gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={ibadah}
-                  onChange={(e) => setIbadah(e.target.checked)}
-                  className="mt-0.5 rounded text-blue-600"
-                />
-                <span className="text-gray-800 font-medium">
-                  3. Memastikan kedisiplinan kehadiran anak dan menyelesaikan kewajiban administrasi sekolah tepat waktu.
-                </span>
-              </label>
-
-              <label className="flex items-start gap-2.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={pendampinganBelajar}
-                  onChange={(e) => setPendampinganBelajar(e.target.checked)}
-                  className="mt-0.5 rounded text-blue-600"
-                />
-                <span className="text-gray-800 font-medium">
-                  4. Melakukan pengawasan, pendampingan belajar mandiri, dan penguatan pendidikan karakter anak dalam lingkungan keluarga pada hari Sabtu dan Minggu.
-                </span>
-              </label>
+              {(config.komitmenPoin && config.komitmenPoin.length > 0
+                ? config.komitmenPoin
+                : DEFAULT_CONSENT_LETTER_CONFIG.komitmenPoin
+              ).map((poin, idx) => (
+                <div key={idx} className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-800 font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                    {idx + 1}
+                  </span>
+                  <span className="text-gray-800 font-medium leading-relaxed">
+                    {poin}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         )}
