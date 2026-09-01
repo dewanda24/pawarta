@@ -1,8 +1,8 @@
-﻿'use server';
+'use server';
 
 import { db } from '@/db';
 import { notificationChannels, notificationLogs } from '@/db/schema/system';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireAuth, logActivity } from '@/lib/server-action';
 
@@ -138,6 +138,81 @@ export async function sendTestMessage(channelId: string, recipient: string, pesa
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Gagal mengirim pesan uji coba';
     return { success: false, error: msg };
+  }
+}
+
+export async function sendAutomatedWhatsApp({
+  recipient,
+  recipientName,
+  title,
+  message,
+  fileUrl,
+}: {
+  recipient: string;
+  recipientName?: string;
+  title?: string;
+  message: string;
+  fileUrl?: string;
+}) {
+  try {
+    const channel = await db.query.notificationChannels.findFirst({
+      where: and(eq(notificationChannels.tipe, 'WHATSAPP'), eq(notificationChannels.isAktif, true)),
+      orderBy: [desc(notificationChannels.isDefault), desc(notificationChannels.createdAt)],
+    });
+
+    if (!channel) return { success: false, error: 'Tidak ada kanal WhatsApp aktif' };
+
+    const apiKey = (channel.konfigurasi as any)?.apiKey;
+    let status = 'SENT';
+    let responsePayload: any = { message: 'Message sent' };
+
+    if (apiKey && channel.provider === 'FONNTE') {
+      try {
+        const formData = new URLSearchParams();
+        const formattedRecipient = recipient.replace(/[^0-9]/g, '').startsWith('0')
+          ? `62${recipient.replace(/[^0-9]/g, '').slice(1)}`
+          : recipient.replace(/[^0-9]/g, '');
+
+        formData.append('target', formattedRecipient);
+        formData.append('message', message);
+        if (fileUrl) {
+          formData.append('url', fileUrl);
+        }
+
+        const res = await fetch('https://api.fonnte.com/send', {
+          method: 'POST',
+          headers: {
+            Authorization: apiKey,
+          },
+          body: formData,
+        });
+        const resJson = await res.json();
+        responsePayload = resJson;
+        if (!res.ok || resJson.status === false) {
+          status = 'FAILED';
+        }
+      } catch (err: any) {
+        status = 'FAILED';
+        responsePayload = { error: err.message };
+      }
+    }
+
+    // Insert log
+    await db.insert(notificationLogs).values({
+      channelId: channel.id,
+      recipient,
+      recipientName: recipientName || 'Admin / Wali',
+      judul: title || 'Notifikasi Persetujuan Orang Tua',
+      pesan: message,
+      status: status as any,
+      sentAt: new Date(),
+      responsePayload,
+    });
+
+    return { success: status === 'SENT' };
+  } catch (error) {
+    console.error('Error sending automated WhatsApp:', error);
+    return { success: false, error };
   }
 }
 

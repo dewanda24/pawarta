@@ -182,12 +182,57 @@ export default async function PersetujuanSuksesPage({ params }: PageProps) {
           )}
 
           {/* Action Buttons */}
-          <div className="space-y-3 pt-2">
+          <div className="space-y-4 pt-2">
+            {/* Primary Action: Kirim ke WhatsApp Admin 085795579158 */}
+            <div className="p-4 bg-emerald-50/80 border-2 border-emerald-300 rounded-2xl space-y-3 shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-xs">
+                  <Phone className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-emerald-950 text-sm">
+                    Kirim Berkas PDF ke WhatsApp Sekolah
+                  </h3>
+                  <p className="text-[11px] text-emerald-800">
+                    Kirim konfirmasi & lampiran link PDF resmi ke nomor <strong>085795579158</strong>
+                  </p>
+                </div>
+              </div>
+
+              <a
+                href={`https://api.whatsapp.com/send?phone=6285795579158&text=${encodeURIComponent(
+                  `*SURAT PERSETUJUAN ORANG TUA - PAWARTA*\n` +
+                  `*${sekolah?.nama || 'SMPN 1 UJUNGJAYA'}*\n\n` +
+                  `Telah diisi & ditandatangani secara sah oleh Orang Tua/Wali:\n\n` +
+                  `• *Nama Siswa*: ${consent.siswa?.nama || (consent.documentSnapshot as any)?.siswa?.nama || '-'}\n` +
+                  `• *NISN / NIS*: ${consent.siswa?.nisn || (consent.documentSnapshot as any)?.siswa?.nisn || '-'} / ${consent.siswa?.nis || (consent.documentSnapshot as any)?.siswa?.nis || '-'}\n` +
+                  `• *Kelas*: ${consent.siswa?.kelas?.namaKelas || consent.kelas?.namaKelas || (consent.documentSnapshot as any)?.siswa?.kelas || '-'}\n` +
+                  `• *Nama Orang Tua*: ${consent.namaOrtu} (${consent.hubungan})\n` +
+                  `• *No. WhatsApp*: ${consent.noHpOrtu}\n` +
+                  `• *Pernyataan Sikap*: ${consent.statusPersetujuan === 'SETUJU' ? 'MENYETUJUI PROGRAM 5 HARI SEKOLAH' : 'TIDAK MENYETUJUI'}\n` +
+                  `• *Nomor Surat*: ${stripNomorPrefix(consent.nomorSurat) || '-'}\n` +
+                  `• *Waktu*: ${consent.signedAt ? new Date(consent.signedAt).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' }) : '-'}\n\n` +
+                  `📄 *Lampiran Dokumen PDF Surat Resmi (Cetak / Unduh)*:\n` +
+                  `https://pawarta.smpn1ujungjaya.sch.id/persetujuan-ortu/cetak/${consent.id}\n\n` +
+                  `_Dokumen digital diterbitkan melalui Sistem Persuratan Digital PAWARTA._`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                <Button className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all">
+                  <Phone className="w-4 h-4 fill-current" />
+                  <span>Kirim ke WhatsApp Sekolah (085795579158)</span>
+                </Button>
+              </a>
+            </div>
+
+            {/* Secondary Action: Cetak PDF & Kirim ke WA Orang Tua */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Link href={`/persetujuan-ortu/cetak/${consent.id}`} target="_blank" className="flex-1">
-                <Button className="w-full h-11 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 shadow-md">
+                <Button className="w-full h-11 bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 shadow-sm">
                   <Printer className="w-4 h-4" />
-                  <span>Cetak / Unduh Lembar Pernyataan (PDF)</span>
+                  <span>Cetak / Unduh Dokumen (PDF)</span>
                 </Button>
               </Link>
 
@@ -209,10 +254,10 @@ export default async function PersetujuanSuksesPage({ params }: PageProps) {
                 >
                   <Button
                     variant="outline"
-                    className="w-full h-11 border-emerald-500 text-emerald-700 hover:bg-emerald-50 font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2"
+                    className="w-full h-11 border-gray-300 text-gray-700 hover:bg-gray-50 font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2"
                   >
                     <Phone className="w-4 h-4 text-emerald-600" />
-                    <span>Kirim Bukti ke WhatsApp</span>
+                    <span>Salinan ke WA Orang Tua</span>
                   </Button>
                 </a>
               )}

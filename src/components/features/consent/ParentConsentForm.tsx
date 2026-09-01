@@ -196,6 +196,9 @@ export function ParentConsentForm({
 
   // Signature & Submission
   const [signatureData, setSignatureData] = useState<string | null>(null);
+  const handleSignatureChange = React.useCallback((val: string | null) => {
+    setSignatureData(val);
+  }, []);
   const [isAgreedTerms, setIsAgreedTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -314,6 +317,35 @@ export function ParentConsentForm({
 
       if (res.success && res.data) {
         toast.success('Surat Persetujuan berhasil diterbitkan!');
+
+        // Siapkan pesan dan URL WhatsApp ke nomor 085795579158
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://pawarta.smpn1ujungjaya.sch.id';
+        const pdfUrl = `${baseUrl}/persetujuan-ortu/cetak/${res.data.id}`;
+        const cleanNomor = stripNomorPrefix(res.data.nomorSurat) || 'B/382/400.3.5.1/VIII/2026';
+
+        const waText =
+          `*SURAT PERSETUJUAN ORANG TUA - PAWARTA*\n` +
+          `*${sekolah?.nama || 'SMPN 1 UJUNGJAYA'}*\n\n` +
+          `Telah diisi & ditandatangani secara sah:\n\n` +
+          `• *Nama Siswa*: ${selectedStudent?.nama || '-'}\n` +
+          `• *NISN / NIS*: ${selectedStudent?.nisn || '-'} / ${selectedStudent?.nis || '-'}\n` +
+          `• *Kelas*: Kelas ${toRomanGrade(selectedTingkat)}\n` +
+          `• *Nama Orang Tua*: ${namaOrtu.trim()} (${hubungan})\n` +
+          `• *No. WhatsApp*: ${noHpOrtu.trim()}\n` +
+          `• *Pernyataan Sikap*: ${statusPersetujuan === 'SETUJU' ? 'MENYETUJUI PROGRAM 5 HARI SEKOLAH' : 'TIDAK MENYETUJUI'}\n` +
+          `• *Nomor Surat*: ${cleanNomor}\n\n` +
+          `📄 *Lampiran Berkas Dokumen PDF Resmi (Cetak / Unduh)*:\n` +
+          `${pdfUrl}\n\n` +
+          `_Pesan ini diterbitkan resmi melalui Sistem Persuratan Digital PAWARTA._`;
+
+        const waUrl = `https://api.whatsapp.com/send?phone=6285795579158&text=${encodeURIComponent(waText)}`;
+
+        try {
+          window.open(waUrl, '_blank');
+        } catch {
+          // Popup blocked fallback
+        }
+
         router.push(`/persetujuan-ortu/sukses/${res.data.id}`);
       } else {
         toast.error(res.error || 'Gagal menyimpan persetujuan');
@@ -1023,7 +1055,7 @@ export function ParentConsentForm({
 
         <SignaturePad
           value={signatureData}
-          onChange={(val) => setSignatureData(val)}
+          onChange={handleSignatureChange}
           parentName={namaOrtu}
           height={180}
         />

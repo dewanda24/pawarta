@@ -21,6 +21,7 @@ import {
   ConsentLetterConfig,
   DEFAULT_CONSENT_LETTER_CONFIG,
 } from './consent-config';
+import { sendAutomatedWhatsApp } from '@/features/system/actions/notifications-gateway';
 
 // ============================================================================
 // 1. PUBLIC ACTIONS (Tanpa Login — Untuk Orang Tua / Wali)
@@ -502,6 +503,57 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
         .returning();
 
       resultId = created.id;
+    }
+
+    // Kirim notifikasi WhatsApp otomatis di latar belakang ke nomor admin & orang tua
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://pawarta.smpn1ujungjaya.sch.id';
+      const pdfUrl = `${baseUrl}/persetujuan-ortu/cetak/${resultId}`;
+      const formattedDate = now.toLocaleDateString('id-ID', {
+        dateStyle: 'full',
+      });
+
+      const notifMessage =
+`*SURAT PERSETUJUAN ORANG TUA - PAWARTA*
+*${sekolah?.nama || 'SMPN 1 UJUNGJAYA'}*
+
+Telah diisi & ditandatangani secara sah oleh Orang Tua/Wali:
+
+• *Nama Siswa*: ${siswa.nama}
+• *NISN / NIS*: ${siswa.nisn || '-'} / ${siswa.nis || '-'}
+• *Kelas*: ${siswa.kelas?.namaKelas || '-'}
+• *Nama Orang Tua*: ${input.namaOrtu.trim()} (${input.hubungan || 'Orang Tua Kandung'})
+• *No. WhatsApp Ortu*: ${input.noHpOrtu.trim()}
+• *Pernyataan Sikap*: ${input.statusPersetujuan === 'SETUJU' ? 'MENYETUJUI PROGRAM 5 HARI SEKOLAH' : 'TIDAK MENYETUJUI'}
+• *Nomor Surat*: ${nomorSurat}
+• *Waktu*: ${formattedDate}
+
+📄 *Lampiran Dokumen PDF Surat Resmi (Cetak / Unduh)*:
+${pdfUrl}
+
+_Pesan ini diterbitkan otomatis melalui Sistem Persuratan Digital PAWARTA._`;
+
+      // 1. Kirim otomatis ke nomor WhatsApp admin 085795579158
+      sendAutomatedWhatsApp({
+        recipient: '085795579158',
+        recipientName: 'Admin Kesiswaan / Panitia',
+        title: `Persetujuan Ortu: ${siswa.nama}`,
+        message: notifMessage,
+        fileUrl: pdfUrl,
+      }).catch(() => {});
+
+      // 2. Kirim otomatis ke nomor WhatsApp orang tua (jika ada)
+      if (input.noHpOrtu) {
+        sendAutomatedWhatsApp({
+          recipient: input.noHpOrtu,
+          recipientName: input.namaOrtu,
+          title: `Bukti Persetujuan: ${siswa.nama}`,
+          message: notifMessage,
+          fileUrl: pdfUrl,
+        }).catch(() => {});
+      }
+    } catch {
+      // Background error ignored to not block user response
     }
 
     try {

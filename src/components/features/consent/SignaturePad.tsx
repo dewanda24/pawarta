@@ -4,7 +4,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RotateCcw, Check, PenTool, Sparkles, Wand2, Edit3, RefreshCw } from 'lucide-react';
+import { RotateCcw, Check, PenTool, Wand2, Edit3, RefreshCw } from 'lucide-react';
 
 interface SignaturePadProps {
   value?: string | null;
@@ -16,10 +16,10 @@ interface SignaturePadProps {
 type SignatureMode = 'DRAW' | 'AUTO';
 
 const SIGNATURE_STYLES = [
-  { id: 'style_1', name: 'Gaya 1 (Formal Script)', font: 'italic 34px "Brush Script MT", "Great Vibes", cursive', slant: 0.05, underline: false },
-  { id: 'style_2', name: 'Gaya 2 (Eksekutif)', font: 'italic bold 30px "Dancing Script", "Segoe Script", cursive', slant: 0.02, underline: false },
-  { id: 'style_3', name: 'Gaya 3 (Elegan Modern)', font: 'italic 32px "Caveat", "Lucida Handwriting", cursive', slant: 0.08, underline: false },
-  { id: 'style_4', name: 'Gaya 4 (Klasik Resmi)', font: 'italic bold 28px "Georgia", serif', slant: 0.04, underline: false },
+  { id: 'style_1', name: 'Gaya 1 (Formal Script)', font: 'italic 34px "Brush Script MT", "Great Vibes", "Segoe Script", cursive', slant: 0.05 },
+  { id: 'style_2', name: 'Gaya 2 (Eksekutif)', font: 'italic bold 30px "Dancing Script", "Segoe Script", "Lucida Handwriting", cursive', slant: 0.02 },
+  { id: 'style_3', name: 'Gaya 3 (Elegan Modern)', font: 'italic 32px "Caveat", "Lucida Handwriting", cursive', slant: 0.08 },
+  { id: 'style_4', name: 'Gaya 4 (Klasik Resmi)', font: 'italic bold 28px "Georgia", serif', slant: 0.04 },
 ];
 
 export function SignaturePad({ value, onChange, parentName = '', height = 180 }: SignaturePadProps) {
@@ -32,9 +32,18 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
   const drawCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const autoCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const [isDrawing, setIsDrawing] = useState(false);
+  // Drawing state in Refs to eliminate render latency & dropped strokes
+  const isDrawingRef = useRef(false);
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const historyRef = useRef<ImageData[]>([]);
+  const [historyCount, setHistoryCount] = useState(0);
   const [hasDrawn, setHasDrawn] = useState(false);
-  const [history, setHistory] = useState<ImageData[]>([]);
+
+  // Stable onChange ref so changing onChange prop doesn't re-trigger canvas re-inits
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   // Update text when parentName prop updates and in AUTO mode
   useEffect(() => {
@@ -44,28 +53,52 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
   }, [parentName, customSignText]);
 
   // Setup Draw Canvas & High-DPI support
-  const initDrawCanvas = useCallback(() => {
+  const initDrawCanvas = useCallback((preserveContent = false) => {
     const canvas = drawCanvasRef.current;
     if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    const targetWidth = Math.round(rect.width * ratio);
+    const targetHeight = Math.round(height * ratio);
+
+    let previousImage: ImageData | null = null;
+    if (preserveContent && canvas.width > 0 && canvas.height > 0) {
+      const oldCtx = canvas.getContext('2d', { willReadFrequently: true });
+      if (oldCtx) {
+        try {
+          previousImage = oldCtx.getImageData(0, 0, canvas.width, canvas.height);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
-    const ratio = Math.max(window.devicePixelRatio || 1, 1);
-    const rect = canvas.getBoundingClientRect();
-
-    canvas.width = rect.width * ratio;
-    canvas.height = rect.height * ratio;
-
-    ctx.scale(ratio, ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#0f172a'; // Slate-900 dark ink
+    ctx.strokeStyle = '#0f172a'; // Deep slate ink
     ctx.lineWidth = 2.5;
 
-    // Snapshot awal
-    const blankSnapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    setHistory([blankSnapshot]);
-  }, []);
+    if (previousImage) {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.putImageData(previousImage, 0, 0);
+      ctx.restore();
+    } else {
+      const blankSnapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      historyRef.current = [blankSnapshot];
+      setHistoryCount(1);
+    }
+  }, [height]);
 
   // Generate Auto Signature from Name (Tanpa Garis Bawah)
   const generateAutoSignature = useCallback(() => {
@@ -82,10 +115,10 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
     const w = rect.width || 400;
     const h = height;
 
-    canvas.width = w * ratio;
-    canvas.height = h * ratio;
+    canvas.width = Math.round(w * ratio);
+    canvas.height = Math.round(h * ratio);
 
-    ctx.scale(ratio, ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.clearRect(0, 0, w, h);
 
     // Styling Tanda Tangan
@@ -106,88 +139,120 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
 
     // Export to base64
     const dataUrl = canvas.toDataURL('image/png');
-    onChange(dataUrl);
-  }, [customSignText, parentName, selectedStyleIndex, height, onChange]);
+    onChangeRef.current(dataUrl);
+  }, [customSignText, parentName, selectedStyleIndex, height]);
 
+  // Initialize DRAW canvas on mount and mode switch
   useEffect(() => {
     if (mode === 'DRAW') {
-      initDrawCanvas();
-    } else {
-      generateAutoSignature();
+      const timer = setTimeout(() => {
+        initDrawCanvas(false);
+      }, 50);
+      return () => clearTimeout(timer);
     }
+  }, [mode, initDrawCanvas]);
+
+  // Trigger auto generate when relevant state changes
+  useEffect(() => {
+    if (mode === 'AUTO') {
+      const timer = setTimeout(() => {
+        generateAutoSignature();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [mode, generateAutoSignature]);
+
+  // Handle window resize
+  useEffect(() => {
     const handleResize = () => {
-      if (mode === 'DRAW') initDrawCanvas();
-      else generateAutoSignature();
+      if (mode === 'DRAW') {
+        initDrawCanvas(true);
+      } else {
+        generateAutoSignature();
+      }
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [mode, initDrawCanvas, generateAutoSignature]);
 
-  // Trigger auto generate when relevant state changes
-  useEffect(() => {
-    if (mode === 'AUTO') {
-      generateAutoSignature();
-    }
-  }, [mode, selectedStyleIndex, customSignText, parentName, generateAutoSignature]);
-
-  // Handle Manual Drawing Coordinates
-  const getCoordinates = (
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
-  ) => {
+  // Coordinates helper using client coordinates relative to canvas
+  const getCoordinates = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = drawCanvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
-
-    if ('touches' in e) {
-      const touch = e.touches[0];
-      return {
-        x: touch.clientX - rect.left,
-        y: touch.clientY - rect.top,
-      };
-    } else {
-      return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      };
-    }
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
   };
 
-  const startDrawing = (
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
-  ) => {
+  // High-performance Pointer Events for DRAW mode
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = drawCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // ignore
+    }
+
     const { x, y } = getCoordinates(e);
+    isDrawingRef.current = true;
+    lastPointRef.current = { x, y };
+
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 2.5;
+
+    // Draw immediate dot for tap/click
     ctx.beginPath();
-    ctx.moveTo(x, y);
-    setIsDrawing(true);
-    setHasDrawn(true);
+    ctx.arc(x, y, 1.25, 0, Math.PI * 2);
+    ctx.fillStyle = '#0f172a';
+    ctx.fill();
+
+    if (!hasDrawn) {
+      setHasDrawn(true);
+    }
   };
 
-  const draw = (
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
-  ) => {
-    if (!isDrawing) return;
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current || !lastPointRef.current) return;
     const canvas = drawCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
-    if ('touches' in e) {
-      e.preventDefault(); // Prevent page scroll on touch
-    }
-
     const { x, y } = getCoordinates(e);
+
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 2.5;
+
+    ctx.beginPath();
+    ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
     ctx.lineTo(x, y);
     ctx.stroke();
+
+    lastPointRef.current = { x, y };
   };
 
-  const stopDrawing = () => {
-    if (!isDrawing) return;
-    setIsDrawing(false);
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current) return;
+    isDrawingRef.current = false;
+    lastPointRef.current = null;
+
+    try {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {
+      // ignore
+    }
 
     const canvas = drawCanvasRef.current;
     if (!canvas) return;
@@ -196,29 +261,41 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
 
     // Save snapshot to history
     const snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    setHistory((prev) => [...prev, snapshot]);
+    historyRef.current = [...historyRef.current, snapshot];
+    setHistoryCount(historyRef.current.length);
 
     // Export base64
     const dataUrl = canvas.toDataURL('image/png');
-    onChange(dataUrl);
+    onChangeRef.current(dataUrl);
   };
 
-  const clear = () => {
+  const handlePointerCancel = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    handlePointerUp(e);
+  };
+
+  const handleClear = () => {
     const canvas = drawCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+    const blank = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    historyRef.current = [blank];
+    setHistoryCount(1);
     setHasDrawn(false);
-    const blankSnapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    setHistory([blankSnapshot]);
-    onChange(null);
+    onChangeRef.current(null);
   };
 
-  const undo = () => {
-    if (history.length <= 1) {
-      clear();
+  const handleUndo = () => {
+    if (historyRef.current.length <= 1) {
+      handleClear();
       return;
     }
     const canvas = drawCanvasRef.current;
@@ -226,18 +303,49 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
 
-    const newHistory = [...history];
+    const newHistory = [...historyRef.current];
     newHistory.pop();
-    const previousSnapshot = newHistory[newHistory.length - 1];
+    historyRef.current = newHistory;
+    setHistoryCount(newHistory.length);
 
-    if (previousSnapshot) {
+    const previousSnapshot = newHistory[newHistory.length - 1];
+    if (previousSnapshot && newHistory.length > 1) {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.putImageData(previousSnapshot, 0, 0);
-      setHistory(newHistory);
+      ctx.restore();
       const dataUrl = canvas.toDataURL('image/png');
-      onChange(dataUrl);
+      onChangeRef.current(dataUrl);
     } else {
-      clear();
+      const ratio = Math.max(window.devicePixelRatio || 1, 1);
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      setHasDrawn(false);
+      onChangeRef.current(null);
     }
+  };
+
+  const switchToDrawMode = () => {
+    setMode('DRAW');
+    setTimeout(() => {
+      initDrawCanvas(true);
+      const canvas = drawCanvasRef.current;
+      if (canvas && hasDrawn) {
+        onChangeRef.current(canvas.toDataURL('image/png'));
+      } else {
+        onChangeRef.current(null);
+      }
+    }, 50);
+  };
+
+  const switchToAutoMode = () => {
+    setMode('AUTO');
+    setTimeout(() => {
+      generateAutoSignature();
+    }, 50);
   };
 
   return (
@@ -246,10 +354,7 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
       <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
         <button
           type="button"
-          onClick={() => {
-            setMode('DRAW');
-            setTimeout(initDrawCanvas, 50);
-          }}
+          onClick={switchToDrawMode}
           className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
             mode === 'DRAW'
               ? 'bg-white text-blue-900 shadow-xs border border-gray-200/80'
@@ -265,9 +370,7 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
 
         <button
           type="button"
-          onClick={() => {
-            setMode('AUTO');
-          }}
+          onClick={switchToAutoMode}
           className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
             mode === 'AUTO'
               ? 'bg-white text-blue-900 shadow-xs border border-gray-200/80'
@@ -292,8 +395,8 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={undo}
-                disabled={history.length <= 1}
+                onClick={handleUndo}
+                disabled={historyCount <= 1}
                 className="h-7 px-2 text-[11px] text-gray-600"
               >
                 <RotateCcw className="w-3 h-3 mr-1" />
@@ -303,7 +406,7 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={clear}
+                onClick={handleClear}
                 disabled={!hasDrawn}
                 className="h-7 px-2 text-[11px] text-red-600 hover:bg-red-50"
               >
@@ -312,18 +415,21 @@ export function SignaturePad({ value, onChange, parentName = '', height = 180 }:
             </div>
           </div>
 
-          <div className="relative border-2 border-dashed border-gray-300 rounded-2xl bg-white overflow-hidden shadow-inner touch-none">
+          <div className="relative border-2 border-dashed border-gray-300 rounded-2xl bg-white overflow-hidden shadow-inner select-none touch-none">
             <canvas
               ref={drawCanvasRef}
-              style={{ width: '100%', height: `${height}px`, display: 'block' }}
-              onMouseDown={startDrawing}
-              onMouseMove={draw}
-              onMouseUp={stopDrawing}
-              onMouseLeave={stopDrawing}
-              onTouchStart={startDrawing}
-              onTouchMove={draw}
-              onTouchEnd={stopDrawing}
-              className="cursor-crosshair"
+              style={{
+                width: '100%',
+                height: `${height}px`,
+                display: 'block',
+                touchAction: 'none',
+              }}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerCancel}
+              onPointerLeave={handlePointerUp}
+              className="cursor-crosshair w-full block touch-none select-none"
             />
             {!hasDrawn && (
               <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center text-gray-400 gap-1 select-none">
