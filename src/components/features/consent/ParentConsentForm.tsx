@@ -319,7 +319,9 @@ export function ParentConsentForm({
         toast.success('Surat Persetujuan berhasil diterbitkan!');
 
         // Siapkan pesan dan URL WhatsApp ke nomor 085795579158
-        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://pawarta.smpn1ujungjaya.sch.id';
+        const baseUrl = typeof window !== 'undefined' && window.location.hostname.includes('pawarta')
+          ? window.location.origin
+          : 'https://pawarta.vercel.app';
         const pdfUrl = `${baseUrl}/persetujuan-ortu/cetak/${res.data.id}`;
         const cleanNomor = stripNomorPrefix(res.data.nomorSurat) || 'B/382/400.3.5.1/VIII/2026';
 

@@ -507,7 +507,7 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
 
     // Kirim notifikasi WhatsApp otomatis di latar belakang ke nomor admin & orang tua
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://pawarta.smpn1ujungjaya.sch.id';
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://pawarta.vercel.app';
       const pdfUrl = `${baseUrl}/persetujuan-ortu/cetak/${resultId}`;
       const formattedDate = now.toLocaleDateString('id-ID', {
         dateStyle: 'full',
