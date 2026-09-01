@@ -45,6 +45,8 @@ import Link from 'next/link';
 import {
   ConsentLetterConfig,
   DEFAULT_CONSENT_LETTER_CONFIG,
+  DEFAULT_LAMPIRAN_JADWAL_KBM,
+  JadwalKbmItem,
 } from '@/features/student-letter/consent-config';
 import { LetterheadView } from '@/components/shared/LetterheadView';
 import { stripNomorPrefix } from '@/lib/nomor-surat-generator';
@@ -569,6 +571,134 @@ export function ParentConsentForm({
                 <p className="font-mono text-[11px] text-gray-800">
                   {config.penandatangan?.nip ? `NIP. ${config.penandatangan.nip}` : '-'}
                 </p>
+              </div>
+            </div>
+
+            {/* SEKAT LAMPIRAN RESMI NASKAH DINAS SEKOLAH */}
+            <div className="pt-8 mt-8 border-t-2 border-dashed border-gray-300">
+              {/* Header Lampiran Naskah Dinas */}
+              <div className="flex flex-col sm:flex-row justify-between items-start text-[12px] pb-3 mb-2">
+                <div className="space-y-0.5">
+                  <span className="font-bold tracking-wider uppercase text-[11px] text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                    Lampiran Surat Pemberitahuan
+                  </span>
+                </div>
+                <div className="text-left sm:text-right text-[12px] space-y-0.5 mt-2 sm:mt-0 font-mono text-gray-700">
+                  <p>Nomor : {stripNomorPrefix(config.nomorSurat) || 'B/382/400.3.5.1/VIII/2026'}</p>
+                  <p>
+                    Tanggal :{' '}
+                    {config.tanggalSurat && config.tanggalSurat !== 'OTOMATIS'
+                      ? config.tanggalSurat
+                      : new Date().toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                  </p>
+                  <p>Perihal : {config.perihalSurat || 'Pemberitahuan & Persetujuan Pembelajaran 5 Hari'}</p>
+                </div>
+              </div>
+
+              {/* Judul Lampiran */}
+              <div className="text-center my-4 space-y-1">
+                <h4 className="font-bold text-sm sm:text-base uppercase tracking-tight text-gray-950">
+                  {config.lampiranJadwal?.judul || 'JADWAL KEGIATAN BELAJAR MENGAJAR (KBM)'}
+                </h4>
+                <p className="font-semibold text-xs sm:text-sm uppercase text-gray-700">
+                  {config.lampiranJadwal?.subjudul ||
+                    `SISTEM PEMBELAJARAN 5 (LIMA) HARI KERJA — ${sekolah?.nama || 'SMPN 1 UJUNGJAYA'}`}
+                </p>
+              </div>
+
+              {/* Tabel Lampiran Jadwal KBM 5 Hari Kerja */}
+              <div className="overflow-x-auto my-4">
+                <table className="w-full border-collapse border border-gray-800 text-[12px] sm:text-[13px]">
+                  <thead>
+                    <tr className="bg-gray-100 text-gray-900 border-b border-gray-800 text-center font-bold">
+                      <th className="border border-gray-800 px-3 py-2 w-28">Hari</th>
+                      <th className="border border-gray-800 px-3 py-2 w-36">Waktu (WIB)</th>
+                      <th className="border border-gray-800 px-3 py-2 text-left">Uraian Kegiatan / Jam Pelajaran</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(
+                      (config.lampiranJadwal?.items && config.lampiranJadwal.items.length > 0
+                        ? config.lampiranJadwal.items
+                        : DEFAULT_LAMPIRAN_JADWAL_KBM
+                      ).reduce((acc: Record<string, JadwalKbmItem[]>, item) => {
+                        if (!acc[item.hari]) acc[item.hari] = [];
+                        acc[item.hari].push(item);
+                        return acc;
+                      }, {})
+                    ).map(([hariName, sesiList]) =>
+                      sesiList.map((sesi, idx) => (
+                        <tr
+                          key={`${hariName}-${sesi.jam}-${idx}`}
+                          className={
+                            sesi.isIstirahat
+                              ? 'bg-amber-50/80 font-medium'
+                              : idx % 2 === 1
+                                ? 'bg-gray-50/60'
+                                : 'bg-white'
+                          }
+                        >
+                          {idx === 0 && (
+                            <td
+                              rowSpan={sesiList.length}
+                              className="border border-gray-800 px-3 py-2 font-bold text-center align-top bg-white"
+                            >
+                              <span className="text-gray-900 block font-bold text-sm">{hariName}</span>
+                              <span className="block text-[10px] text-gray-500 font-normal mt-1">
+                                {sesiList[0].jam.split('–')[0].trim()} s.d.{' '}
+                                {sesiList[sesiList.length - 1].jam.split('–')[1]?.trim() || ''}
+                              </span>
+                            </td>
+                          )}
+                          <td className="border border-gray-800 px-3 py-1.5 text-center font-mono text-[12px] font-semibold text-gray-800 whitespace-nowrap">
+                            {sesi.jam}
+                          </td>
+                          <td className="border border-gray-800 px-3 py-1.5 text-gray-900">
+                            <span className={sesi.isIstirahat ? 'text-amber-900 font-bold' : ''}>
+                              {sesi.kegiatan || (sesi.isIstirahat ? 'Istirahat' : `Jam Pelajaran ${idx + 1}`)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pengesahan Pejabat Sekolah pada Lembar Lampiran */}
+              <div className="flex justify-end pt-4 text-[13px]">
+                <div className="text-center w-64 space-y-1">
+                  <p>
+                    {config.tempatSurat || sekolah?.kabupaten || 'Sumedang'},{' '}
+                    {config.tanggalSurat && config.tanggalSurat !== 'OTOMATIS'
+                      ? config.tanggalSurat
+                      : new Date().toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                  </p>
+                  <p className="font-bold">{config.penandatangan?.jabatan || `Kepala ${sekolah?.nama || 'SMPN 1 UJUNGJAYA'}`}</p>
+                  <div className="h-16 flex items-center justify-center my-1">
+                    {config.penandatangan?.tampilkanQr !== false ? (
+                      <div className="w-14 h-14 border border-gray-300 rounded flex items-center justify-center bg-gray-50 text-[10px] font-mono text-gray-500">
+                        [QR TTE]
+                      </div>
+                    ) : (
+                      <div className="h-14" />
+                    )}
+                  </div>
+                  <p className="font-bold underline">
+                    {config.penandatangan?.nama || 'Drs. H. Dedi Kusnadi, M.Pd.'}
+                  </p>
+                  <p className="font-mono text-[11px] text-gray-800">
+                    {config.penandatangan?.nip ? `NIP. ${config.penandatangan.nip}` : '-'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

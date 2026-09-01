@@ -21,6 +21,8 @@ import {
 import {
   ConsentLetterConfig,
   DEFAULT_CONSENT_LETTER_CONFIG,
+  DEFAULT_LAMPIRAN_JADWAL_KBM,
+  JadwalKbmItem,
 } from '@/features/student-letter/consent-config';
 import {
   saveConsentLetterConfig,
@@ -507,6 +509,17 @@ export function ConsentLetterConfigModal({
                     className="h-9 text-xs"
                   />
                 </div>
+
+                {/* Info Card: Lampiran Resmi Jadwal KBM */}
+                <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-lg text-xs space-y-1 text-blue-900 mt-2">
+                  <p className="font-bold flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-blue-700" />
+                    Lampiran Resmi: Jadwal KBM 5 Hari Kerja
+                  </p>
+                  <p className="text-[11px] text-blue-800">
+                    Tabel rincian jadwal jam belajar (Senin s.d. Jumat: 47 sesi KBM & Pembiasaan) otomatis menyatu sebagai lampiran resmi pada dokumen Surat Pemberitahuan Sekolah dan dapat ditinjau pada tab <strong>Pratinjau Surat</strong>.
+                  </p>
+                </div>
               </div>
 
               {/* Bagian 3: Butir Komitmen Orang Tua (Halaman 2) */}
@@ -819,6 +832,103 @@ export function ConsentLetterConfigModal({
                     <p className="text-gray-600 font-mono text-[10px]">
                       NIP. {config.penandatangan.nip || '-'}
                     </p>
+                  </div>
+                </div>
+
+                {/* Sekat Lampiran pada Pratinjau Admin */}
+                <div className="pt-6 mt-6 border-t-2 border-dashed border-gray-300">
+                  <div className="flex justify-between items-start text-[11px] pb-2 mb-2 font-sans border-b border-gray-200">
+                    <span className="font-bold uppercase bg-blue-50 text-blue-900 px-2 py-0.5 rounded border border-blue-200 text-[10px]">
+                      Lampiran Surat Pemberitahuan
+                    </span>
+                    <div className="text-right text-[10px] font-mono text-gray-600">
+                      <p>Nomor : {config.nomorSurat}</p>
+                      <p>Perihal : {config.perihalSurat}</p>
+                    </div>
+                  </div>
+
+                  <div className="text-center my-3 space-y-0.5">
+                    <h5 className="font-bold text-xs uppercase tracking-tight text-gray-900">
+                      {config.lampiranJadwal?.judul || 'JADWAL KEGIATAN BELAJAR MENGAJAR (KBM)'}
+                    </h5>
+                    <p className="font-semibold text-[11px] uppercase text-gray-600">
+                      {config.lampiranJadwal?.subjudul ||
+                        `SISTEM PEMBELAJARAN 5 HARI KERJA — ${sekolahNama || 'SMPN 1 UJUNGJAYA'}`}
+                    </p>
+                  </div>
+
+                  <div className="overflow-x-auto my-3">
+                    <table className="w-full border-collapse border border-gray-700 text-[11px]">
+                      <thead>
+                        <tr className="bg-gray-100 text-gray-900 border-b border-gray-700 text-center font-bold">
+                          <th className="border border-gray-700 px-2 py-1 w-20">Hari</th>
+                          <th className="border border-gray-700 px-2 py-1 w-28">Waktu</th>
+                          <th className="border border-gray-700 px-2 py-1 text-left">Uraian Kegiatan</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(
+                          (config.lampiranJadwal?.items && config.lampiranJadwal.items.length > 0
+                            ? config.lampiranJadwal.items
+                            : DEFAULT_LAMPIRAN_JADWAL_KBM
+                          ).reduce((acc: Record<string, JadwalKbmItem[]>, item) => {
+                            if (!acc[item.hari]) acc[item.hari] = [];
+                            acc[item.hari].push(item);
+                            return acc;
+                          }, {})
+                        ).map(([hariName, sesiList]) =>
+                          sesiList.map((sesi, idx) => (
+                            <tr
+                              key={`${hariName}-${sesi.jam}-${idx}`}
+                              className={
+                                sesi.isIstirahat
+                                  ? 'bg-amber-50/80 font-medium'
+                                  : idx % 2 === 1
+                                    ? 'bg-gray-50/60'
+                                    : 'bg-white'
+                              }
+                            >
+                              {idx === 0 && (
+                                <td
+                                  rowSpan={sesiList.length}
+                                  className="border border-gray-700 px-2 py-1 font-bold text-center align-top bg-white"
+                                >
+                                  <span>{hariName}</span>
+                                </td>
+                              )}
+                              <td className="border border-gray-700 px-2 py-0.5 text-center font-mono text-[10px] font-semibold text-gray-800 whitespace-nowrap">
+                                {sesi.jam}
+                              </td>
+                              <td className="border border-gray-700 px-2 py-0.5 text-gray-900 text-[10.5px]">
+                                <span className={sesi.isIstirahat ? 'text-amber-900 font-bold' : ''}>
+                                  {sesi.kegiatan || (sesi.isIstirahat ? 'Istirahat' : `Jam Pelajaran ${idx + 1}`)}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="flex justify-end pt-2 font-sans text-xs">
+                    <div className="text-center w-56 space-y-0.5">
+                      <p>Hormat kami,</p>
+                      <p className="font-bold">{config.penandatangan.jabatan}</p>
+                      <div className="h-10 flex items-center justify-center my-0.5">
+                        {config.penandatangan.tampilkanQr ? (
+                          <div className="w-9 h-9 border border-gray-300 rounded flex items-center justify-center bg-gray-50 text-[8px] font-mono text-gray-500">
+                            [QR TTE]
+                          </div>
+                        ) : (
+                          <div className="h-8" />
+                        )}
+                      </div>
+                      <p className="font-bold">{config.penandatangan.nama}</p>
+                      <p className="text-gray-600 font-mono text-[9px]">
+                        NIP. {config.penandatangan.nip || '-'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

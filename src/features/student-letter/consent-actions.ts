@@ -174,6 +174,7 @@ export async function getConsentLetterConfig() {
               ...DEFAULT_CONSENT_LETTER_CONFIG.ketentuan,
               ...(parsed.ketentuan || {}),
             },
+            lampiranJadwal: parsed.lampiranJadwal || DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal,
             penandatangan: {
               ...DEFAULT_CONSENT_LETTER_CONFIG.penandatangan,
               ...(parsed.penandatangan || {}),

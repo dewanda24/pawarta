@@ -32,6 +32,10 @@ import {
   MessageSquare,
   Share2,
   Settings2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
 } from 'lucide-react';
 import {
   Dialog,
@@ -141,6 +145,10 @@ Atas perhatian, pengertian, dan kerja sama Bapak/Ibu sekalian, kami ucapkan teri
 _Hormat kami,_
 *Kepala SMPN 1 Ujungjaya & Tim Kesiswaan*`;
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+
   // Filter list
   const filteredData = data.filter((item) => {
     if (selectedClass !== 'ALL' && item.kelasId !== selectedClass) return false;
@@ -154,6 +162,14 @@ _Hormat kami,_
     }
     return true;
   });
+
+  // Pagination Calculations
+  const totalRecords = filteredData.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalRecords);
+  const paginatedData = filteredData.slice(startIndex, endIndex);
 
   const handleCopyPublicLink = () => {
     const publicUrl = `${origin}/persetujuan-ortu`;
@@ -295,7 +311,10 @@ _Hormat kami,_
           <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
           <Input
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
             placeholder="Cari nama siswa, NISN, atau orang tua..."
             className="pl-9 h-9 text-xs"
           />
@@ -303,7 +322,13 @@ _Hormat kami,_
 
         {/* Filter Kelas */}
         <div className="sm:col-span-3">
-          <Select value={selectedClass} onValueChange={(val) => setSelectedClass(val)}>
+          <Select
+            value={selectedClass}
+            onValueChange={(val) => {
+              setSelectedClass(val);
+              setCurrentPage(1);
+            }}
+          >
             <SelectTrigger className="h-9 text-xs">
               <SelectValue placeholder="Semua Kelas" />
             </SelectTrigger>
@@ -320,7 +345,13 @@ _Hormat kami,_
 
         {/* Filter Status */}
         <div className="sm:col-span-3">
-          <Select value={selectedStatus} onValueChange={(val) => setSelectedStatus(val)}>
+          <Select
+            value={selectedStatus}
+            onValueChange={(val) => {
+              setSelectedStatus(val);
+              setCurrentPage(1);
+            }}
+          >
             <SelectTrigger className="h-9 text-xs">
               <SelectValue placeholder="Semua Status" />
             </SelectTrigger>
@@ -350,10 +381,12 @@ _Hormat kami,_
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredData.length > 0 ? (
-                filteredData.map((item, idx) => (
+              {paginatedData.length > 0 ? (
+                paginatedData.map((item, idx) => (
                   <tr key={item.id} className="hover:bg-gray-50/70 transition-colors">
-                    <td className="p-3.5 text-center font-mono text-gray-500">{idx + 1}</td>
+                    <td className="p-3.5 text-center font-mono text-gray-500">
+                      {startIndex + idx + 1}
+                    </td>
 
                     <td className="p-3.5">
                       <div className="font-bold text-gray-900 text-xs sm:text-sm">
@@ -450,16 +483,93 @@ _Hormat kami,_
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-gray-400">
                     Tidak ada data persetujuan orang tua yang sesuai dengan filter.
-          </td>
+                  </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
 
-        {/* Footer info */}
-        <div className="p-3.5 bg-gray-50 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500">
-          <span>Menampilkan {filteredData.length} dari total {data.length} surat masuk</span>
+        {/* Pagination Footer Controls */}
+        <div className="p-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-3 text-gray-500 font-medium">
+            <span>
+              Halaman <strong>{safeCurrentPage}</strong> dari <strong>{totalPages}</strong>{' '}
+              <span className="text-gray-400">
+                (Menampilkan {totalRecords > 0 ? startIndex + 1 : 0}–{endIndex} dari {totalRecords} surat)
+              </span>
+            </span>
+
+            <div className="flex items-center gap-1.5 border-l border-gray-200 pl-3">
+              <span className="text-[11px] text-gray-500">Tampilkan:</span>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(val) => {
+                  setPageSize(Number(val));
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="h-7 w-16 text-xs bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-[11px] text-gray-400">baris</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(1)}
+              disabled={safeCurrentPage === 1}
+              className="h-8 px-2 text-xs"
+              title="Halaman Pertama"
+            >
+              <ChevronsLeft className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={safeCurrentPage === 1}
+              className="h-8 px-2.5 text-xs flex items-center gap-1 font-medium"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>Sebelumnya</span>
+            </Button>
+
+            <span className="font-semibold text-gray-700 px-3 py-1 bg-white border border-gray-200 rounded-md text-xs shadow-2xs">
+              {safeCurrentPage}
+            </span>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safeCurrentPage >= totalPages}
+              className="h-8 px-2.5 text-xs flex items-center gap-1 font-medium"
+            >
+              <span>Selanjutnya</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={safeCurrentPage >= totalPages}
+              className="h-8 px-2 text-xs"
+              title="Halaman Terakhir"
+            >
+              <ChevronsRight className="w-3.5 h-3.5" />
+            </Button>
+          </div>
         </div>
       </div>
 
