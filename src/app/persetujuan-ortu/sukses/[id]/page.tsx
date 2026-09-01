@@ -207,7 +207,7 @@ export default async function PersetujuanSuksesPage({ params }: PageProps) {
               >
                 <Button className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 shadow-md">
                   <Phone className="w-4 h-4" />
-                  <span>Kirim ke WhatsApp Sekolah (085795579158)</span>
+                  <span>Kirim ke WhatsApp Sekolah</span>
                 </Button>
               </a>
 
