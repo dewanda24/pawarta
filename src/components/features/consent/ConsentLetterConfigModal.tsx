@@ -1,12 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +17,7 @@ import {
   ConsentLetterConfig,
   DEFAULT_CONSENT_LETTER_CONFIG,
   DEFAULT_LAMPIRAN_JADWAL_KBM,
+  HARI_LIST,
   JadwalKbmItem,
 } from '@/features/student-letter/consent-config';
 import {
@@ -39,9 +35,17 @@ import {
   RotateCcw,
   Loader2,
   CheckCircle2,
-  QrCode,
   Sparkles,
   Type,
+  CalendarDays,
+  Copy,
+  Coffee,
+  BookOpen,
+  ArrowRight,
+  Layers,
+  Search,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -73,17 +77,46 @@ export function ConsentLetterConfigModal({
   sekolahKabupaten = 'Sumedang',
   onSaved,
 }: ConsentLetterConfigModalProps) {
-  const [activeTab, setActiveTab] = useState<'redaksi' | 'penandatangan' | 'preview'>('redaksi');
-  const [config, setConfig] = useState<ConsentLetterConfig>(initialConfig || DEFAULT_CONSENT_LETTER_CONFIG);
+  const [activeTab, setActiveTab] = useState<'redaksi' | 'jadwal' | 'penandatangan' | 'preview'>(
+    'redaksi',
+  );
+  const [config, setConfig] = useState<ConsentLetterConfig>(
+    initialConfig || DEFAULT_CONSENT_LETTER_CONFIG,
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
-  // Sync state if initialConfig updates
-  React.useEffect(() => {
-    if (initialConfig) {
-      setConfig(initialConfig);
-    }
-  }, [initialConfig]);
+  // Filter & Utilitas Jadwal
+  const [jadwalDayFilter, setJadwalDayFilter] = useState<string>('ALL');
+  const [searchKegiatan, setSearchKegiatan] = useState<string>('');
+  const [showCopyPanel, setShowCopyPanel] = useState<boolean>(false);
+  const [copySourceDay, setCopySourceDay] = useState<string>('Selasa');
+  const [copyTargetDay, setCopyTargetDay] = useState<string>('Rabu');
+
+  const [prevInitial, setPrevInitial] = useState(initialConfig);
+  if (initialConfig !== prevInitial) {
+    setPrevInitial(initialConfig);
+    setConfig({
+      ...initialConfig,
+      lampiranJadwal: {
+        judul:
+          initialConfig.lampiranJadwal?.judul ||
+          DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.judul,
+        subjudul:
+          initialConfig.lampiranJadwal?.subjudul ||
+          DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.subjudul,
+        items:
+          initialConfig.lampiranJadwal?.items && initialConfig.lampiranJadwal.items.length > 0
+            ? initialConfig.lampiranJadwal.items
+            : DEFAULT_LAMPIRAN_JADWAL_KBM,
+      },
+    });
+  }
+
+  const scheduleItems: JadwalKbmItem[] =
+    config.lampiranJadwal?.items && config.lampiranJadwal.items.length > 0
+      ? config.lampiranJadwal.items
+      : DEFAULT_LAMPIRAN_JADWAL_KBM;
 
   const handleSelectPegawai = (pegawaiId: string) => {
     const selected = availablePegawai.find((p) => p.id === pegawaiId);
@@ -107,10 +140,7 @@ export function ConsentLetterConfigModal({
   const handleAddKomitmen = () => {
     setConfig((prev) => ({
       ...prev,
-      komitmenPoin: [
-        ...prev.komitmenPoin,
-        'Poin komitmen baru...',
-      ],
+      komitmenPoin: [...prev.komitmenPoin, 'Poin komitmen baru...'],
     }));
   };
 
@@ -133,6 +163,276 @@ export function ConsentLetterConfigModal({
     });
   };
 
+  // =========================================================================
+  // HANDLERS EDIT JADWAL KBM
+  // =========================================================================
+  const handleUpdateLampiranHeader = (field: 'judul' | 'subjudul', val: string) => {
+    setConfig((prev) => ({
+      ...prev,
+      lampiranJadwal: {
+        judul:
+          prev.lampiranJadwal?.judul || DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.judul || '',
+        subjudul:
+          prev.lampiranJadwal?.subjudul ||
+          DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.subjudul ||
+          '',
+        items: prev.lampiranJadwal?.items || DEFAULT_LAMPIRAN_JADWAL_KBM,
+        [field]: val,
+      },
+    }));
+  };
+
+  const handleUpdateJadwalItem = (
+    globalIndex: number,
+    field: keyof JadwalKbmItem,
+    val: JadwalKbmItem[keyof JadwalKbmItem],
+  ) => {
+    setConfig((prev) => {
+      const currentItems = [...(prev.lampiranJadwal?.items || DEFAULT_LAMPIRAN_JADWAL_KBM)];
+      if (currentItems[globalIndex]) {
+        currentItems[globalIndex] = {
+          ...currentItems[globalIndex],
+          [field]: val,
+        };
+      }
+      return {
+        ...prev,
+        lampiranJadwal: {
+          judul:
+            prev.lampiranJadwal?.judul || DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.judul || '',
+          subjudul:
+            prev.lampiranJadwal?.subjudul ||
+            DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.subjudul ||
+            '',
+          items: currentItems,
+        },
+      };
+    });
+  };
+
+  const handleAddJadwalItem = (hariPreset?: string) => {
+    setConfig((prev) => {
+      const currentItems = [...(prev.lampiranJadwal?.items || DEFAULT_LAMPIRAN_JADWAL_KBM)];
+      const targetHari =
+        hariPreset && hariPreset !== 'ALL'
+          ? hariPreset
+          : jadwalDayFilter !== 'ALL'
+            ? jadwalDayFilter
+            : 'Senin';
+
+      const itemsForHari = currentItems.filter((it) => it.hari === targetHari);
+      let nextJam = '07.00–07.40';
+      const nonBreakCount = itemsForHari.filter(
+        (i) => !i.isIstirahat && i.kegiatan?.toLowerCase().includes('jam pelajaran'),
+      ).length;
+      const nextKegiatan = `Jam Pelajaran ke-${nonBreakCount + 1}`;
+
+      if (itemsForHari.length > 0) {
+        const lastItem = itemsForHari[itemsForHari.length - 1];
+        const parts = lastItem.jam.split('–');
+        if (parts.length === 2 && parts[1].trim()) {
+          const endJam = parts[1].trim();
+          nextJam = `${endJam}–...`;
+        }
+      }
+
+      const newItem: JadwalKbmItem = {
+        hari: targetHari,
+        jam: nextJam,
+        kegiatan: nextKegiatan,
+        isIstirahat: false,
+      };
+
+      // Cari indeks terakhir untuk hari tersebut agar rapi
+      let lastIndexForDay = -1;
+      for (let i = currentItems.length - 1; i >= 0; i--) {
+        if (currentItems[i].hari === targetHari) {
+          lastIndexForDay = i;
+          break;
+        }
+      }
+
+      if (lastIndexForDay !== -1) {
+        currentItems.splice(lastIndexForDay + 1, 0, newItem);
+      } else {
+        currentItems.push(newItem);
+      }
+
+      return {
+        ...prev,
+        lampiranJadwal: {
+          judul:
+            prev.lampiranJadwal?.judul || DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.judul || '',
+          subjudul:
+            prev.lampiranJadwal?.subjudul ||
+            DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.subjudul ||
+            '',
+          items: currentItems,
+        },
+      };
+    });
+    toast.success('Sesi baru berhasil ditambahkan');
+  };
+
+  const handleDeleteJadwalItem = (globalIndex: number) => {
+    setConfig((prev) => {
+      const currentItems = [...(prev.lampiranJadwal?.items || DEFAULT_LAMPIRAN_JADWAL_KBM)];
+      currentItems.splice(globalIndex, 1);
+      return {
+        ...prev,
+        lampiranJadwal: {
+          judul:
+            prev.lampiranJadwal?.judul || DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.judul || '',
+          subjudul:
+            prev.lampiranJadwal?.subjudul ||
+            DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.subjudul ||
+            '',
+          items: currentItems,
+        },
+      };
+    });
+    toast.success('Sesi jadwal dihapus');
+  };
+
+  const handleDuplicateJadwalItem = (globalIndex: number) => {
+    setConfig((prev) => {
+      const currentItems = [...(prev.lampiranJadwal?.items || DEFAULT_LAMPIRAN_JADWAL_KBM)];
+      const target = currentItems[globalIndex];
+      if (target) {
+        const cloned: JadwalKbmItem = {
+          ...target,
+          kegiatan: `${target.kegiatan || 'Sesi'} (Salinan)`,
+        };
+        currentItems.splice(globalIndex + 1, 0, cloned);
+      }
+      return {
+        ...prev,
+        lampiranJadwal: {
+          judul:
+            prev.lampiranJadwal?.judul || DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.judul || '',
+          subjudul:
+            prev.lampiranJadwal?.subjudul ||
+            DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.subjudul ||
+            '',
+          items: currentItems,
+        },
+      };
+    });
+    toast.success('Sesi berhasil diduplikasi');
+  };
+
+  const handleMoveJadwalItem = (globalIndex: number, direction: 'UP' | 'DOWN') => {
+    setConfig((prev) => {
+      const currentItems = [...(prev.lampiranJadwal?.items || DEFAULT_LAMPIRAN_JADWAL_KBM)];
+      const targetIndex = direction === 'UP' ? globalIndex - 1 : globalIndex + 1;
+      if (targetIndex < 0 || targetIndex >= currentItems.length) return prev;
+
+      const temp = currentItems[globalIndex];
+      currentItems[globalIndex] = currentItems[targetIndex];
+      currentItems[targetIndex] = temp;
+
+      return {
+        ...prev,
+        lampiranJadwal: {
+          judul:
+            prev.lampiranJadwal?.judul || DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.judul || '',
+          subjudul:
+            prev.lampiranJadwal?.subjudul ||
+            DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.subjudul ||
+            '',
+          items: currentItems,
+        },
+      };
+    });
+  };
+
+  const handleResetJadwalOnly = () => {
+    if (
+      !confirm(
+        'Kembalikan seluruh tabel jadwal KBM 5 hari ke standar default resmi sekolah (47 sesi)?',
+      )
+    ) {
+      return;
+    }
+
+    setConfig((prev) => ({
+      ...prev,
+      lampiranJadwal: {
+        judul: DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.judul || '',
+        subjudul: DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.subjudul || '',
+        items: [...DEFAULT_LAMPIRAN_JADWAL_KBM],
+      },
+    }));
+    toast.success('Tabel jadwal KBM dikembalikan ke standar 47 sesi resmi');
+  };
+
+  const handleCopyDaySchedule = () => {
+    if (copySourceDay === copyTargetDay) {
+      toast.error('Pilih hari sumber dan tujuan yang berbeda');
+      return;
+    }
+
+    if (
+      !confirm(
+        `Salin semua sesi dari hari ${copySourceDay} ke hari ${copyTargetDay}? Sesi pada hari ${copyTargetDay} saat ini akan digantikan.`,
+      )
+    ) {
+      return;
+    }
+
+    setConfig((prev) => {
+      const currentItems = [...(prev.lampiranJadwal?.items || DEFAULT_LAMPIRAN_JADWAL_KBM)];
+      const sourceItems = currentItems.filter((it) => it.hari === copySourceDay);
+      if (sourceItems.length === 0) {
+        toast.error(`Tidak ada sesi pada hari ${copySourceDay}`);
+        return prev;
+      }
+
+      // Hapus sesi target yang ada
+      const withoutTarget = currentItems.filter((it) => it.hari !== copyTargetDay);
+
+      // Buat salinan sesi dengan hari target
+      const copiedItems = sourceItems.map((it) => ({
+        ...it,
+        hari: copyTargetDay,
+      }));
+
+      // Tentukan posisi penyisipan berdasarkan urutan baku hari
+      const dayOrder = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+      const targetDayIdx = dayOrder.indexOf(copyTargetDay);
+
+      let insertIdx = withoutTarget.length;
+      for (let i = 0; i < withoutTarget.length; i++) {
+        const currentDayIdx = dayOrder.indexOf(withoutTarget[i].hari);
+        if (currentDayIdx > targetDayIdx) {
+          insertIdx = i;
+          break;
+        }
+      }
+
+      withoutTarget.splice(insertIdx, 0, ...copiedItems);
+
+      return {
+        ...prev,
+        lampiranJadwal: {
+          judul:
+            prev.lampiranJadwal?.judul || DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.judul || '',
+          subjudul:
+            prev.lampiranJadwal?.subjudul ||
+            DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.subjudul ||
+            '',
+          items: withoutTarget,
+        },
+      };
+    });
+
+    setShowCopyPanel(false);
+    toast.success(`Jadwal hari ${copySourceDay} berhasil disalin ke hari ${copyTargetDay}`);
+  };
+
+  // =========================================================================
+  // SIMPAN & RESET GLOBAL
+  // =========================================================================
   const handleSave = async () => {
     if (!config.nomorSurat.trim()) {
       toast.error('Nomor surat wajib diisi');
@@ -151,7 +451,7 @@ export function ConsentLetterConfigModal({
     try {
       const res = await saveConsentLetterConfig(config);
       if (res.success) {
-        toast.success('Pengaturan surat 5 hari kerja berhasil disimpan!');
+        toast.success('Pengaturan surat & jadwal 5 hari kerja berhasil disimpan!');
         if (onSaved) onSaved(config);
         onOpenChange(false);
       } else {
@@ -165,7 +465,11 @@ export function ConsentLetterConfigModal({
   };
 
   const handleReset = async () => {
-    if (!confirm('Kembalikan seluruh teks dan penandatangan surat ke format standar sekolah?')) {
+    if (
+      !confirm(
+        'Kembalikan seluruh teks, jadwal, dan penandatangan surat ke format standar resmi sekolah?',
+      )
+    ) {
       return;
     }
 
@@ -203,9 +507,21 @@ export function ConsentLetterConfigModal({
                   ? '"Courier New", Courier, monospace'
                   : 'Arial, Helvetica, sans-serif';
 
+  // Sesi yang difilter untuk editor jadwal
+  const filteredScheduleWithGlobalIndex = scheduleItems
+    .map((item, idx) => ({ item, globalIndex: idx }))
+    .filter(({ item }) => {
+      const matchDay = jadwalDayFilter === 'ALL' || item.hari === jadwalDayFilter;
+      const matchSearch =
+        !searchKegiatan.trim() ||
+        (item.kegiatan || '').toLowerCase().includes(searchKegiatan.toLowerCase()) ||
+        item.jam.toLowerCase().includes(searchKegiatan.toLowerCase());
+      return matchDay && matchSearch;
+    });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[92vh] flex flex-col p-0 rounded-2xl overflow-hidden shadow-2xl border-gray-200">
+      <DialogContent className="sm:max-w-5xl max-h-[94vh] flex flex-col p-0 rounded-2xl overflow-hidden shadow-2xl border-gray-200">
         {/* Modal Header */}
         <DialogHeader className="p-5 sm:p-6 bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shrink-0">
           <div className="flex items-center justify-between">
@@ -215,61 +531,79 @@ export function ConsentLetterConfigModal({
               </div>
               <div>
                 <DialogTitle className="text-lg sm:text-xl font-bold tracking-tight text-white">
-                  Pengaturan Isi & Penandatangan Surat 5 Hari Kerja
+                  Pengaturan Surat & Jadwal KBM 5 Hari Kerja
                 </DialogTitle>
                 <p className="text-xs text-blue-200 mt-0.5">
-                  Sesuaikan redaksi naskah dinas, ketentuan jam belajar, dan pejabat penandatangan sah
+                  Sesuaikan redaksi surat, rincian jadwal jam belajar harian, dan penandatangan sah
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Navigation Tabs */}
-          <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-white/15">
+          {/* Navigation Tabs (4 Tab Lengkap) */}
+          <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-white/15 overflow-x-auto pb-1">
             <button
               type="button"
               onClick={() => setActiveTab('redaksi')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap ${
                 activeTab === 'redaksi'
-                  ? 'bg-white text-blue-950 shadow-xs'
+                  ? 'bg-white text-blue-950 shadow-xs font-bold'
                   : 'text-blue-100 hover:bg-white/10'
               }`}
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>1. Redaksi & Ketentuan Surat</span>
+              <span>1. Redaksi & Naskah Dinas</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('jadwal')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+                activeTab === 'jadwal'
+                  ? 'bg-white text-blue-950 shadow-xs font-bold'
+                  : 'text-blue-100 hover:bg-white/10'
+              }`}
+            >
+              <CalendarDays className="w-3.5 h-3.5 text-blue-400" />
+              <span>2. Lampiran Jadwal KBM</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-500/30 text-white font-mono">
+                {scheduleItems.length} Sesi
+              </span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab('penandatangan')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap ${
                 activeTab === 'penandatangan'
-                  ? 'bg-white text-blue-950 shadow-xs'
+                  ? 'bg-white text-blue-950 shadow-xs font-bold'
                   : 'text-blue-100 hover:bg-white/10'
               }`}
             >
               <UserCheck className="w-3.5 h-3.5" />
-              <span>2. Hak Penandatangan</span>
+              <span>3. Hak Penandatangan</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab('preview')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap ${
                 activeTab === 'preview'
-                  ? 'bg-white text-blue-950 shadow-xs'
+                  ? 'bg-white text-blue-950 shadow-xs font-bold'
                   : 'text-blue-100 hover:bg-white/10'
               }`}
             >
-              <Eye className="w-3.5 h-3.5" />
-              <span>3. Live Preview Dokumen</span>
+              <Eye className="w-3.5 h-3.5 text-amber-300" />
+              <span>4. Live Preview Dokumen</span>
             </button>
           </div>
         </DialogHeader>
 
         {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 bg-gray-50/60 text-gray-900">
-          {/* TAB 1: REDAKSI & KETENTUAN SURAT */}
+          {/* ========================================================================= */}
+          {/* TAB 1: REDAKSI & KETENTUAN SURAT                                         */}
+          {/* ========================================================================= */}
           {activeTab === 'redaksi' && (
             <div className="space-y-6 animate-in fade-in-50">
               {/* Bagian 1: Identitas & Klasifikasi Naskah */}
@@ -306,7 +640,7 @@ export function ConsentLetterConfigModal({
                     <Input
                       value={config.lampiranSurat}
                       onChange={(e) => setConfig({ ...config, lampiranSurat: e.target.value })}
-                      placeholder="1 Lembar (Lembar Persetujuan)"
+                      placeholder="1 Lembar Lampiran Jadwal KBM"
                       className="h-9 text-xs"
                     />
                   </div>
@@ -333,7 +667,7 @@ export function ConsentLetterConfigModal({
                 </div>
               </div>
 
-              {/* Bagian Baru: Pengaturan Tipografi & Jenis Font Naskah Surat */}
+              {/* Bagian: Tipografi & Jenis Huruf */}
               <div className="bg-blue-50/50 p-5 rounded-xl border border-blue-200 shadow-xs space-y-4">
                 <div className="flex items-center justify-between border-b border-blue-200 pb-2">
                   <h4 className="font-bold text-xs uppercase tracking-wider text-blue-950 flex items-center gap-1.5">
@@ -353,14 +687,26 @@ export function ConsentLetterConfigModal({
                     </Label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
                       {[
-                        { id: 'Times New Roman', label: 'Times New Roman', fontClass: "'Times New Roman', serif" },
+                        {
+                          id: 'Times New Roman',
+                          label: 'Times New Roman',
+                          fontClass: "'Times New Roman', serif",
+                        },
                         { id: 'Arial', label: 'Arial (Sans)', fontClass: 'Arial, sans-serif' },
-                        { id: 'Bookman Old Style', label: 'Bookman', fontClass: '"Bookman Old Style", serif' },
+                        {
+                          id: 'Bookman Old Style',
+                          label: 'Bookman',
+                          fontClass: '"Bookman Old Style", serif',
+                        },
                         { id: 'Garamond', label: 'Garamond', fontClass: 'Garamond, serif' },
                         { id: 'Georgia', label: 'Georgia', fontClass: 'Georgia, serif' },
                         { id: 'Calibri', label: 'Calibri', fontClass: 'Calibri, sans-serif' },
                         { id: 'Tahoma', label: 'Tahoma', fontClass: 'Tahoma, sans-serif' },
-                        { id: 'Courier New', label: 'Courier New', fontClass: '"Courier New", monospace' },
+                        {
+                          id: 'Courier New',
+                          label: 'Courier New',
+                          fontClass: '"Courier New", monospace',
+                        },
                       ].map((item) => (
                         <button
                           key={item.id}
@@ -385,7 +731,9 @@ export function ConsentLetterConfigModal({
                       <Label className="text-xs font-bold text-gray-800">Ukuran Huruf Naskah</Label>
                       <select
                         value={config.ukuranFontSurat || 11}
-                        onChange={(e) => setConfig({ ...config, ukuranFontSurat: parseFloat(e.target.value) })}
+                        onChange={(e) =>
+                          setConfig({ ...config, ukuranFontSurat: parseFloat(e.target.value) })
+                        }
                         className="w-full h-8 px-2 rounded-md border border-gray-300 text-xs bg-white font-semibold text-gray-800"
                       >
                         <option value="10">10 pt (Kompak)</option>
@@ -420,7 +768,9 @@ export function ConsentLetterConfigModal({
                 </h4>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-gray-700">Teks Paragraf Pembuka:</Label>
+                  <Label className="text-xs font-semibold text-gray-700">
+                    Teks Paragraf Pembuka:
+                  </Label>
                   <Textarea
                     value={config.teksPembuka}
                     onChange={(e) => setConfig({ ...config, teksPembuka: e.target.value })}
@@ -456,27 +806,12 @@ export function ConsentLetterConfigModal({
                         })
                       }
                       placeholder="Senin s.d. Jumat"
-                      className="h-9 text-xs font-semibold text-blue-800"
+                      className="h-9 text-xs"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-gray-700">Jam Belajar Efektif:</Label>
-                    <Input
-                      value={config.ketentuan.jamBelajar}
-                      onChange={(e) =>
-                        setConfig({
-                          ...config,
-                          ketentuan: { ...config.ketentuan, jamBelajar: e.target.value },
-                        })
-                      }
-                      placeholder="07.00 s.d. 15.00 WIB (disesuaikan jadwal KBM)"
-                      className="h-9 text-xs font-semibold text-blue-800"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-gray-700">Hari Libur Siswa:</Label>
+                    <Label className="text-xs font-semibold text-gray-700">Hari Libur:</Label>
                     <Input
                       value={config.ketentuan.hariLibur}
                       onChange={(e) =>
@@ -489,10 +824,29 @@ export function ConsentLetterConfigModal({
                       className="h-9 text-xs"
                     />
                   </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-gray-700">
+                      Keterangan Jam Belajar:
+                    </Label>
+                    <Input
+                      value={config.ketentuan.jamBelajar}
+                      onChange={(e) =>
+                        setConfig({
+                          ...config,
+                          ketentuan: { ...config.ketentuan, jamBelajar: e.target.value },
+                        })
+                      }
+                      placeholder="06.30 s.d. 14.00 WIB (Senin–Kamis) & 06.30 s.d. 11.30 WIB (Jumat)"
+                      className="h-9 text-xs"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1.5 pt-2">
-                  <Label className="text-xs font-semibold text-gray-700">Paragraf Tujuan Program:</Label>
+                  <Label className="text-xs font-semibold text-gray-700">
+                    Paragraf Tujuan Program:
+                  </Label>
                   <Textarea
                     value={config.paragrafTujuan}
                     onChange={(e) => setConfig({ ...config, paragrafTujuan: e.target.value })}
@@ -510,15 +864,28 @@ export function ConsentLetterConfigModal({
                   />
                 </div>
 
-                {/* Info Card: Lampiran Resmi Jadwal KBM */}
-                <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-lg text-xs space-y-1 text-blue-900 mt-2">
-                  <p className="font-bold flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-blue-700" />
-                    Lampiran Resmi: Jadwal KBM 5 Hari Kerja
-                  </p>
-                  <p className="text-[11px] text-blue-800">
-                    Tabel rincian jadwal jam belajar (Senin s.d. Jumat: 47 sesi KBM & Pembiasaan) otomatis menyatu sebagai lampiran resmi pada dokumen Surat Pemberitahuan Sekolah dan dapat ditinjau pada tab <strong>Pratinjau Surat</strong>.
-                  </p>
+                {/* Banner Arahkan ke Tab Jadwal */}
+                <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-xl text-xs space-y-2 text-blue-900 mt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <p className="font-bold flex items-center gap-1.5 text-blue-950">
+                      <CalendarDays className="w-4 h-4 text-blue-700" />
+                      Rincian Tabel Jam Pelajaran (Lampiran Jadwal KBM)
+                    </p>
+                    <p className="text-[11px] text-blue-800">
+                      Terdapat <strong>{scheduleItems.length} sesi jam belajar</strong> yang dapat
+                      Anda sesuaikan per hari, jam, kegiatan, dan waktu istirahat pada tab khusus.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setActiveTab('jadwal')}
+                    className="shrink-0 text-xs bg-white text-blue-800 border-blue-300 hover:bg-blue-100 font-bold flex items-center gap-1.5 h-8"
+                  >
+                    <span>Buka Editor Jadwal KBM</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
               </div>
 
@@ -569,7 +936,432 @@ export function ConsentLetterConfigModal({
             </div>
           )}
 
-          {/* TAB 2: HAK PENANDATANGAN SURAT */}
+          {/* ========================================================================= */}
+          {/* TAB 2: LAMPIRAN JADWAL KBM (EDITOR INTERAKTIF JADWAL 5 HARI)              */}
+          {/* ========================================================================= */}
+          {activeTab === 'jadwal' && (
+            <div className="space-y-5 animate-in fade-in-50">
+              {/* Box 1: Judul & Subjudul Lampiran Dokumen */}
+              <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-xs space-y-3">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-blue-900 flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-blue-700" />
+                    Header Lampiran Jadwal Dokumen
+                  </h4>
+                  <span className="text-[11px] text-gray-500">
+                    Ditampilkan di bagian atas tabel jadwal lampiran
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-gray-700">Judul Lampiran:</Label>
+                    <Input
+                      value={
+                        config.lampiranJadwal?.judul ??
+                        DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.judul ??
+                        ''
+                      }
+                      onChange={(e) => handleUpdateLampiranHeader('judul', e.target.value)}
+                      placeholder="LAMPIRAN: JADWAL KEGIATAN BELAJAR MENGAJAR (KBM)"
+                      className="h-9 text-xs font-semibold"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold text-gray-700">
+                      Subjudul / Nama Program:
+                    </Label>
+                    <Input
+                      value={
+                        config.lampiranJadwal?.subjudul ??
+                        DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.subjudul ??
+                        ''
+                      }
+                      onChange={(e) => handleUpdateLampiranHeader('subjudul', e.target.value)}
+                      placeholder={`SISTEM PEMBELAJARAN 5 HARI KERJA — ${sekolahNama}`}
+                      className="h-9 text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Box 2: Filter Hari, Pencarian, & Aksi Cepat */}
+              <div className="bg-white p-4 sm:p-5 rounded-xl border border-gray-200 shadow-xs space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                  {/* Day Filter Pills */}
+                  <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+                    <button
+                      type="button"
+                      onClick={() => setJadwalDayFilter('ALL')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                        jadwalDayFilter === 'ALL'
+                          ? 'bg-blue-900 text-white shadow-xs'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>Semua Hari</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                          jadwalDayFilter === 'ALL'
+                            ? 'bg-white/20 text-white'
+                            : 'bg-gray-200 text-gray-800'
+                        }`}
+                      >
+                        {scheduleItems.length}
+                      </span>
+                    </button>
+
+                    {HARI_LIST.map((h) => {
+                      const count = scheduleItems.filter((i) => i.hari === h).length;
+                      return (
+                        <button
+                          key={h}
+                          type="button"
+                          onClick={() => setJadwalDayFilter(h)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                            jadwalDayFilter === h
+                              ? 'bg-blue-900 text-white shadow-xs font-bold'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          <span>{h}</span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                              jadwalDayFilter === h
+                                ? 'bg-white/20 text-white'
+                                : 'bg-gray-200 text-gray-700'
+                            }`}
+                          >
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Toolbar Actions */}
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowCopyPanel(!showCopyPanel)}
+                      className={`text-xs h-8 flex items-center gap-1.5 ${
+                        showCopyPanel
+                          ? 'bg-indigo-50 border-indigo-300 text-indigo-900 font-bold'
+                          : 'text-gray-700 border-gray-200 hover:bg-gray-100'
+                      }`}
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Salin Jadwal Hari</span>
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResetJadwalOnly}
+                      className="text-xs h-8 text-amber-700 border-amber-300 hover:bg-amber-50 flex items-center gap-1.5"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Reset Jadwal</span>
+                    </Button>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => handleAddJadwalItem()}
+                      className="text-xs h-8 bg-blue-700 hover:bg-blue-800 text-white font-bold flex items-center gap-1.5 shadow-xs"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>+ Tambah Sesi</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Panel Salin Jadwal Antar Hari (Expandable) */}
+                {showCopyPanel && (
+                  <div className="p-4 bg-indigo-50/80 border border-indigo-200 rounded-xl space-y-3 animate-in fade-in-50">
+                    <div className="flex items-center justify-between">
+                      <h5 className="font-bold text-xs uppercase tracking-wider text-indigo-950 flex items-center gap-1.5">
+                        <Copy className="w-3.5 h-3.5 text-indigo-700" />
+                        Salin Struktur Jadwal Antar Hari
+                      </h5>
+                      <span className="text-[11px] text-indigo-700">
+                        Mempercepat pembuatan jadwal jika hari lain memiliki jam yang sama
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-700">Salin dari:</span>
+                        <select
+                          value={copySourceDay}
+                          onChange={(e) => setCopySourceDay(e.target.value)}
+                          className="h-8 px-2.5 rounded-lg border border-indigo-200 bg-white font-bold text-indigo-950 text-xs shadow-xs"
+                        >
+                          {HARI_LIST.map((h) => (
+                            <option key={h} value={h}>
+                              Hari {h} ({scheduleItems.filter((i) => i.hari === h).length} sesi)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <ArrowRight className="w-4 h-4 text-indigo-500 hidden sm:block" />
+
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-700">Terapkan ke:</span>
+                        <select
+                          value={copyTargetDay}
+                          onChange={(e) => setCopyTargetDay(e.target.value)}
+                          className="h-8 px-2.5 rounded-lg border border-indigo-200 bg-white font-bold text-indigo-950 text-xs shadow-xs"
+                        >
+                          {HARI_LIST.map((h) => (
+                            <option key={h} value={h}>
+                              Hari {h}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleCopyDaySchedule}
+                        className="h-8 text-xs bg-indigo-700 hover:bg-indigo-800 text-white font-bold shadow-xs ml-auto"
+                      >
+                        Terapkan Salinan
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Pencarian Sesi */}
+                <div className="flex items-center justify-between gap-3">
+                  <div className="relative flex-1 max-w-sm">
+                    <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-2.5" />
+                    <Input
+                      value={searchKegiatan}
+                      onChange={(e) => setSearchKegiatan(e.target.value)}
+                      placeholder="Cari jam / kegiatan pelajaran..."
+                      className="h-8 pl-8 text-xs bg-gray-50/70 border-gray-200"
+                    />
+                  </div>
+
+                  <div className="text-[11px] text-gray-500 font-medium">
+                    Menampilkan <strong>{filteredScheduleWithGlobalIndex.length}</strong> dari{' '}
+                    <strong>{scheduleItems.length}</strong> sesi
+                  </div>
+                </div>
+
+                {/* Tabel / Daftar Baris Jadwal */}
+                <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-xs">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-gray-100/90 text-gray-800 border-b border-gray-200 font-bold">
+                          <th className="py-2.5 px-3 w-12 text-center">No</th>
+                          <th className="py-2.5 px-3 w-28">Hari</th>
+                          <th className="py-2.5 px-3 w-36">Waktu / Jam</th>
+                          <th className="py-2.5 px-3">Uraian Kegiatan / Mata Pelajaran</th>
+                          <th className="py-2.5 px-3 w-32 text-center">Jenis Sesi</th>
+                          <th className="py-2.5 px-3 w-36 text-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {filteredScheduleWithGlobalIndex.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="py-8 text-center text-gray-400">
+                              <CalendarDays className="w-8 h-8 mx-auto mb-2 opacity-40 text-gray-400" />
+                              <p className="font-semibold text-xs text-gray-600">
+                                Tidak ada sesi jadwal ditemukan
+                              </p>
+                              <p className="text-[11px] text-gray-400 mt-0.5">
+                                Klik tombol <strong>+ Tambah Sesi</strong> untuk menambahkan jadwal
+                                baru.
+                              </p>
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredScheduleWithGlobalIndex.map(({ item, globalIndex }, listIdx) => (
+                            <tr
+                              key={globalIndex}
+                              className={`transition-colors ${
+                                item.isIstirahat
+                                  ? 'bg-amber-50/60 hover:bg-amber-50'
+                                  : listIdx % 2 === 1
+                                    ? 'bg-gray-50/40 hover:bg-blue-50/40'
+                                    : 'bg-white hover:bg-blue-50/40'
+                              }`}
+                            >
+                              {/* Kolom No Urut */}
+                              <td className="py-2 px-3 text-center text-gray-500 font-mono text-[11px]">
+                                {listIdx + 1}
+                              </td>
+
+                              {/* Kolom Hari */}
+                              <td className="py-2 px-3">
+                                <select
+                                  value={item.hari}
+                                  onChange={(e) =>
+                                    handleUpdateJadwalItem(globalIndex, 'hari', e.target.value)
+                                  }
+                                  className="h-8 px-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-900 bg-white shadow-2xs w-full"
+                                >
+                                  {HARI_LIST.map((h) => (
+                                    <option key={h} value={h}>
+                                      {h}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+
+                              {/* Kolom Waktu / Jam */}
+                              <td className="py-2 px-3">
+                                <Input
+                                  value={item.jam}
+                                  onChange={(e) =>
+                                    handleUpdateJadwalItem(globalIndex, 'jam', e.target.value)
+                                  }
+                                  placeholder="07.00–07.40"
+                                  className="h-8 font-mono text-xs font-bold text-gray-800 bg-white"
+                                />
+                              </td>
+
+                              {/* Kolom Uraian Kegiatan */}
+                              <td className="py-2 px-3">
+                                <Input
+                                  value={item.kegiatan || ''}
+                                  onChange={(e) =>
+                                    handleUpdateJadwalItem(globalIndex, 'kegiatan', e.target.value)
+                                  }
+                                  placeholder="Contoh: Jam Pelajaran ke-1 / Upacara / Literasi"
+                                  className={`h-8 text-xs bg-white ${
+                                    item.isIstirahat ? 'font-bold text-amber-950' : 'text-gray-900'
+                                  }`}
+                                />
+                              </td>
+
+                              {/* Kolom Jenis Sesi (Toggle Istirahat) */}
+                              <td className="py-2 px-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleUpdateJadwalItem(
+                                      globalIndex,
+                                      'isIstirahat',
+                                      !item.isIstirahat,
+                                    )
+                                  }
+                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all ${
+                                    item.isIstirahat
+                                      ? 'bg-amber-100 text-amber-900 border-amber-300 shadow-2xs'
+                                      : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
+                                  }`}
+                                  title="Klik untuk mengubah jenis sesi KBM / Istirahat"
+                                >
+                                  {item.isIstirahat ? (
+                                    <>
+                                      <Coffee className="w-3 h-3 text-amber-700" />
+                                      <span>Istirahat</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <BookOpen className="w-3 h-3 text-blue-600" />
+                                      <span>KBM</span>
+                                    </>
+                                  )}
+                                </button>
+                              </td>
+
+                              {/* Kolom Aksi */}
+                              <td className="py-2 px-3">
+                                <div className="flex items-center justify-center gap-1">
+                                  {/* Naikkan */}
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={globalIndex === 0}
+                                    onClick={() => handleMoveJadwalItem(globalIndex, 'UP')}
+                                    className="h-7 w-7 p-0 text-gray-500 hover:text-blue-700 hover:bg-blue-50"
+                                    title="Pindahkan ke atas"
+                                  >
+                                    <ArrowUp className="w-3.5 h-3.5" />
+                                  </Button>
+
+                                  {/* Turunkan */}
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={globalIndex === scheduleItems.length - 1}
+                                    onClick={() => handleMoveJadwalItem(globalIndex, 'DOWN')}
+                                    className="h-7 w-7 p-0 text-gray-500 hover:text-blue-700 hover:bg-blue-50"
+                                    title="Pindahkan ke bawah"
+                                  >
+                                    <ArrowDown className="w-3.5 h-3.5" />
+                                  </Button>
+
+                                  {/* Duplikat */}
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDuplicateJadwalItem(globalIndex)}
+                                    className="h-7 w-7 p-0 text-gray-500 hover:text-indigo-700 hover:bg-indigo-50"
+                                    title="Duplikat sesi ini"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </Button>
+
+                                  {/* Hapus */}
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteJadwalItem(globalIndex)}
+                                    className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    title="Hapus sesi ini"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Bottom Action Bar */}
+                <div className="flex items-center justify-between pt-2">
+                  <span className="text-xs text-gray-500">
+                    💡 Perubahan jadwal ini otomatis disinkronkan ke dokumen naskah dinas dan form
+                    persetujuan orang tua.
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => handleAddJadwalItem()}
+                    className="text-xs h-8 bg-blue-700 hover:bg-blue-800 text-white font-bold flex items-center gap-1.5 shadow-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Tambah Sesi Jadwal</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 3: HAK PENANDATANGAN SURAT                                            */}
+          {/* ========================================================================= */}
           {activeTab === 'penandatangan' && (
             <div className="space-y-6 animate-in fade-in-50">
               <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-xs space-y-4">
@@ -599,15 +1391,12 @@ export function ConsentLetterConfigModal({
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-[11px] text-gray-500">
-                    Memilih dari daftar akan mengisikan nama lengkap, NIP, dan jabatan secara otomatis.
-                  </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-gray-700">
-                      Nama Lengkap Pejabat (beserta Gelar) <span className="text-red-500">*</span>
+                      Nama Lengkap & Gelar:
                     </Label>
                     <Input
                       value={config.penandatangan.nama}
@@ -618,14 +1407,12 @@ export function ConsentLetterConfigModal({
                         })
                       }
                       placeholder="Drs. H. Dedi Kusnadi, M.Pd."
-                      className="h-9 text-xs font-bold"
+                      className="h-9 text-xs font-bold text-gray-900"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-gray-700">
-                      Nomor Induk Pegawai (NIP)
-                    </Label>
+                    <Label className="text-xs font-semibold text-gray-700">NIP Pegawai:</Label>
                     <Input
                       value={config.penandatangan.nip}
                       onChange={(e) =>
@@ -641,7 +1428,7 @@ export function ConsentLetterConfigModal({
 
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold text-gray-700">
-                      Jabatan yang Tertera di Dokumen <span className="text-red-500">*</span>
+                      Jabatan Penandatangan:
                     </Label>
                     <Input
                       value={config.penandatangan.jabatan}
@@ -651,22 +1438,24 @@ export function ConsentLetterConfigModal({
                           penandatangan: { ...config.penandatangan, jabatan: e.target.value },
                         })
                       }
-                      placeholder="Kepala SMPN 1 UJUNGJAYA / Plt. Kepala Sekolah"
-                      className="h-9 text-xs font-semibold text-blue-900"
+                      placeholder={`Kepala ${sekolahNama}`}
+                      className="h-9 text-xs"
                     />
-                    <p className="text-[10px] text-gray-400">
-                      Misal: <em>Kepala SMPN 1 Ujungjaya</em> atau <em>Plt. Kepala SMPN 1 Ujungjaya</em>
-                    </p>
                   </div>
 
                   <div className="space-y-1">
-                    <Label className="text-xs font-semibold text-gray-700">Pangkat / Golongan</Label>
+                    <Label className="text-xs font-semibold text-gray-700">
+                      Pangkat / Golongan Ruang:
+                    </Label>
                     <Input
                       value={config.penandatangan.pangkatGolongan || ''}
                       onChange={(e) =>
                         setConfig({
                           ...config,
-                          penandatangan: { ...config.penandatangan, pangkatGolongan: e.target.value },
+                          penandatangan: {
+                            ...config.penandatangan,
+                            pangkatGolongan: e.target.value,
+                          },
                         })
                       }
                       placeholder="Pembina Tingkat I (IV/b)"
@@ -675,9 +1464,8 @@ export function ConsentLetterConfigModal({
                   </div>
                 </div>
 
-                {/* Toggles */}
-                <div className="pt-3 border-t border-gray-100 flex flex-col sm:flex-row gap-4">
-                  <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer bg-gray-50 p-3 rounded-xl border border-gray-200 flex-1">
+                <div className="pt-3 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center gap-4 text-xs">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={config.penandatangan.tampilkanQr}
@@ -689,18 +1477,21 @@ export function ConsentLetterConfigModal({
                       }
                       className="rounded text-blue-600"
                     />
-                    <QrCode className="w-4 h-4 text-blue-600" />
-                    <span>Sertakan QR Code Verifikasi Digital PAWARTA</span>
+                    <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                    <span>Sertakan QR-Code Verifikasi Dokumen & TTE</span>
                   </label>
 
-                  <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer bg-gray-50 p-3 rounded-xl border border-gray-200 flex-1">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={config.penandatangan.tampilkanTtdDigital}
                       onChange={(e) =>
                         setConfig({
                           ...config,
-                          penandatangan: { ...config.penandatangan, tampilkanTtdDigital: e.target.checked },
+                          penandatangan: {
+                            ...config.penandatangan,
+                            tampilkanTtdDigital: e.target.checked,
+                          },
                         })
                       }
                       className="rounded text-blue-600"
@@ -713,14 +1504,17 @@ export function ConsentLetterConfigModal({
             </div>
           )}
 
-          {/* TAB 3: LIVE PREVIEW DOKUMEN */}
+          {/* ========================================================================= */}
+          {/* TAB 4: LIVE PREVIEW DOKUMEN                                               */}
+          {/* ========================================================================= */}
           {activeTab === 'preview' && (
             <div className="space-y-6 animate-in fade-in-50">
               <div className="bg-blue-50 border border-blue-200 p-3 rounded-xl text-xs text-blue-800 flex items-center justify-between">
                 <span className="flex items-center gap-1.5 font-semibold">
-                  <Sparkles className="w-4 h-4 text-blue-600" /> Pratinjau Real-Time Dokumen Naskah Dinas
+                  <Sparkles className="w-4 h-4 text-blue-600" /> Pratinjau Real-Time Dokumen Naskah
+                  Dinas & Lampiran Jadwal
                 </span>
-                <span className="text-[11px] bg-blue-200 text-blue-900 px-2 py-0.5 rounded font-mono">
+                <span className="text-[11px] bg-blue-200 text-blue-900 px-2 py-0.5 rounded font-mono font-bold">
                   Ukuran: HVS F4
                 </span>
               </div>
@@ -734,12 +1528,18 @@ export function ConsentLetterConfigModal({
                   lineHeight: config.spasiSurat || '1.5',
                 }}
               >
-                <div className="border-b-2 border-black pb-2 text-center space-y-0.5" style={{ fontFamily: previewFont }}>
-                  <h3 className="font-bold text-xs uppercase">PEMERINTAH DAERAH KABUPATEN SUMEDANG</h3>
+                {/* Kop Surat Sederhana */}
+                <div
+                  className="border-b-2 border-black pb-2 text-center space-y-0.5"
+                  style={{ fontFamily: previewFont }}
+                >
+                  <h3 className="font-bold text-xs uppercase">
+                    PEMERINTAH DAERAH KABUPATEN {sekolahKabupaten.toUpperCase()}
+                  </h3>
                   <h4 className="font-bold text-xs uppercase">DINAS PENDIDIKAN</h4>
                   <h2 className="font-black text-sm uppercase text-gray-900">{sekolahNama}</h2>
                   <p className="text-[10px] text-gray-600">
-                    Jalan Raya Ujungjaya No. 123, Kabupaten Sumedang, Jawa Barat
+                    Jalan Raya Ujungjaya No. 123, Kabupaten {sekolahKabupaten}, Jawa Barat
                   </p>
                 </div>
 
@@ -769,7 +1569,14 @@ export function ConsentLetterConfigModal({
                     </tbody>
                   </table>
                   <div className="text-right font-sans text-xs">
-                    <p>{config.tempatSurat}, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    <p>
+                      {config.tempatSurat},{' '}
+                      {new Date().toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </p>
                   </div>
                 </div>
 
@@ -863,19 +1670,18 @@ export function ConsentLetterConfigModal({
                         <tr className="bg-gray-100 text-gray-900 border-b border-gray-700 text-center font-bold">
                           <th className="border border-gray-700 px-2 py-1 w-20">Hari</th>
                           <th className="border border-gray-700 px-2 py-1 w-28">Waktu</th>
-                          <th className="border border-gray-700 px-2 py-1 text-left">Uraian Kegiatan</th>
+                          <th className="border border-gray-700 px-2 py-1 text-left">
+                            Uraian Kegiatan
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         {Object.entries(
-                          (config.lampiranJadwal?.items && config.lampiranJadwal.items.length > 0
-                            ? config.lampiranJadwal.items
-                            : DEFAULT_LAMPIRAN_JADWAL_KBM
-                          ).reduce((acc: Record<string, JadwalKbmItem[]>, item) => {
+                          scheduleItems.reduce((acc: Record<string, JadwalKbmItem[]>, item) => {
                             if (!acc[item.hari]) acc[item.hari] = [];
                             acc[item.hari].push(item);
                             return acc;
-                          }, {})
+                          }, {}),
                         ).map(([hariName, sesiList]) =>
                           sesiList.map((sesi, idx) => (
                             <tr
@@ -900,12 +1706,15 @@ export function ConsentLetterConfigModal({
                                 {sesi.jam}
                               </td>
                               <td className="border border-gray-700 px-2 py-0.5 text-gray-900 text-[10.5px]">
-                                <span className={sesi.isIstirahat ? 'text-amber-900 font-bold' : ''}>
-                                  {sesi.kegiatan || (sesi.isIstirahat ? 'Istirahat' : `Jam Pelajaran ${idx + 1}`)}
+                                <span
+                                  className={sesi.isIstirahat ? 'text-amber-900 font-bold' : ''}
+                                >
+                                  {sesi.kegiatan ||
+                                    (sesi.isIstirahat ? 'Istirahat' : `Jam Pelajaran ${idx + 1}`)}
                                 </span>
                               </td>
                             </tr>
-                          ))
+                          )),
                         )}
                       </tbody>
                     </table>
@@ -946,7 +1755,11 @@ export function ConsentLetterConfigModal({
             disabled={isResetting || isSaving}
             className="text-xs text-amber-700 border-amber-300 hover:bg-amber-50 flex items-center gap-1.5 w-full sm:w-auto"
           >
-            {isResetting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+            {isResetting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <RotateCcw className="w-3.5 h-3.5" />
+            )}
             <span>Reset ke Standar Resmi</span>
           </Button>
 
@@ -968,8 +1781,12 @@ export function ConsentLetterConfigModal({
               disabled={isSaving || isResetting}
               className="text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white shadow-xs flex items-center gap-1.5"
             >
-              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              <span>Simpan Pengaturan Surat</span>
+              {isSaving ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Save className="w-3.5 h-3.5" />
+              )}
+              <span>Simpan Pengaturan Surat & Jadwal</span>
             </Button>
           </div>
         </div>

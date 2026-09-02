@@ -20,6 +20,7 @@ import { generateNomorNaskahDinas } from '@/lib/nomor-surat-generator';
 import {
   ConsentLetterConfig,
   DEFAULT_CONSENT_LETTER_CONFIG,
+  DEFAULT_LAMPIRAN_JADWAL_KBM,
 } from './consent-config';
 import { sendAutomatedWhatsApp } from '@/features/system/actions/notifications-gateway';
 
@@ -174,7 +175,19 @@ export async function getConsentLetterConfig() {
               ...DEFAULT_CONSENT_LETTER_CONFIG.ketentuan,
               ...(parsed.ketentuan || {}),
             },
-            lampiranJadwal: parsed.lampiranJadwal || DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal,
+            lampiranJadwal: parsed.lampiranJadwal
+              ? {
+                  judul:
+                    parsed.lampiranJadwal.judul ??
+                    DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.judul,
+                  subjudul:
+                    parsed.lampiranJadwal.subjudul ??
+                    DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal?.subjudul,
+                  items: Array.isArray(parsed.lampiranJadwal.items)
+                    ? parsed.lampiranJadwal.items
+                    : DEFAULT_LAMPIRAN_JADWAL_KBM,
+                }
+              : DEFAULT_CONSENT_LETTER_CONFIG.lampiranJadwal,
             penandatangan: {
               ...DEFAULT_CONSENT_LETTER_CONFIG.penandatangan,
               ...(parsed.penandatangan || {}),
@@ -239,9 +252,10 @@ export async function saveConsentLetterConfig(input: ConsentLetterConfig) {
   try {
     const user = await requireAuth();
 
-    let template = await db.query.documentTemplates.findFirst({
-      where: eq(documentTemplates.kode, 'SURAT_5_HARI_KERJA'),
-    });
+    let template: typeof documentTemplates.$inferSelect | undefined =
+      await db.query.documentTemplates.findFirst({
+        where: eq(documentTemplates.kode, 'SURAT_5_HARI_KERJA'),
+      });
 
     const now = new Date();
     const configJson = JSON.stringify(input);
@@ -273,7 +287,7 @@ export async function saveConsentLetterConfig(input: ConsentLetterConfig) {
         })
         .returning();
 
-      template = newTemplate as any;
+      template = newTemplate;
     }
 
     if (!template) throw new Error('Gagal menyiapkan master template dokumen');
@@ -442,8 +456,7 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
         nama: activeConfig.penandatangan.nama || kepsek?.nama || 'Drs. H. Dedi Kusnadi, M.Pd.',
         nip: activeConfig.penandatangan.nip || kepsek?.nip || '19680512 199403 1 005',
         jabatan: activeConfig.penandatangan.jabatan || 'Kepala SMPN 1 UJUNGJAYA',
-        pangkatGolongan:
-          activeConfig.penandatangan.pangkatGolongan || kepsek?.pangkatGolongan,
+        pangkatGolongan: activeConfig.penandatangan.pangkatGolongan || kepsek?.pangkatGolongan,
       },
       config: activeConfig,
       siswa: {
@@ -514,8 +527,7 @@ export async function submitParentConsent(input: SubmitParentConsentInput) {
         dateStyle: 'full',
       });
 
-      const notifMessage =
-`*SURAT PERSETUJUAN ORANG TUA - PAWARTA*
+      const notifMessage = `*SURAT PERSETUJUAN ORANG TUA - PAWARTA*
 *${sekolah?.nama || 'SMPN 1 UJUNGJAYA'}*
 
 Telah diisi & ditandatangani secara sah oleh Orang Tua/Wali:
@@ -697,7 +709,8 @@ export async function getConsentListAdmin(params?: GetConsentListParams) {
 
     return { success: true, data: filteredList };
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : 'Gagal memuat data rekapitulasi persetujuan';
+    const msg =
+      error instanceof Error ? error.message : 'Gagal memuat data rekapitulasi persetujuan';
     return { success: false, error: msg, data: [] };
   }
 }
@@ -755,8 +768,7 @@ export async function getConsentSummaryStats(kategori = '5_HARI_KERJA') {
       }
 
       const belum = Math.max(0, totalSiswaKelas - submitted);
-      const percentage =
-        totalSiswaKelas > 0 ? Math.round((submitted / totalSiswaKelas) * 100) : 0;
+      const percentage = totalSiswaKelas > 0 ? Math.round((submitted / totalSiswaKelas) * 100) : 0;
 
       return {
         kelasId: k.id,

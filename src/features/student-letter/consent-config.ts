@@ -5,6 +5,8 @@ export interface JadwalKbmItem {
   isIstirahat?: boolean;
 }
 
+export const HARI_LIST = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'] as const;
+
 export interface LampiranJadwalConfig {
   judul?: string;
   subjudul?: string;
@@ -143,7 +145,8 @@ export const DEFAULT_CONSENT_LETTER_CONFIG: ConsentLetterConfig = {
   ketentuan: {
     mulaiBerlaku: 'Tahun Pelajaran 2026/2027',
     hariBelajar: 'Senin s.d. Jumat',
-    jamBelajar: '06.30 s.d. 14.00 WIB (Senin–Kamis) & 06.30 s.d. 11.30 WIB (Jumat) — Rincian Jadwal Terlampir',
+    jamBelajar:
+      '06.30 s.d. 14.00 WIB (Senin–Kamis) & 06.30 s.d. 11.30 WIB (Jumat) — Rincian Jadwal Terlampir',
     hariLibur: 'Sabtu dan Minggu',
   },
 
